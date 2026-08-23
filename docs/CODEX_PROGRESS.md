@@ -69,3 +69,20 @@ Started Milestone 1: Next.js shell and visual parity.
 - V4 remaining work centers on procurement, pre-purchase checks, purchase payment controls, Vehicle Secured, inspection, repair/modification, export/shipping, delivery, and after-sales.
 - V5 remaining work centers on 360 pages, employee workflow/KPI, fraud/risk, immutable audit expansion, reporting/forecasting, Owner AI Command Center, and management briefs/reviews.
 - Blocking dependencies include Supabase project/env confirmation, migrations/RLS/storage, durable job provider, compliant Facebook/Marketplace connector approach, AI key/model/cost policy, legal review for Purchase Fund, and Owner approval before production deployment.
+
+### Hybrid Marketplace Import
+
+- Implemented the chosen V1-safe import path: Facebook public metadata first, then screenshot/photo fallback, with Cloud Browser remaining optional.
+- `/api/marketplace-import` now resolves Facebook share links to canonical Marketplace item URLs when public metadata is available.
+- The importer extracts OpenGraph/Twitter metadata: title, description, cover image, canonical URL, and available price metadata.
+- The importer returns `draft_fields` from deterministic text extraction so a draft can show brand/model/year/spec hints even if NK AI is not configured.
+- The Add Vehicle UI now accepts `draft_fields` and keeps a metadata-based Review screen available if the AI extraction endpoint fails or is not configured.
+- Missing fields from public metadata are surfaced as review issues, prompting screenshot/photo evidence for gallery, seller/contact, location, source price, and current availability.
+- Verified against sample Facebook share URL `https://www.facebook.com/share/1DF6CzLM1A/?mibextid=wwXIfr` through a local endpoint call:
+  - Status: `partial`.
+  - Provider: `Facebook public metadata`.
+  - Canonical URL: `https://www.facebook.com/marketplace/item/1716607786274590/`.
+  - Title: `2025 Toyota HILUX REVO 2.8 4WD GR SPORT WIDE`.
+  - Draft fields: Toyota, Hilux Revo, 2025.
+  - Cover images: 1.
+  - Missing evidence: full photo gallery, seller/contact, location, source price, current availability.

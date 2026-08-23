@@ -25,6 +25,7 @@ type MarketplaceImport = {
   provider?: string;
   setup_url?: string;
   source_url?: string;
+  canonical_url?: string;
   source_platform?: string;
   title?: string;
   description?: string;
@@ -35,6 +36,7 @@ type MarketplaceImport = {
   images?: string[];
   missing?: string[];
   conflicts?: string[];
+  draft_fields?: Partial<FormValues>;
 };
 type CloudStatus = { configured: boolean; provider: string };
 type ImportIssue = "" | "setup" | "login" | "unavailable";
@@ -299,18 +301,38 @@ export default function VehicleEditor({ initialVehicle, onSave, onCancel, notify
         id: `marketplace-${Date.now()}-${index}`, name: `marketplace-image-${index + 1}.jpg`, dataUrl,
       }));
       const listingText = [imported.listing_text, imported.seller ? `Seller: ${imported.seller}` : "", imported.location ? `Location: ${imported.location}` : ""].filter(Boolean).join("\n\n");
+      const nextUrl = imported.canonical_url || sourceUrl.trim();
       setPhotos(importedPhotos); setCoverId(importedPhotos[0]?.id || "");
-      setValues((current) => ({ ...current, listingText }));
+      setSourceUrl(nextUrl);
       const prefill: Partial<FormValues> = {
+        ...(imported.draft_fields || {}),
         listingText, sourcePrice: imported.source_price || "", seller: imported.seller || "",
         location: imported.location || "", sourcePlatform: imported.source_platform || "Facebook Marketplace",
       };
-      const analyzed = await analyzeVehicle(importedPhotos, listingText, sourceUrl.trim(), prefill);
+      setValues((current) => ({ ...current, ...Object.fromEntries(Object.entries(prefill).filter(([, value]) => Boolean(value))), listingText }));
+      const analyzed = await analyzeVehicle(importedPhotos, listingText, nextUrl, prefill);
       if (analyzed && (imported.conflicts?.length || imported.missing?.length)) {
-        setConflicts((current) => [...(imported.conflicts || []), ...current]);
+        setConflicts((current) => [...(imported.conflicts || []), ...(imported.missing || []).map((item) => `Need screenshot/photo evidence: ${item}`), ...current]);
       }
       if (analyzed && imported.status === "partial") {
         setMessage("We imported what was available. Upload screenshots/photos to complete the details.");
+      }
+      if (!analyzed) {
+        setAiMeta((current) => ({
+          ...current,
+          brand: prefill.brand ? { confidence: 70, status: "Need Review", evidence: ["Facebook public metadata"], alternatives: [] } : current.brand,
+          model: prefill.model ? { confidence: 70, status: "Need Review", evidence: ["Facebook public metadata"], alternatives: [] } : current.model,
+          year: prefill.year ? { confidence: 70, status: "Need Review", evidence: ["Facebook public metadata"], alternatives: [] } : current.year,
+          grade: prefill.grade ? { confidence: 55, status: "Need Review", evidence: ["Facebook public metadata"], alternatives: [] } : current.grade,
+          engine: prefill.engine ? { confidence: 55, status: "Need Review", evidence: ["Facebook public metadata"], alternatives: [] } : current.engine,
+          transmission: prefill.transmission ? { confidence: 55, status: "Need Review", evidence: ["Facebook public metadata"], alternatives: [] } : current.transmission,
+          drive: prefill.drive ? { confidence: 55, status: "Need Review", evidence: ["Facebook public metadata"], alternatives: [] } : current.drive,
+          body: prefill.body ? { confidence: 55, status: "Need Review", evidence: ["Facebook public metadata"], alternatives: [] } : current.body,
+        }));
+        setConflicts([...(imported.conflicts || []), ...(imported.missing || []).map((item) => `Need screenshot/photo evidence: ${item}`)]);
+        setSummary("Public Facebook metadata was imported. Add screenshots/photos to confirm price, seller, location, gallery, and current availability.");
+        setStage("review");
+        setMessage("Imported public metadata. Upload screenshots/photos to complete the missing details.");
       }
     } catch {
       setStage("fallback"); setImportBlocked(true); setImportIssue("unavailable"); setMessage("");
@@ -400,10 +422,10 @@ export default function VehicleEditor({ initialVehicle, onSave, onCancel, notify
         <button className="alt-import-button" onClick={() => { setStage("fallback"); setShowText(true); }}><span>≡</span><b>Paste Listing Text</b><small>AI จะอ่านแทนการกรอก Specs</small></button>
       </div>
       <div className={`connector-note ${cloudStatus?.configured ? "connector-connected" : "connector-setup"}`}>
-        <b><i /> Cloud Browser · {cloudStatus === null ? "checking" : cloudStatus.configured ? "connected" : "setup required"}</b>
+        <b><i /> Public metadata first · Cloud Browser {cloudStatus === null ? "checking" : cloudStatus.configured ? "connected" : "optional"}</b>
         <span>{cloudStatus?.configured
-          ? "เปิดด้วย Browserless profile ที่ล็อกอินไว้ และหยุดให้ยืนยันเมื่อ Facebook ขอ Login/Checkpoint"
-          : "โค้ดเชื่อมพร้อมแล้ว · ต้องเชื่อม Browserless token และ Facebook profile ครั้งเดียว (ทำจากมือถือได้)"}</span>
+          ? "ระบบจะใช้ metadata สาธารณะก่อน และใช้ Browserless เป็นตัวเสริมเมื่อ metadata ไม่พอ"
+          : "วางลิงก์แล้วดึง title, description และ cover image ได้ก่อน จากนั้นเพิ่ม screenshot/photos เพื่อเติมราคา ผู้ขาย พื้นที่ และรูปทั้งหมด"}</span>
       </div>
     </section> : null}
 

@@ -1,8 +1,21 @@
 import { NextResponse } from "next/server";
+import { extractVehicle } from "../../lib/domain";
 
 export const runtime = "nodejs";
 
 type ConnectorState = "imported" | "partial";
+type DraftFields = {
+  brand?: string;
+  model?: string;
+  year?: string;
+  grade?: string;
+  engine?: string;
+  transmission?: string;
+  drive?: string;
+  body?: string;
+  mileage?: string;
+  color?: string;
+};
 type ConnectorResult = {
   status: ConnectorState;
   canonical_url?: string;
@@ -15,6 +28,7 @@ type ConnectorResult = {
   images?: string[];
   missing?: string[];
   conflicts?: string[];
+  draft_fields?: DraftFields;
 };
 
 type CloudBrowserResult = {
@@ -114,6 +128,124 @@ function validateMarketplaceUrl(value: string) {
 
 function cleanText(value: unknown, max = 30_000) {
   return typeof value === "string" ? value.trim().slice(0, max) : "";
+}
+
+function decodeHtml(value: string) {
+  return value
+    .replace(/&#x([0-9a-f]+);/gi, (_, hex: string) => String.fromCodePoint(Number.parseInt(hex, 16)))
+    .replace(/&#(\d+);/g, (_, number: string) => String.fromCodePoint(Number.parseInt(number, 10)))
+    .replace(/&quot;/g, "\"")
+    .replace(/&#039;|&apos;/g, "'")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">");
+}
+
+function tagAttribute(tag: string, name: string) {
+  const match = tag.match(new RegExp(`\\s${name}=(["'])(.*?)\\1`, "i"));
+  return match ? decodeHtml(match[2]) : "";
+}
+
+function metaContent(html: string, keys: string[]) {
+  const tags = html.match(/<meta\b[^>]*>/gi) || [];
+  for (const tag of tags) {
+    const property = tagAttribute(tag, "property") || tagAttribute(tag, "name");
+    if (keys.some((key) => property.toLowerCase() === key.toLowerCase())) {
+      return cleanText(tagAttribute(tag, "content"));
+    }
+  }
+  return "";
+}
+
+function canonicalUrl(html: string, fallback: string) {
+  const tags = html.match(/<link\b[^>]*>/gi) || [];
+  for (const tag of tags) {
+    if (tagAttribute(tag, "rel").toLowerCase() === "canonical") {
+      const href = tagAttribute(tag, "href");
+      if (href) return href;
+    }
+  }
+  return fallback;
+}
+
+async function boundedText(response: Response) {
+  const length = Number(response.headers.get("content-length") || 0);
+  if (length > MAX_CONNECTOR_RESPONSE_BYTES) throw new Error("metadata_response_too_large");
+  const reader = response.body?.getReader();
+  if (!reader) return response.text();
+  const chunks: Uint8Array[] = [];
+  let received = 0;
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    received += value.byteLength;
+    if (received > MAX_CONNECTOR_RESPONSE_BYTES) throw new Error("metadata_response_too_large");
+    chunks.push(value);
+  }
+  const bytes = new Uint8Array(received);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return new TextDecoder().decode(bytes);
+}
+
+function draftFieldsFromText(text: string): DraftFields {
+  const extracted = extractVehicle(text);
+  return {
+    brand: extracted.brand,
+    model: extracted.model,
+    year: String(extracted.year),
+    grade: extracted.grade,
+    engine: extracted.engine,
+    transmission: extracted.transmission,
+    drive: extracted.drive,
+    body: extracted.body,
+    mileage: extracted.mileage,
+    color: extracted.color,
+  };
+}
+
+async function importPublicMetadata(sourceUrl: string): Promise<ConnectorResult | null> {
+  const response = await fetch(sourceUrl, {
+    method: "GET",
+    cache: "no-store",
+    redirect: "follow",
+    signal: AbortSignal.timeout(25_000),
+    headers: {
+      Accept: "text/html,application/xhtml+xml",
+      "User-Agent": "Mozilla/5.0 (compatible; NKCarsMetadataImport/1.0)",
+    },
+  });
+  if (!response.ok || !(response.headers.get("content-type") || "").includes("text/html")) return null;
+  const finalUrl = validateMarketplaceUrl(response.url);
+  const html = await boundedText(response);
+  const title = metaContent(html, ["og:title", "twitter:title"]);
+  const description = metaContent(html, ["og:description", "description", "twitter:description"]);
+  const image = cleanImageUrl(metaContent(html, ["og:image", "twitter:image"]));
+  const price = metaContent(html, ["product:price:amount", "og:price:amount"]).replace(/[^0-9.]/g, "").slice(0, 20);
+  const canonical = validateMarketplaceUrl(canonicalUrl(html, finalUrl));
+  const listingText = [title, description].filter(Boolean).join("\n\n");
+  if (!title && !description && !image) return null;
+  return {
+    status: image ? "partial" : "partial",
+    canonical_url: canonical,
+    title,
+    description,
+    listing_text: listingText,
+    source_price: price,
+    images: image ? [image] : [],
+    missing: [
+      "Full photo gallery",
+      "Seller/contact",
+      "Location",
+      price ? "" : "Source price",
+      "Current availability",
+    ].filter(Boolean),
+    conflicts: [],
+    draft_fields: draftFieldsFromText(listingText),
+  };
 }
 
 function cleanImageUrl(value: unknown) {
@@ -240,7 +372,7 @@ function configuredConnector(): { connector: MarketplaceConnector; provider: str
 function safeFailure(
   status: "cloud_setup_required" | "login_required" | "unavailable",
   httpStatus = 422,
-  provider = "Browserless Cloud Browser",
+  provider = "Facebook public metadata",
 ) {
   const details = {
     cloud_setup_required: {
@@ -276,38 +408,18 @@ export async function POST(request: Request) {
     }, { status: 400, headers: { "Cache-Control": "no-store" } });
   }
 
+  const publicResult = await importPublicMetadata(sourceUrl).catch(() => null);
+  if (publicResult) {
+    return importedResponse(publicResult, sourceUrl, "Facebook public metadata");
+  }
+
   const configured = configuredConnector();
-  if (!configured) return safeFailure("cloud_setup_required", 503);
+  if (!configured) return safeFailure("unavailable", 422);
 
   try {
     const result = await configured.connector.importListing(sourceUrl);
     if (result.status !== "imported" && result.status !== "partial") return safeFailure("unavailable", 422, configured.provider);
-    const images = Array.isArray(result.images)
-      ? [...new Set(result.images.map(cleanImageUrl).filter(Boolean))].slice(0, MAX_IMAGES)
-      : [];
-    const title = cleanText(result.title, 500);
-    const description = cleanText(result.description);
-    const listingText = cleanText(result.listing_text) || [title, description].filter(Boolean).join("\n\n");
-    const price = String(result.source_price ?? "").replace(/[^0-9.]/g, "").slice(0, 20);
-    const meaningful = Boolean(title || description || listingText || price || images.length);
-    if (!meaningful) return safeFailure("unavailable", 422, configured.provider);
-
-    return NextResponse.json({
-      status: result.status,
-      provider: configured.provider,
-      source_url: sourceUrl,
-      canonical_url: cleanText(result.canonical_url, 3_000),
-      source_platform: "Facebook Marketplace",
-      title,
-      description,
-      listing_text: listingText,
-      source_price: price,
-      seller: cleanText(result.seller, 500),
-      location: cleanText(result.location, 500),
-      images,
-      missing: Array.isArray(result.missing) ? result.missing.map((item) => cleanText(item, 100)).filter(Boolean).slice(0, 30) : [],
-      conflicts: Array.isArray(result.conflicts) ? result.conflicts.map((item) => cleanText(item, 500)).filter(Boolean).slice(0, 30) : [],
-    }, { headers: { "Cache-Control": "no-store" } });
+    return importedResponse(result, sourceUrl, configured.provider);
   } catch (error) {
     const code = error instanceof Error ? error.message : "unknown";
     if (code === "cloud_setup_required") return safeFailure("cloud_setup_required", 503);
@@ -315,4 +427,34 @@ export async function POST(request: Request) {
     console.error("Marketplace import failed", code);
     return safeFailure("unavailable", 422, configured.provider);
   }
+}
+
+function importedResponse(result: ConnectorResult, sourceUrl: string, provider: string) {
+  const images = Array.isArray(result.images)
+    ? [...new Set(result.images.map(cleanImageUrl).filter(Boolean))].slice(0, MAX_IMAGES)
+    : [];
+  const title = cleanText(result.title, 500);
+  const description = cleanText(result.description);
+  const listingText = cleanText(result.listing_text) || [title, description].filter(Boolean).join("\n\n");
+  const price = String(result.source_price ?? "").replace(/[^0-9.]/g, "").slice(0, 20);
+  const meaningful = Boolean(title || description || listingText || price || images.length);
+  if (!meaningful) return safeFailure("unavailable", 422, provider);
+
+  return NextResponse.json({
+    status: result.status,
+    provider,
+    source_url: sourceUrl,
+    canonical_url: cleanText(result.canonical_url, 3_000),
+    source_platform: "Facebook Marketplace",
+    title,
+    description,
+    listing_text: listingText,
+    source_price: price,
+    seller: cleanText(result.seller, 500),
+    location: cleanText(result.location, 500),
+    images,
+    missing: Array.isArray(result.missing) ? result.missing.map((item) => cleanText(item, 100)).filter(Boolean).slice(0, 30) : [],
+    conflicts: Array.isArray(result.conflicts) ? result.conflicts.map((item) => cleanText(item, 500)).filter(Boolean).slice(0, 30) : [],
+    draft_fields: result.draft_fields || draftFieldsFromText(listingText),
+  }, { headers: { "Cache-Control": "no-store" } });
 }
