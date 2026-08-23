@@ -44,6 +44,17 @@ type ExtractionRequest = {
   sourceUrl?: unknown;
 };
 
+function isSupportedImage(value: string) {
+  if (/^data:image\/(?:jpeg|jpg|png|webp);base64,/.test(value)) return true;
+  try {
+    const url = new URL(value);
+    const host = url.hostname.toLowerCase();
+    return url.protocol === "https:" && (host.endsWith(".fbcdn.net") || host.endsWith(".fbsbx.com") || host.endsWith(".facebook.com"));
+  } catch {
+    return false;
+  }
+}
+
 const requestWindows = new Map<string, { count: number; resetAt: number }>();
 
 function allowRequest(request: Request) {
@@ -93,7 +104,7 @@ export async function POST(request: Request) {
   }
 
   const images = Array.isArray(body.images)
-    ? body.images.filter((image): image is string => typeof image === "string" && /^data:image\/(?:jpeg|jpg|png|webp);base64,/.test(image)).slice(0, 30)
+    ? body.images.filter((image): image is string => typeof image === "string" && isSupportedImage(image)).slice(0, 30)
     : [];
   const listingText = typeof body.listingText === "string" ? body.listingText.slice(0, 30000) : "";
   const sourceUrl = typeof body.sourceUrl === "string" ? body.sourceUrl.slice(0, 3000) : "";
@@ -152,7 +163,7 @@ Rules:
         ? (result.error as { message: string }).message
         : "OpenAI API request failed";
       console.error("NK vehicle extraction failed", response.status, message);
-      return NextResponse.json({ error: `NK AI วิเคราะห์ไม่สำเร็จ (${response.status})` }, { status: 502 });
+      return NextResponse.json({ error: "NK AI วิเคราะห์ไม่สำเร็จ กรุณาลองใหม่" }, { status: 502 });
     }
     const text = outputText(result);
     if (!text) return NextResponse.json({ error: "NK AI ไม่ได้ส่งผลวิเคราะห์กลับมา" }, { status: 502 });
