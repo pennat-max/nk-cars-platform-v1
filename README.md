@@ -1,4 +1,25 @@
-# vinext-starter
+# NK Cars Platform V1
+
+Private mobile-first prototype and production-rebuild reference for NK Cars' Thailand-to-international used-vehicle sourcing workflow.
+
+The production handoff is complete and lives in:
+
+- [Codex working agreement](AGENTS.md)
+- [Product and UI handoff](docs/CODEX_HANDOFF.md)
+- [Facebook Marketplace import and AI extraction](docs/AI_MARKETPLACE_IMPORT.md)
+- [Production data model and authorization](docs/DATA_MODEL.md)
+- [Production Next.js architecture](docs/PRODUCTION_ARCHITECTURE.md)
+- [Acceptance and parity tests](docs/ACCEPTANCE_TESTS.md)
+- [Implementation plan](docs/IMPLEMENTATION_PLAN.md)
+- [Current Browserless POC setup](docs/CLOUD_BROWSER_SETUP.md)
+
+Codex must preserve the current UI, mobile design, screens, flows, business rules, safe failure behavior, and demo behavior. The priority production path is:
+
+> Paste Facebook Marketplace URL → fetch reachable listing data/images → AI analyze all evidence → Vehicle Draft → Waiting Review → Owner Approve → Publish
+
+Do not redesign or make the private preview public without explicit Owner approval.
+
+## Current prototype runtime
 
 A clean full-stack starter running on
 [vinext](https://github.com/cloudflare/vinext), with optional Cloudflare D1 and
