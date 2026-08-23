@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { AiFieldMeta, Vehicle, VehicleCorrection } from "../types";
 
 type FieldKey =
@@ -18,9 +18,12 @@ type ExtractionResponse = {
   image_count: number;
 };
 type MarketplaceImport = {
-  status: "imported" | "partial" | "connector_required" | "invalid_url";
+  status: "imported" | "partial" | "cloud_setup_required" | "login_required" | "unavailable" | "connector_required" | "invalid_url";
   message?: string;
+  action?: string;
   connector?: string;
+  provider?: string;
+  setup_url?: string;
   source_url?: string;
   source_platform?: string;
   title?: string;
@@ -33,6 +36,8 @@ type MarketplaceImport = {
   missing?: string[];
   conflicts?: string[];
 };
+type CloudStatus = { configured: boolean; provider: string };
+type ImportIssue = "" | "setup" | "login" | "unavailable";
 
 const MAX_PHOTOS = 30;
 const emptyValues: FormValues = {
@@ -168,13 +173,25 @@ export default function VehicleEditor({ initialVehicle, onSave, onCancel, notify
   const [importing, setImporting] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [importBlocked, setImportBlocked] = useState(false);
+  const [importIssue, setImportIssue] = useState<ImportIssue>("");
+  const [cloudStatus, setCloudStatus] = useState<CloudStatus | null>(null);
   const [message, setMessage] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (initialVehicle) return;
+    let active = true;
+    fetch("/api/marketplace-cloud/status", { cache: "no-store" })
+      .then((response) => response.json())
+      .then((status: CloudStatus) => { if (active) setCloudStatus(status); })
+      .catch(() => { if (active) setCloudStatus({ configured: false, provider: "Browserless Cloud Browser" }); });
+    return () => { active = false; };
+  }, [initialVehicle]);
 
   function clearAll() {
     setStage("start"); setValues({ ...emptyValues }); setSourceUrl(""); setPhotos([]); setCoverId("");
     setAiMeta({}); setAiOriginal({}); setManualFields(new Set()); setEditingFields(new Set());
-    setConflicts([]); setSummary(""); setShowText(false); setImportBlocked(false); setMessage("");
+    setConflicts([]); setSummary(""); setShowText(false); setImportBlocked(false); setImportIssue(""); setMessage("");
     if (inputRef.current) inputRef.current.value = "";
   }
 
@@ -262,7 +279,7 @@ export default function VehicleEditor({ initialVehicle, onSave, onCancel, notify
 
   async function importMarketplace() {
     if (!sourceUrl.trim()) return setMessage("กรุณาวางลิงก์ Facebook Marketplace ก่อน");
-    setImporting(true); setImportBlocked(false); setMessage("");
+    setImporting(true); setImportBlocked(false); setImportIssue(""); setMessage("");
     try {
       const response = await fetch("/api/marketplace-import", {
         method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url: sourceUrl.trim() }),
@@ -273,7 +290,9 @@ export default function VehicleEditor({ initialVehicle, onSave, onCancel, notify
         return;
       }
       if (!response.ok || (imported.status !== "imported" && imported.status !== "partial")) {
-        setStage("fallback"); setImportBlocked(true); setMessage("Unable to import this listing automatically");
+        const issue: ImportIssue = imported.status === "cloud_setup_required" || imported.status === "connector_required"
+          ? "setup" : imported.status === "login_required" ? "login" : "unavailable";
+        setStage("fallback"); setImportBlocked(true); setImportIssue(issue); setMessage("");
         return;
       }
       const importedPhotos = (imported.images || []).slice(0, MAX_PHOTOS).map((dataUrl, index) => ({
@@ -294,7 +313,7 @@ export default function VehicleEditor({ initialVehicle, onSave, onCancel, notify
         setMessage("We imported what was available. Upload screenshots/photos to complete the details.");
       }
     } catch {
-      setStage("fallback"); setImportBlocked(true); setMessage("Unable to import this listing automatically");
+      setStage("fallback"); setImportBlocked(true); setImportIssue("unavailable"); setMessage("");
     } finally {
       setImporting(false);
     }
@@ -371,18 +390,37 @@ export default function VehicleEditor({ initialVehicle, onSave, onCancel, notify
       <p className="import-subcopy">วางลิงก์เดียว แล้วให้ NK AI ดึงข้อมูลและรูปที่เข้าถึงได้มาสร้าง Draft</p>
       <label className="primary-url-field"><span>Facebook Marketplace URL</span><input inputMode="url" value={sourceUrl} onChange={(event) => setSourceUrl(event.target.value)} autoCapitalize="none" autoCorrect="off" /></label>
       <button className="button ai import-ai-button" disabled={busy} onClick={importMarketplace}>{importing ? <><i className="spinner" />กำลังอ่าน Listing และรูป…</> : "✦ Import & Analyze with NK AI"}</button>
+      {importing ? <div className="cloud-browser-progress" aria-live="polite">
+        <i className="spinner" /><div><b>Cloud Browser กำลังเปิด Listing</b><span>อ่านข้อมูลจริงและรูปสูงสุด 30 รูป แล้วส่งหลักฐานทั้งหมดให้ NK AI</span></div>
+      </div> : null}
       {message ? <div className="inline-message" role="alert">{message}</div> : null}
       <div className="or-divider"><span>or</span></div>
       <div className="import-alternatives">
         <button className="alt-import-button" onClick={() => inputRef.current?.click()}><span>▧</span><b>Upload Photos</b><small>เลือกพร้อมกันได้ 30 รูป</small></button>
         <button className="alt-import-button" onClick={() => { setStage("fallback"); setShowText(true); }}><span>≡</span><b>Paste Listing Text</b><small>AI จะอ่านแทนการกรอก Specs</small></button>
       </div>
-      <div className="connector-note"><b>Marketplace connector boundary</b><span>ระบบใช้เฉพาะข้อมูลจริงที่ Facebook อนุญาตให้เข้าถึง หากถูกปิดกั้นจะพาไปใช้ Screenshot ทันที</span></div>
+      <div className={`connector-note ${cloudStatus?.configured ? "connector-connected" : "connector-setup"}`}>
+        <b><i /> Cloud Browser · {cloudStatus === null ? "checking" : cloudStatus.configured ? "connected" : "setup required"}</b>
+        <span>{cloudStatus?.configured
+          ? "เปิดด้วย Browserless profile ที่ล็อกอินไว้ และหยุดให้ยืนยันเมื่อ Facebook ขอ Login/Checkpoint"
+          : "โค้ดเชื่อมพร้อมแล้ว · ต้องเชื่อม Browserless token และ Facebook profile ครั้งเดียว (ทำจากมือถือได้)"}</span>
+      </div>
     </section> : null}
 
     {stage === "fallback" ? <>
       {importBlocked ? <section className="import-failed-card">
-        <span>!</span><div><h2>Unable to import this listing automatically</h2><p>Marketplace connector required · ลิงก์เดิมถูกเก็บไว้แล้ว</p></div>
+        <span>!</span><div>
+          <h2>{importIssue === "setup" ? "Cloud Browser setup required" : importIssue === "login" ? "Facebook login required in Cloud Browser" : "Unable to import this listing automatically"}</h2>
+          <p>{importIssue === "setup"
+            ? "ต้องเชื่อม Browserless token + Facebook profile ครั้งเดียว · ทำจากมือถือได้ · ลิงก์เดิมถูกเก็บไว้แล้ว"
+            : importIssue === "login"
+              ? "เปิด Browserless Profile เพื่อยืนยัน Facebook แล้วกด Try link again · ลิงก์เดิมถูกเก็บไว้แล้ว"
+              : "Facebook ไม่เปิดข้อมูล Listing ให้ Cloud Browser ในครั้งนี้ · ลิงก์เดิมถูกเก็บไว้แล้ว"}</p>
+          <div className="cloud-browser-actions">
+            {(importIssue === "setup" || importIssue === "login") ? <a className="button secondary" href="https://www.browserless.io/account" target="_blank" rel="noreferrer">Open Browserless ↗</a> : null}
+            {importIssue === "login" ? <button className="button secondary" disabled={busy} onClick={importMarketplace}>Try link again</button> : null}
+          </div>
+        </div>
       </section> : null}
       <section className="fallback-card">
         <p className="eyebrow">Continue with NK AI</p><h2>Upload Screenshots / Photos</h2>

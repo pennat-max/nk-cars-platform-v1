@@ -30,6 +30,10 @@ Scripts that need writable project-scoped home, npm, XDG, and temporary paths us
 - `examples/d1/` contains an optional D1 example surface
 - `drizzle.config.ts` supports local migration generation when needed
 
+## NK Cars marketplace import
+
+The owner-only Add Vehicle flow can use a standard cloud browser to open an authenticated Facebook Marketplace listing, collect reachable listing text and images, and pass the evidence to NK AI. See [docs/CLOUD_BROWSER_SETUP.md](docs/CLOUD_BROWSER_SETUP.md) for the phone-only Browserless profile setup and runtime variables.
+
 ## Workspace Auth Headers
 
 OpenAI workspace sites can read the current user's email from
