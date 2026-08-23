@@ -78,11 +78,15 @@ Started Milestone 1: Next.js shell and visual parity.
 - The importer returns `draft_fields` from deterministic text extraction so a draft can show brand/model/year/spec hints even if NK AI is not configured.
 - The Add Vehicle UI now accepts `draft_fields` and keeps a metadata-based Review screen available if the AI extraction endpoint fails or is not configured.
 - Missing fields from public metadata are surfaced as review issues, prompting screenshot/photo evidence for gallery, seller/contact, location, source price, and current availability.
+- Fixed the hosted import request to use Facebook's public mobile content path with an iPhone-compatible request profile that identifies NK Cars. The previous crawler-style user agent was denied by Facebook from the Sites runtime.
+- Fixed multi-line OpenGraph attribute parsing. Facebook places the Marketplace description across multiple lines, which previously caused the importer to drop mileage, body type, drive, and description evidence.
+- Public metadata now prefers the canonical `og:url`, reads Thai price labels when present, recognizes Thai mileage text, and excludes placeholder `Unknown` / `Need Review` values from prefill so NK AI can still fill them.
+- Added an API regression test covering mobile Facebook metadata, a multi-line Thai description, canonical URL, cover image, Thai price and mileage, 4WD, and Double Cab extraction.
 - Verified against sample Facebook share URL `https://www.facebook.com/share/1DF6CzLM1A/?mibextid=wwXIfr` through a local endpoint call:
   - Status: `partial`.
   - Provider: `Facebook public metadata`.
   - Canonical URL: `https://www.facebook.com/marketplace/item/1716607786274590/`.
   - Title: `2025 Toyota HILUX REVO 2.8 4WD GR SPORT WIDE`.
-  - Draft fields: Toyota, Hilux Revo, 2025.
+  - Draft fields: Toyota, Hilux Revo, 2025, 4WD, Double Cab, 24,000 km.
   - Cover images: 1.
   - Missing evidence: full photo gallery, seller/contact, location, source price, current availability.

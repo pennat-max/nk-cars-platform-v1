@@ -48,6 +48,7 @@ interface MarketplaceConnector {
 const MAX_CONNECTOR_RESPONSE_BYTES = 2 * 1024 * 1024;
 const MAX_IMAGES = 30;
 const BROWSERLESS_DEFAULT_ORIGIN = "https://production-sfo.browserless.io";
+const FACEBOOK_MOBILE_USER_AGENT = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1 NKCars/1.0";
 
 // Standard Chromium only: no stealth mode, CAPTCHA solving, proxy rotation, or login automation.
 const BROWSERLESS_FUNCTION = String.raw`
@@ -142,7 +143,7 @@ function decodeHtml(value: string) {
 }
 
 function tagAttribute(tag: string, name: string) {
-  const match = tag.match(new RegExp(`\\s${name}=(["'])(.*?)\\1`, "i"));
+  const match = tag.match(new RegExp(`\\s${name}=(["'])([\\s\\S]*?)\\1`, "i"));
   return match ? decodeHtml(match[2]) : "";
 }
 
@@ -158,6 +159,8 @@ function metaContent(html: string, keys: string[]) {
 }
 
 function canonicalUrl(html: string, fallback: string) {
+  const openGraphUrl = metaContent(html, ["og:url"]);
+  if (openGraphUrl) return openGraphUrl;
   const tags = html.match(/<link\b[^>]*>/gi) || [];
   for (const tag of tags) {
     if (tagAttribute(tag, "rel").toLowerCase() === "canonical") {
@@ -193,7 +196,7 @@ async function boundedText(response: Response) {
 
 function draftFieldsFromText(text: string): DraftFields {
   const extracted = extractVehicle(text);
-  return {
+  const fields: DraftFields = {
     brand: extracted.brand,
     model: extracted.model,
     year: String(extracted.year),
@@ -205,6 +208,15 @@ function draftFieldsFromText(text: string): DraftFields {
     mileage: extracted.mileage,
     color: extracted.color,
   };
+  return Object.fromEntries(Object.entries(fields).filter(([, value]) => {
+    const normalized = value?.trim().toLowerCase();
+    return normalized && normalized !== "unknown" && normalized !== "need review";
+  })) as DraftFields;
+}
+
+function priceFromText(text: string) {
+  const normalized = text.replace(/,/g, "");
+  return normalized.match(/(?:THB|฿|PRICE|ราคา)\s*:?\s*(\d{5,8})(?!\d)/i)?.[1] || "";
 }
 
 async function importPublicMetadata(sourceUrl: string): Promise<ConnectorResult | null> {
@@ -214,8 +226,9 @@ async function importPublicMetadata(sourceUrl: string): Promise<ConnectorResult 
     redirect: "follow",
     signal: AbortSignal.timeout(25_000),
     headers: {
-      Accept: "text/html,application/xhtml+xml",
-      "User-Agent": "Mozilla/5.0 (compatible; NKCarsMetadataImport/1.0)",
+      Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      "Accept-Language": "th-TH,th;q=0.9,en;q=0.8",
+      "User-Agent": FACEBOOK_MOBILE_USER_AGENT,
     },
   });
   if (!response.ok || !(response.headers.get("content-type") || "").includes("text/html")) return null;
@@ -224,9 +237,10 @@ async function importPublicMetadata(sourceUrl: string): Promise<ConnectorResult 
   const title = metaContent(html, ["og:title", "twitter:title"]);
   const description = metaContent(html, ["og:description", "description", "twitter:description"]);
   const image = cleanImageUrl(metaContent(html, ["og:image", "twitter:image"]));
-  const price = metaContent(html, ["product:price:amount", "og:price:amount"]).replace(/[^0-9.]/g, "").slice(0, 20);
+  const priceMetadata = metaContent(html, ["product:price:amount", "og:price:amount"]);
   const canonical = validateMarketplaceUrl(canonicalUrl(html, finalUrl));
   const listingText = [title, description].filter(Boolean).join("\n\n");
+  const price = (priceMetadata.replace(/[^0-9.]/g, "") || priceFromText(listingText)).slice(0, 20);
   if (!title && !description && !image) return null;
   return {
     status: image ? "partial" : "partial",

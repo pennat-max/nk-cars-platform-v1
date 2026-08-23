@@ -17,8 +17,8 @@ export function extractVehicle(text: string) {
   const brand = brands.find((item) => upper.includes(item.toUpperCase())) || "Unknown";
   const model = models.find((item) => upper.includes(item.toUpperCase())) || "Need Review";
   const year = capture(text, /\b(20(?:0[0-9]|1[0-9]|2[0-6]))\b/) || "Need Review";
-  const priceText = capture(text.replace(/,/g, ""), /(?:THB|฿|PRICE\s*:?\s*)\s*(\d{5,7})/i);
-  const mileageText = capture(text.replace(/,/g, ""), /(\d{2,6})\s*(?:KM|KMS)/i);
+  const priceText = capture(text.replace(/,/g, ""), /(?:THB|฿|PRICE|ราคา)\s*:?\s*(\d{5,8})(?!\d)/i);
+  const mileageText = capture(text.replace(/,/g, ""), /(\d{2,6})\s*(?:KM|KMS|กม\.?|กิโล(?:เมตร)?(?:แท้)?)/i);
   const transmission = /\b(?:AT|AUTO|AUTOMATIC)\b/i.test(text) ? "AT" : /\b(?:MT|MANUAL)\b/i.test(text) ? "MT" : "Need Review";
   const drive = /\b4\s*(?:WD|X4)\b/i.test(text) ? "4WD" : /\b2\s*WD\b/i.test(text) ? "2WD" : "Need Review";
   return {
