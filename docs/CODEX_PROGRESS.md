@@ -1,5 +1,62 @@
 # Codex Progress
 
+## 2026-08-24 - Buying Browser V1 Preview Complete
+
+Branch: `codex/buying-browser-rebuild`
+
+### Completed
+
+- Completed `BB-V1A`, `BB-V1B`, and `BB-V1C` as an additive preview under `/buy`; the legacy root and stock-first implementation remain unchanged as rollback/reference.
+- Added the customer shell and routes for Browse, Saved, Paste Vehicle Link, Ask NK AI, Vehicle detail, My Cases, Case detail, Inspections, Messages, and Account.
+- Added marketplace-style search, sort, Thai location, year, price, mileage, transmission, drive, and body filters with an iPhone two-column result grid.
+- Added eight realistic AI-generated pickup demo images and source records that are visibly labeled Demo rather than represented as live inventory.
+- Added a source-adapter boundary with separate internal and customer-safe DTOs. Customer routes exclude source URL/platform, seller/contact, exact source location, internal notes, source-cost context, and margin.
+- Added deduplicated Vehicle Case creation, browser-local preview persistence, availability request history, deterministic pricing, deterministic inspection/travel quotes, inspection request state, and case-linked conversation history.
+- Added deterministic grounded NK AI preview responses. The UI marks unknowns Pending and does not claim that a source, seller, AI provider, or inspector was contacted.
+- Connected Paste Link to the existing real import API for supported Facebook URLs and retained open-source/photo/text/manual-review fallbacks for blocked or unsupported sources. Up to 30 photos are handled as one vehicle evidence set, retained in the Vehicle Case gallery, and stored separately in preview IndexedDB so metadata persistence does not silently discard the gallery.
+- Added an Owner/internal demo route at `/buy/owner` for source URL, seller/contact, exact location, source price, notes, adapter state, and case status. It is explicitly not represented as a production authorization boundary.
+- Replaced the browser-native reset confirmation with an accessible in-page confirmation and verified a clean preview reset.
+- Preserved `.openai/hosting.json`, the existing Sites project association, the production root, and all rollback branches. No production deployment, Site overwrite, public publish, secret change, paid action, or real message occurred.
+
+### Current Work
+
+- Buying Browser V1 preview implementation and verification are complete. Awaiting Owner mobile review; production activation is not approved.
+
+### Owner Blockers
+
+- Production deployment, switching the public root to `/buy`, or overwriting the existing ChatGPT Site requires explicit Owner approval.
+- Production customer identity and durable persistence require the approved Auth/database project, tenant configuration, RLS review, Storage policy, and production environment configuration.
+- Production activation of the 10% commission and inspection/travel rates requires final Owner/commercial/legal approval.
+
+### External Integration Blockers
+
+- Real customer-specific Facebook/source sessions require customer-authorized manual login, encrypted isolated session storage, and a compliant connector network path. MFA, CAPTCHA, checkpoints, and platform restrictions are never bypassed.
+- No approved production AI model/key, connector endpoint/token, durable worker, monitoring/alerting service, inspection provider directory, or live message channel is configured.
+- Seller availability checks and inspection requests remain prepared/pending records only; no seller or provider message is sent.
+
+### Verification
+
+- Browser flow: Browse -> Vehicle detail -> Save Vehicle -> Vehicle Case -> Check Availability -> Request Inspection -> Ask NK AI passed and persisted across reload.
+- Paste unsupported link -> photo/text fallback -> manual evidence review passed without fabricated source access or remote placeholder imagery.
+- Multi-photo fallback -> Vehicle Case gallery passed with two selected files, gallery switching, and both images restored after reload from preview media storage.
+- Customer/internal redaction boundary passed in browser and route tests; internal source facts appeared only in the Owner demo view.
+- Responsive checks passed at 390 x 844 and 1280 x 900 with no horizontal overflow, framework error overlay, or console warning/error.
+- `npm.cmd test`: passed, including a verified production build and 20/20 Node tests.
+- `npm.cmd run build`: passed independently after the test run.
+- `npm.cmd run test:connector-browser`: passed with two queued candidates and a completed three-image gallery fixture.
+- Typecheck: passed with `tsc --noEmit --incremental false`.
+- Lint: passed with 0 errors and 13 existing legacy `<img>` warnings outside the Buying Browser files.
+- `git diff --check`: passed; only Git line-ending notices were emitted.
+
+### Preview
+
+- Local network preview: `http://192.168.0.184:4200/buy` while the development server and iPhone are on the same Wi-Fi.
+- This is a temporary non-production preview; it does not change the existing ChatGPT Site.
+
+### Next Recommended Step
+
+- Owner reviews the mobile preview. The smallest following production milestone is `BB-V1D - Production Identity And Durable Cases`, starting with approved Auth, organization membership, tenant-scoped Vehicle Case persistence, RLS, and audit. Do not deploy or switch the public root without explicit approval.
+
 ## 2026-08-23 - Buying Browser Rebuild
 
 Branch: `codex/buying-browser-rebuild`

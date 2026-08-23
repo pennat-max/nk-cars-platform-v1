@@ -1,7 +1,7 @@
 # NK Cars Buying Browser Rebuild Plan
 
-Status: approved V1 implementation plan
-Date: 2026-08-23
+Status: Buying Browser V1 preview implementation complete; awaiting Owner review
+Date: 2026-08-24
 Branch: `codex/buying-browser-rebuild`
 
 This plan implements `docs/PRODUCT_PIVOT_BUYING_BROWSER.md`. It is additive: the existing stock-first application remains available as rollback/reference until the Owner approves a production replacement.
@@ -109,16 +109,19 @@ Deterministic total:
 
 - Customer shell, Browse, search/filter/location, two-column mobile grid, saved state, customer-safe detail, Vehicle Case creation, source-adapter contracts, and realistic labeled fixtures.
 - Exit: core browse/save/case flow works on iPhone viewport; customer output passes redaction tests; old app remains unchanged.
+- Status: Complete on 2026-08-24.
 
 ### BB-V1B - Assisted Buying Workflow
 
 - Paste Link, Ask NK AI, Check Availability, pricing breakdown, Request Inspection, My Cases, Messages/history, and safe fallback behavior.
 - Exit: all actions persist locally, accurately describe pending work, and never fake a real source/message/provider action.
+- Status: Complete on 2026-08-24.
 
 ### BB-V1C - Internal View And Preview Hardening
 
 - Owner/internal case-source view, adapter/profile status, responsive/accessibility fixes, regression tests, preview verification, and final documentation.
 - Exit: tests/typecheck/lint/build pass and a mobile-accessible preview is ready for Owner review.
+- Status: Complete on 2026-08-24.
 
 ## Acceptance Tests
 
@@ -138,4 +141,4 @@ Deterministic total:
 
 ## Smallest Safe Next Milestone
 
-Start with **BB-V1A**. It establishes the customer account shell, Browse-to-Case domain boundary, customer/internal DTO separation, and additive `/buy` preview without changing the production root or deleting the existing application. BB-V1B and BB-V1C follow only after BB-V1A is stable and tested.
+After Owner review, the smallest next V1 production milestone is **BB-V1D - Production Identity And Durable Cases**: connect approved Auth and organization membership, add tenant-scoped durable Vehicle Case storage with RLS and audit, and preserve the current adapter/UI contracts. It requires the approved production project/configuration and does not include deployment, real source login, real messages, or a root-route switch.

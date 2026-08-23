@@ -2,6 +2,7 @@
 
 Status: Active working context for Codex
 Purpose: Keep routine development fast and token-efficient.
+Implementation status: Buying Browser V1 preview complete on 2026-08-24; production activation is not approved.
 
 Use this file with `AGENTS.md` as the default context. Consult larger product specs only when necessary.
 
@@ -180,6 +181,21 @@ Minimum Buying Browser V1:
 18. relevant tests/build passing
 
 Do not expand into full Payment/Purchase/Shipping ERP before this customer journey is proven.
+
+### Preview completion
+
+All 18 Buying Browser V1 preview targets are implemented additively under `/buy` on `codex/buying-browser-rebuild`:
+
+- customer shell, Browse, Saved, Vehicle detail, My Cases, Inspections, Messages, Account, and separate Owner demo routes;
+- text search plus year, price, mileage, location, transmission, drive, body, and sort controls;
+- Paste Link through the real import boundary when supported, with an honest photo/text/manual fallback when blocked and a reload-safe multi-photo preview gallery;
+- customer-safe normalized English vehicle facts, labeled demo data, deterministic grounded NK AI preview replies, and no invented facts;
+- deduplicated Vehicle Cases, availability requests, inspection requests, case timelines, and conversation history;
+- deterministic 10% preview commission on vehicle price only, explicit inspection/travel zones, and Pending pass-through costs;
+- separate customer and internal source DTOs with customer redaction tests;
+- responsive verification at 390 x 844 and 1280 x 900 with no horizontal overflow or browser console errors.
+
+Preview state is intentionally browser-local and demo/source-adapter backed. Production Auth, tenant isolation, RLS, durable storage, encrypted source sessions, real AI, real provider assignment, and real messaging remain blocked integrations rather than simulated successes.
 
 ## 10. Current technical strategy
 

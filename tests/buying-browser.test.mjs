@@ -1,0 +1,128 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import {
+  DEFAULT_FILTERS,
+  addCaseQuestion,
+  calculatePricing,
+  createVehicleCase,
+  filterListings,
+  inspectionQuoteForLocation,
+  presentCustomerListing,
+  requestAvailability,
+  requestInspection,
+} from "../app/buying-browser/domain.mjs";
+
+const source = {
+  id: "listing-1",
+  adapterId: "fixture",
+  sourceReference: "FIXTURE-1",
+  sourcePlatform: "Internal platform",
+  sourceUrl: "https://private.example/source",
+  sellerName: "Private Seller",
+  sellerPhone: "+66 81 222 3333",
+  exactLocation: "Private address",
+  internalNotes: "Never expose",
+  title: "2022 Toyota Hilux Revo",
+  summary: "Evidence-backed normalized summary.",
+  brand: "Toyota",
+  model: "Hilux Revo",
+  year: 2022,
+  grade: "Rocco",
+  engine: "2.8L diesel",
+  transmission: "AT",
+  drive: "4WD",
+  body: "Double Cab",
+  mileageKm: 42000,
+  color: "Black",
+  observedPriceThb: 900000,
+  observedAt: "2026-08-23T08:30:00.000Z",
+  generalLocation: "Bangkok",
+  imageUrls: ["https://images.example/vehicle.jpg"],
+  availability: "Availability Not Yet Confirmed",
+  translationState: "Normalized",
+  evidenceLabels: ["Listing title"],
+  demo: true,
+};
+
+test("customer presenter strips internal source and seller fields", () => {
+  const customer = presentCustomerListing(source);
+  assert.equal(customer.title, source.title);
+  const serialized = JSON.stringify(customer);
+  for (const secret of ["sellerName", "sellerPhone", "sourceUrl", "sourcePlatform", "exactLocation", "internalNotes", "Private Seller", "+66 81 222 3333"]) {
+    assert.doesNotMatch(serialized, new RegExp(secret.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"));
+  }
+});
+
+test("browse filtering preserves explicit vehicle criteria", () => {
+  const customer = presentCustomerListing(source);
+  const second = { ...customer, id: "listing-2", brand: "Ford", model: "Ranger", title: "2020 Ford Ranger", year: 2020, transmission: "MT", drive: "2WD", body: "Extended Cab", observedPriceThb: 600000, mileageKm: 90000, generalLocation: "Rayong" };
+  const matches = filterListings([customer, second], { ...DEFAULT_FILTERS, query: "Revo", yearFrom: "2021", priceMax: "950000", mileageMax: "50000", drive: "4WD", location: "Bangkok" });
+  assert.deepEqual(matches.map((item) => item.id), ["listing-1"]);
+  assert.deepEqual(filterListings([customer, second], { ...DEFAULT_FILTERS, transmission: "MT" }).map((item) => item.id), ["listing-2"]);
+  assert.deepEqual(filterListings([customer, second], { ...DEFAULT_FILTERS, body: "Double Cab", sort: "price-low" }).map((item) => item.id), ["listing-1"]);
+});
+
+test("pricing applies commission only to vehicle purchase price", () => {
+  const result = calculatePricing({ vehiclePriceThb: 900000, commissionRate: 10, inspectionTravelThb: 3500, domesticTransportThb: 10000, repairModificationThb: 20000, exportShippingThb: 50000, otherAgreedThb: null });
+  assert.equal(result.commissionAmountThb, 90000);
+  assert.equal(result.knownSubtotalThb, 1_073_500);
+  assert.equal(result.pendingCount, 1);
+  assert.equal(result.lines.find((line) => line.key === "other")?.status, "Pending");
+});
+
+test("inspection quote uses deterministic configured location zones", () => {
+  assert.deepEqual(inspectionQuoteForLocation("Bangkok, Thailand"), { region: "Bangkok Metro", baseFeeThb: 2900, travelFeeThb: 600, totalThb: 3500, status: "Quote Ready" });
+  assert.equal(inspectionQuoteForLocation("Unknown province"), null);
+});
+
+test("Vehicle Case deduplicates save and records honest pending workflows", () => {
+  const listing = presentCustomerListing(source);
+  const created = createVehicleCase(listing, [], "customer-1", "2026-08-23T10:00:00.000Z");
+  assert.equal(created.created, true);
+  assert.equal(created.caseRecord.id, "NK-CASE-2026-001245");
+  assert.equal(created.caseRecord.availability, "Availability Not Yet Confirmed");
+  const duplicate = createVehicleCase(listing, [created.caseRecord], "customer-1", "2026-08-23T10:01:00.000Z");
+  assert.equal(duplicate.created, false);
+  assert.equal(duplicate.caseRecord.id, created.caseRecord.id);
+
+  const availability = requestAvailability(created.caseRecord, "2026-08-23T10:02:00.000Z");
+  assert.equal(availability.availability, "Availability Check Requested");
+  assert.match(availability.messages.at(-1).text, /No seller message has been sent/i);
+  const inspection = requestInspection(availability, "2026-08-23T10:03:00.000Z");
+  assert.equal(inspection.inspectionQuote.status, "Requested - Awaiting Provider");
+  assert.match(inspection.messages.at(-1).text, /No provider is assigned or booked yet/i);
+  const answered = addCaseQuestion(inspection, "Is this available?", "2026-08-23T10:04:00.000Z");
+  assert.match(answered.messages.at(-1).text, /not confirmed|requested/i);
+});
+
+test("renders additive Buying Browser routes without customer source leakage", async () => {
+  const workerUrl = new URL("../dist/server/index.js", import.meta.url);
+  workerUrl.searchParams.set("test", `buying-browser-${process.pid}-${Date.now()}`);
+  const { default: worker } = await import(workerUrl.href);
+  const env = { ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) } };
+  const ctx = { waitUntil() {}, passThroughOnException() {} };
+  const routes = ["/buy", "/buy/saved", "/buy/paste", "/buy/ask", "/buy/cases", "/buy/inspections", "/buy/messages", "/buy/account", "/buy/vehicle/th-demo-001"];
+  for (const route of routes) {
+    const response = await worker.fetch(new Request(`http://localhost${route}`, { headers: { accept: "text/html" } }), env, ctx);
+    assert.equal(response.status, 200, route);
+    const html = await response.text();
+    assert.match(html, /data-buying-browser-v1/i, route);
+    assert.doesNotMatch(html, /Siam Pickup Demo|\+66 81 000 0101|example\.invalid\/internal|Demo partner feed|Bang Kapi/i, route);
+    if (route === "/buy/vehicle/th-demo-001") {
+      assert.match(html, /Demo Market Result/i);
+      assert.doesNotMatch(html, /Live Market Result/i);
+    }
+  }
+});
+
+test("renders owner demo source view separately from customer routes", async () => {
+  const workerUrl = new URL("../dist/server/index.js", import.meta.url);
+  workerUrl.searchParams.set("test", `buying-owner-${process.pid}-${Date.now()}`);
+  const { default: worker } = await import(workerUrl.href);
+  const response = await worker.fetch(new Request("http://localhost/buy/owner", { headers: { accept: "text/html" } }), { ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) } }, { waitUntil() {}, passThroughOnException() {} });
+  assert.equal(response.status, 200);
+  const html = await response.text();
+  assert.match(html, /data-buying-browser-owner-preview/i);
+  assert.match(html, /Siam Pickup Demo/);
+  assert.match(html, /Demo · not an auth boundary/i);
+});

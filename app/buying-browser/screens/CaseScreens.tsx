@@ -1,0 +1,122 @@
+"use client";
+
+import Link from "next/link";
+import { ArrowLeft, Bot, CheckCircle2, ClipboardCheck, Clock3, ExternalLink, FolderKanban, Gauge, Heart, Info, LockKeyhole, MessageSquare, RotateCcw, Send, ShieldCheck, UserRound, WifiOff } from "lucide-react";
+import { FormEvent, useMemo, useState } from "react";
+import { useBuyingBrowser } from "../BuyingBrowserProvider";
+import { formatDateTime, formatThb } from "../format";
+import PricingBreakdown from "../components/PricingBreakdown";
+import VehiclePhoto from "../components/VehiclePhoto";
+
+export function CasesScreen() {
+  const { state } = useBuyingBrowser();
+  if (!state.cases.length) return <section className="bb-empty-state"><FolderKanban size={31} /><h1>No Vehicle Cases yet</h1><p>Save a vehicle result as a case to start availability, pricing, inspection, and conversation history.</p><Link className="bb-button primary" href="/buy">Browse Vehicles</Link></section>;
+  return (
+    <>
+      <section className="bb-page-heading"><div><p className="bb-kicker">Customer workspace</p><h1>My Cases</h1><p>Each saved vehicle keeps its own verification, pricing, inspection, and conversation history.</p></div><span className="bb-result-count">{state.cases.length} cases</span></section>
+      <section className="bb-case-list">
+        {state.cases.map((item) => <Link key={item.id} href={`/buy/cases/${encodeURIComponent(item.id)}`} className="bb-case-card">
+          <VehiclePhoto listing={item.vehicle} />
+          <div><small>{item.id}</small><h2>{item.vehicle.title}</h2><p>{item.vehicle.generalLocation}, Thailand · {formatThb(item.vehicle.observedPriceThb)}</p><span className={item.availability === "Availability Check Requested" ? "bb-status-chip requested" : "bb-status-chip pending"}><Clock3 size={13} />{item.availability}</span></div>
+          <strong>{item.inspectionQuote?.status ?? "Inspection location pending"}</strong>
+        </Link>)}
+      </section>
+    </>
+  );
+}
+
+export function CaseDetailScreen({ caseId }: { caseId?: string }) {
+  const { hydrated, findCaseById, requestCaseAvailability, requestCaseInspection, askCaseQuestion } = useBuyingBrowser();
+  const vehicleCase = caseId ? findCaseById(caseId) : undefined;
+  const [question, setQuestion] = useState("");
+  const [imageIndex, setImageIndex] = useState(0);
+  if (!hydrated) return <section className="bb-loading-state"><span /><p>Loading Vehicle Case…</p></section>;
+  if (!vehicleCase) return <section className="bb-empty-state"><FolderKanban size={31} /><h1>Vehicle Case not found</h1><p>This preview case may have been reset or belongs to a different preview account.</p><Link className="bb-button primary" href="/buy/cases"><ArrowLeft size={17} />Back to My Cases</Link></section>;
+
+  function submitQuestion(event: FormEvent) {
+    event.preventDefault();
+    if (!question.trim()) return;
+    askCaseQuestion(vehicleCase!.id, question);
+    setQuestion("");
+  }
+
+  return (
+    <>
+      <Link className="bb-back-link" href="/buy/cases"><ArrowLeft size={18} />My Cases</Link>
+      <section className="bb-case-hero">
+        <div className="bb-case-media"><VehiclePhoto listing={vehicleCase.vehicle} imageUrl={vehicleCase.vehicle.imageUrls[imageIndex] || vehicleCase.vehicle.imageUrls[0]} alt={`${vehicleCase.vehicle.title} case image ${imageIndex + 1}`} />{!vehicleCase.vehicle.demo && vehicleCase.vehicle.imageUrls.length > 1 && <div className="bb-case-thumbs" aria-label="Vehicle Case photos">{vehicleCase.vehicle.imageUrls.map((image, index) => <button key={index} className={index === imageIndex ? "active" : ""} onClick={() => setImageIndex(index)} aria-label={`Show case image ${index + 1}`}><VehiclePhoto listing={vehicleCase.vehicle} imageUrl={image} alt="" /></button>)}</div>}</div>
+        <div><p className="bb-kicker">{vehicleCase.id}</p><h1>{vehicleCase.vehicle.title}</h1><p>{vehicleCase.vehicle.grade} · {vehicleCase.vehicle.generalLocation}, Thailand</p><div className="bb-status-row"><span className={vehicleCase.availability === "Availability Check Requested" ? "bb-status-chip requested" : "bb-status-chip pending"}><Clock3 size={13} />{vehicleCase.availability}</span><span className="bb-status-chip market">Source Vehicle</span></div></div>
+      </section>
+
+      <section className="bb-case-action-row" aria-label="Vehicle Case actions">
+        <button disabled={vehicleCase.availability === "Availability Check Requested"} onClick={() => requestCaseAvailability(vehicleCase.id)}><Gauge size={20} /><span><b>{vehicleCase.availability === "Availability Check Requested" ? "Check Requested" : "Check Availability"}</b><small>Prepare current seller verification</small></span></button>
+        <button disabled={!vehicleCase.inspectionQuote || vehicleCase.inspectionQuote.status === "Requested - Awaiting Provider"} onClick={() => requestCaseInspection(vehicleCase.id)}><ClipboardCheck size={20} /><span><b>{vehicleCase.inspectionQuote?.status === "Requested - Awaiting Provider" ? "Inspection Requested" : "Request Inspection"}</b><small>{vehicleCase.inspectionQuote ? formatThb(vehicleCase.inspectionQuote.totalThb) : "Location needs confirmation"}</small></span></button>
+        <a href="#nk-ai-case-chat"><Bot size={20} /><span><b>Ask NK AI</b><small>Answers grounded in this case</small></span></a>
+      </section>
+
+      <PricingBreakdown vehicleCase={vehicleCase} />
+
+      <section className="bb-case-split">
+        <div className="bb-case-facts">
+          <div className="bb-section-heading"><div><p className="bb-kicker">Current facts</p><h2>Case summary</h2></div></div>
+          <dl><div><dt>Observed vehicle price</dt><dd>{formatThb(vehicleCase.vehicle.observedPriceThb)}</dd></div><div><dt>Price observed</dt><dd>{formatDateTime(vehicleCase.vehicle.observedAt)}</dd></div><div><dt>Availability</dt><dd>{vehicleCase.availability}</dd></div><div><dt>Inspection quote</dt><dd>{vehicleCase.inspectionQuote ? `${formatThb(vehicleCase.inspectionQuote.totalThb)} · ${vehicleCase.inspectionQuote.region}` : "Pending location confirmation"}</dd></div><div><dt>Translation</dt><dd>{vehicleCase.vehicle.translationState}</dd></div><div><dt>Last case update</dt><dd>{formatDateTime(vehicleCase.updatedAt)}</dd></div></dl>
+          <p className="bb-honesty-note"><ShieldCheck size={16} />No seller contact, source URL, internal notes, source identity, or internal margin is exposed in this customer case.</p>
+        </div>
+        <div className="bb-case-timeline">
+          <div className="bb-section-heading"><div><p className="bb-kicker">Audit-friendly history</p><h2>Case timeline</h2></div></div>
+          <ol>{[...vehicleCase.timeline].reverse().map((item) => <li key={item.id}><span><CheckCircle2 size={15} /></span><div><b>{item.title}</b><p>{item.detail}</p><time>{formatDateTime(item.createdAt)}</time></div></li>)}</ol>
+        </div>
+      </section>
+
+      <section className="bb-case-chat" id="nk-ai-case-chat">
+        <div className="bb-section-heading"><div><p className="bb-kicker">One customer assistant</p><h2>NK AI Assistant</h2></div><span className="bb-status-chip market">Grounded preview</span></div>
+        <div className="bb-chat-messages">{vehicleCase.messages.map((message) => <article key={message.id} className={message.sender === "Customer" ? "customer" : "assistant"}><header><b>{message.sender}</b><small>{formatDateTime(message.createdAt)}</small></header><p>{message.text}</p><footer>{message.delivery}</footer></article>)}</div>
+        <div className="bb-prompt-chips"><button onClick={() => askCaseQuestion(vehicleCase.id, "Is this vehicle still available?")}>Is it available?</button><button onClick={() => askCaseQuestion(vehicleCase.id, "Show the current price structure and pending costs.")}>Explain the price</button><button onClick={() => askCaseQuestion(vehicleCase.id, "What are the known specifications and mileage?")}>Known specifications</button></div>
+        <form onSubmit={submitQuestion}><label><Bot size={19} /><input value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="Ask about this vehicle, price, or inspection" aria-label="Ask NK AI about this case" /></label><button type="submit" aria-label="Send question"><Send size={19} /></button></form>
+        <p className="bb-ai-boundary"><Info size={14} />This preview uses deterministic grounded replies. It does not send seller messages or call an external AI service.</p>
+      </section>
+    </>
+  );
+}
+
+export function InspectionsScreen() {
+  const { state, requestCaseInspection } = useBuyingBrowser();
+  const casesWithQuotes = state.cases.filter((item) => item.inspectionQuote);
+  return (
+    <>
+      <section className="bb-page-heading"><div><p className="bb-kicker">Inspection network</p><h1>Inspections</h1><p>Configured quote state is separate from provider acceptance, inspection work, and the final report.</p></div></section>
+      {!casesWithQuotes.length ? <section className="bb-empty-state"><ClipboardCheck size={31} /><h2>No inspection quotes yet</h2><p>Create a Vehicle Case with a recognized Thai location to calculate deterministic inspection and travel pricing.</p><Link className="bb-button primary" href="/buy">Browse Vehicles</Link></section> : <section className="bb-inspection-list">{casesWithQuotes.map((item) => <article key={item.id}><VehiclePhoto listing={item.vehicle} /><div><small>{item.id}</small><h2>{item.vehicle.title}</h2><p>{item.inspectionQuote!.region}</p><dl><div><dt>Base inspection</dt><dd>{formatThb(item.inspectionQuote!.baseFeeThb)}</dd></div><div><dt>Travel zone</dt><dd>{formatThb(item.inspectionQuote!.travelFeeThb)}</dd></div><div><dt>Customer price</dt><dd>{formatThb(item.inspectionQuote!.totalThb)}</dd></div></dl><span className={item.inspectionQuote!.status.startsWith("Requested") ? "bb-status-chip requested" : "bb-status-chip market"}>{item.inspectionQuote!.status}</span></div><div className="bb-inspection-actions"><Link className="bb-button secondary" href={`/buy/cases/${encodeURIComponent(item.id)}`}>Open Case</Link><button className="bb-button primary" disabled={item.inspectionQuote!.status === "Requested - Awaiting Provider"} onClick={() => requestCaseInspection(item.id)}>{item.inspectionQuote!.status === "Requested - Awaiting Provider" ? "Awaiting Provider" : "Request Inspection"}</button></div></article>)}</section>}
+    </>
+  );
+}
+
+export function MessagesScreen() {
+  const { state } = useBuyingBrowser();
+  const conversations = useMemo(() => state.cases.filter((item) => item.messages.length).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)), [state.cases]);
+  return (
+    <>
+      <section className="bb-page-heading"><div><p className="bb-kicker">Conversation history</p><h1>Messages</h1><p>NK AI search history and case-specific communication remain linked to the right customer context.</p></div><Link className="bb-button secondary" href="/buy/account"><UserRound size={17} />Account</Link></section>
+      <section className="bb-general-thread"><header><Bot size={22} /><div><h2>NK AI vehicle search</h2><p>General requirements before a Vehicle Case is selected.</p></div></header>{state.generalMessages.slice(-4).map((message) => <article key={message.id} className={message.sender === "Customer" ? "customer" : "assistant"}><b>{message.sender}</b><p>{message.text}</p><time>{formatDateTime(message.createdAt)}</time></article>)}<Link href="/buy/ask">Continue search conversation</Link></section>
+      {!conversations.length ? <section className="bb-empty-state"><MessageSquare size={30} /><h2>No case conversations yet</h2><p>Create a Vehicle Case and ask NK AI or request availability.</p></section> : <section className="bb-conversation-list">{conversations.map((item) => { const last = item.messages[item.messages.length - 1]; return <Link key={item.id} href={`/buy/cases/${encodeURIComponent(item.id)}`}><VehiclePhoto listing={item.vehicle} alt="" /><div><small>{item.id}</small><h2>{item.vehicle.title}</h2><p><b>{last.sender}:</b> {last.text}</p></div><time>{formatDateTime(last.createdAt)}</time></Link>; })}</section>}
+    </>
+  );
+}
+
+export function AccountScreen() {
+  const { customer, sourceStatus, state, resetPreview } = useBuyingBrowser();
+  const [confirmReset, setConfirmReset] = useState(false);
+
+  function reset() {
+    resetPreview();
+    setConfirmReset(false);
+  }
+  return (
+    <>
+      <section className="bb-page-heading"><div><p className="bb-kicker">NK customer account</p><h1>Account</h1><p>Customer identity and destination details remain separate from the Thai vehicle search location.</p></div></section>
+      <section className="bb-account-profile"><span><UserRound size={28} /></span><div><h2>{customer.displayName}</h2><p>{customer.email ?? "Local preview identity"}</p><dl><div><dt>Customer country</dt><dd>{customer.country}</dd></div><div><dt>Destination port</dt><dd>{customer.destinationPort}</dd></div><div><dt>Vehicle search area</dt><dd>Thailand</dd></div></dl></div></section>
+      <section className="bb-account-section"><div className="bb-section-heading"><div><p className="bb-kicker">Authorized source access</p><h2>Source sessions</h2></div><span className="bb-status-chip pending"><WifiOff size={13} />Not connected</span></div><div className="bb-source-account-row"><div><b>{sourceStatus.label}</b><p>{sourceStatus.message}</p></div><a className="bb-button secondary" href="https://www.facebook.com/marketplace/" target="_blank" rel="noreferrer">Open source app/browser<ExternalLink size={16} /></a></div><p className="bb-security-note"><LockKeyhole size={16} />NK Cars never asks you to enter a Facebook password in an NK form. A real managed source session requires customer-authorized login and isolated encrypted session storage.</p></section>
+      <section className="bb-account-section"><div className="bb-section-heading"><div><p className="bb-kicker">Preview data</p><h2>This browser</h2></div></div><dl className="bb-preview-stats"><div><dt>Saved vehicles</dt><dd><Heart size={17} />{state.savedListingIds.length}</dd></div><div><dt>Vehicle Cases</dt><dd><FolderKanban size={17} />{state.cases.length}</dd></div><div><dt>Inspection requests</dt><dd><ClipboardCheck size={17} />{state.cases.filter((item) => item.inspectionQuote?.status === "Requested - Awaiting Provider").length}</dd></div></dl>{confirmReset ? <div className="bb-reset-confirm" role="group" aria-label="Confirm preview data reset"><p>Remove saved vehicles, Vehicle Cases, and local preview history from this browser?</p><div><button className="bb-button secondary" onClick={() => setConfirmReset(false)}>Cancel</button><button className="bb-button danger" onClick={reset}><RotateCcw size={17} />Clear preview data</button></div></div> : <button className="bb-button danger" onClick={() => setConfirmReset(true)}><RotateCcw size={17} />Reset local preview data</button>}</section>
+      <p className="bb-honesty-note"><ShieldCheck size={16} />This V1 preview uses local browser storage. Production customer accounts require server Auth, tenant isolation, RLS, audit, and durable database storage.</p>
+    </>
+  );
+}

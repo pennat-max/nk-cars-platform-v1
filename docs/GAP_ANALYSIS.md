@@ -1,7 +1,7 @@
 # NK Cars Gap Analysis
 
-Status: current implementation compared with the authoritative Buying Browser direction
-Date: 2026-08-23
+Status: Buying Browser V1 preview complete; production and external integration gaps remain
+Date: 2026-08-24
 Branch: `codex/buying-browser-rebuild`
 
 ## Source Of Truth
@@ -33,43 +33,39 @@ Reusable and working:
 - Existing `MARKETPLACE_CONNECTOR_URL` server boundary and safe provider-error handling.
 - Rollback/reference commit `61d4bc8` on `codex/production-rebuild`.
 
-Not yet complete at this analysis point:
+Buying Browser V1 preview completed on 2026-08-24:
 
-- Additive Buying Browser customer routes and account shell.
-- Browse/search/filter/location and saved-vehicle experience.
-- Vehicle Case persistence and customer/internal DTO separation.
-- Paste Link integrated into the new case workflow.
-- Case-linked Ask NK AI, availability request, messages/history, deterministic pricing, and inspection quote/request.
-- Owner/internal source/case view.
-- Production Auth, tenancy, database, RLS, Storage, durable queue, source-session isolation, and real external integrations.
+- Additive customer routes and account shell under `/buy`; the existing root remains unchanged.
+- Browse, Saved, detail, search, sort, Thai location, year, price, mileage, transmission, drive, and body filtering.
+- Customer-safe normalized English facts, eight labeled realistic demo source results, and source/customer DTO separation.
+- Paste Link through the existing import boundary plus open-source, up-to-30-photo, listing-text, and manual-review fallback.
+- Deduplicated Vehicle Cases, availability requests, case timeline, My Cases, messages/history, grounded NK AI preview responses, deterministic pricing, and deterministic inspection/travel requests.
+- Separate Owner/internal demo view and customer redaction tests.
+- Manual browser verification at 390 x 844 and 1280 x 900 with no horizontal overflow or console errors.
 
-## V1 Remaining Work
+## V1 Production Activation Remaining
 
-### Customer Buying Browser
+The approved Buying Browser V1 preview acceptance criteria are complete. The following are production gaps and external integrations, not simulated preview features:
 
-- NK customer account shell and mobile navigation.
-- Marketplace-style Browse with text search, year, price, mileage, location, transmission, drive, body/cab filters, pagination/infinite-loading boundary, and saved results.
-- Customer-safe detail with normalized English facts and no misleading NK-owned/verified claims.
-- Paste Vehicle Link through a source adapter plus open-source/share/screenshot fallback.
-- Ask NK AI to Find One with hard-requirement preservation and grounded results.
+### Identity, Persistence, And Operations
 
-### Vehicle Case And Assisted Workflow
+- Supabase Auth or an approved equivalent, individual customer accounts, organization membership, least-privilege RBAC, and tenant isolation.
+- Durable Vehicle Case, saved-vehicle, conversation, timeline, pricing, inspection, and source-reference storage with RLS, idempotency, audit, backup, and restore.
+- Private media storage, file visibility, signed access, retention, deletion, and evidence policy.
+- Durable jobs, observability, retries, alerts, kill switches, production rate limits, and operational support controls.
 
-- Persistent case identifiers and deduplicated Save behavior.
-- Customer-safe case DTO separate from seller/source/internal DTO.
-- Availability-check request, prepared translation, verification state, case timeline, and messages/history.
-- Deterministic price structure: vehicle price, configurable commission, inspection/travel, domestic transport, repair, export/shipping, and other agreed costs.
-- Deterministic inspection/travel quote and request state distinct from accepted/completed state.
-- Owner/internal case source view and attention states.
-
-### Source And Production Foundation
+### Live Sources And AI
 
 - Complete customer-specific source-profile isolation before real multi-user access.
 - Source adapters beyond Facebook and a policy-compliant production connector network path.
 - Live result normalization, ranking, freshness, duplicate matching, and operational snapshot policy.
-- Supabase Auth, individual accounts, tenant membership, least-privilege RBAC, RLS, durable schema, Storage visibility, idempotency, and immutable material-action audit.
-- Durable jobs, observability, retries, alerts, kill switches, backup, and restore.
 - Production AI provider/model, structured extraction/translation, cost policy, retention, and grounded-response evaluation.
+
+### Commercial And Provider Activation
+
+- Owner-approved production commission/minimum/fleet configuration and inspection/travel rate table.
+- Real inspection provider directory, service areas, assignment, acceptance, checklist/report, and customer-safe result delivery.
+- Approved seller/provider communication channel with consent, retention, send authorization, delivery status, and audit.
 
 ## V2 Remaining Work
 
@@ -114,24 +110,18 @@ Not yet complete at this analysis point:
 - Payment, seller deposit/refund, and shipping integrations require provider contracts, credentials, and deterministic controls.
 - Marketing/media reuse requires explicit customer permission.
 
-## Current Milestone
+## Milestone Status And Next Step
 
-**BB-V1A - Additive Buying Browser Foundation** is the smallest safe rebuild milestone.
+- `BB-V1A - Additive Buying Browser Foundation`: Complete.
+- `BB-V1B - Assisted Buying Workflow`: Complete.
+- `BB-V1C - Internal View And Preview Hardening`: Complete.
 
-Scope:
+The smallest next V1 production milestone is **BB-V1D - Production Identity And Durable Cases**:
 
-- Add `/buy` customer shell without changing the production root.
-- Implement customer-safe Browse/search/filters/location, saved state, detail, and Save -> Vehicle Case.
-- Add source-adapter web contracts and labeled realistic fixtures.
-- Separate customer DTOs from internal seller/source facts.
-- Keep legacy routes, data, `.openai/hosting.json`, and existing Site association unchanged.
+- connect the approved Auth/database project without changing the production root;
+- add organization membership and customer identity;
+- persist saved vehicles, Vehicle Cases, timeline, and conversations under tenant-scoped RLS;
+- add material-action audit and private media/storage boundaries;
+- retain the current source adapter, customer DTO, pricing, and inspection contracts.
 
-Exit gate:
-
-- Browse-to-case works at iPhone viewport and persists across reloads.
-- Search/filter and duplicate-save behavior pass tests.
-- Customer rendered data passes source/seller/contact/cost/margin redaction checks.
-- Existing regression tests, Buying Browser tests, typecheck, lint, build, and `git diff --check` pass.
-- No production deployment, Site overwrite, secret change, paid service, or real message occurs.
-
-After BB-V1A, continue with BB-V1B (Paste/AI/availability/pricing/inspection/history) and BB-V1C (owner view, privacy/accessibility, mobile preview hardening) as defined in `docs/BUYING_BROWSER_REBUILD_PLAN.md`.
+BB-V1D is blocked on approved production project/configuration and must not deploy, replace the existing ChatGPT Site, enable real messages, or activate commercial pricing without the corresponding Owner approvals.
