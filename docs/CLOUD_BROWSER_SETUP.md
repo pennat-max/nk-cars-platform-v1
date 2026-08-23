@@ -1,6 +1,6 @@
 # NK Cars Cloud Browser connector
 
-The Add Vehicle flow includes a production integration boundary for a standard Browserless Chromium session. It opens a Facebook Marketplace URL, reads only content visible to the authenticated browser, collects up to 30 reachable images, and sends that evidence to NK AI as one vehicle.
+The Add Vehicle flow includes a production integration boundary for a standard Browserless Chromium session. It opens a Facebook Marketplace URL, reads only content visible to the authenticated browser, walks the visible listing carousel, collects up to 30 reachable images, and sends that evidence to NK AI as one vehicle.
 
 ## Runtime variables
 
@@ -18,7 +18,13 @@ The existing `MARKETPLACE_CONNECTOR_URL` and `MARKETPLACE_CONNECTOR_TOKEN` remai
 4. Add the Browserless token and profile name as private runtime environment variables for this Site.
 5. Paste a Facebook Marketplace link in Add Vehicle and run Import & Analyze.
 
+This setup is completed once. Routine imports do not require Owner approval or a new login while the saved profile remains valid. NK Cars detects counters such as `1 of 18` and reports whether the reachable gallery is complete.
+
 Facebook may expire or challenge a saved session. When that happens, NK Cars returns `login_required` without displaying a provider error or stack trace. Refresh the Browserless profile, then retry. The source URL remains in the draft flow.
+
+Facebook public metadata commonly contains only the cover image. Without the token/profile above, NK Cars cannot truthfully recover unseen carousel photos. The supported fallback is to select multiple screenshots/photos from the phone in one operation; NK AI analyzes the complete upload as one vehicle.
+
+Customer-facing descriptions and pages do not display the source platform, source URL, seller/dealer identity or contact, source price, or sourcing location. Imported evidence remains available only in internal review surfaces.
 
 ## Guardrails
 

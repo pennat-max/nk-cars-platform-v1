@@ -90,3 +90,33 @@ Started Milestone 1: Next.js shell and visual parity.
   - Draft fields: Toyota, Hilux Revo, 2025, 4WD, Double Cab, 24,000 km.
   - Cover images: 1.
   - Missing evidence: full photo gallery, seller/contact, location, source price, current availability.
+
+### Full Gallery And Customer-Safe English
+
+- Fixed the hosted importer short-circuit that returned immediately after finding one public OpenGraph cover image. Public metadata is now treated as the initial result and a configured Cloud Browser supplements it.
+- Added standard-Chromium gallery traversal for accessible Facebook listings. The connector opens the listing media, follows visible Next Photo controls, detects counters such as `1 of 18`, deduplicates Facebook CDN images, and returns up to 30 images with `expected_image_count` and `gallery_complete` evidence.
+- Login UI no longer causes a false `login_required` result when real public listing evidence is also visible. Checkpoint/login-only pages still stop safely for human authentication.
+- Added connector merge behavior and regression coverage proving that public metadata plus a configured Browserless session produces one completed gallery result instead of stopping at the cover image.
+- Expanded deterministic Thai listing extraction for Toyota Revo shorthand, Rocco/GR Sport grade, 2.4L engine capacity, A/T and M/T variants, D/C body shorthand, Thai `ไมล์` mileage, and Thai source price text. Hard requirements such as 2WD/4WD remain unconfirmed when evidence is absent.
+- Added an AI-generated customer English description field to Waiting Review. It summarizes only evidence-backed identity, grade, engine, transmission, drive, body, mileage, color, and features.
+- Added defense-in-depth sanitization at AI response, draft save, and customer render. Customer copy removes URLs, seller/dealer/source/platform/contact/location, phone, source price/currency, VIN/chassis, registration, and plate references.
+- Added a customer photo gallery with selectable thumbnails and retained imported HTTPS image collections in prototype device state. Customer pages do not visibly expose source URL, source platform, seller identity/contact, source price, or sourcing location.
+- Verified the supplied Facebook public-content path directly: Facebook's unauthenticated HTML contains only one unique listing JPG, confirming that the remaining gallery requires an authenticated compliant browser session or owner-supplied photos/screenshots.
+
+### Full Gallery Verification
+
+- `git diff --check`: passed.
+- `npm.cmd exec tsc -- --noEmit --incremental false`: passed.
+- `npm.cmd run lint`: passed with 0 errors and the existing 13 `<img>` optimization warnings.
+- `npm.cmd test`: passed, including build and 6/6 Node tests.
+- Browserless function source syntax check: passed.
+- Local preview at `http://127.0.0.1:4197` returned HTTP 200.
+- iPhone-size viewport check at 390 x 844 passed for Add Vehicle and the customer vehicle detail page. No horizontal overflow or browser console errors were found; the public detail showed the English Vehicle Overview without source/seller/cost details.
+
+### Current External Dependency
+
+- Full Facebook carousel import is code-complete but cannot run on the existing private Site until `BROWSERLESS_TOKEN` and an authenticated `BROWSERLESS_PROFILE` are configured. The Site currently has neither value.
+- This is a one-time Owner account/login setup, with occasional re-authentication only when Facebook expires or challenges the saved session. NK Cars does not store the Facebook password and does not bypass checkpoints or CAPTCHA.
+- Until that connection exists, the deployed fallback remains usable: keep the listing URL, import the public cover/title/description, then upload multiple screenshots/photos and analyze them as one vehicle.
+- Before a real customer launch, imported remote images must be copied into first-party durable media storage. The current prototype retains HTTPS gallery URLs, which can expire and can reveal the upstream CDN hostname to a technically inspecting user even though no source is visible in the UI.
+- Owner standing instruction now permits validated changes to be committed and deployed to the existing private ChatGPT Site without repeated approval. Production/public publishing, new Site creation, URL changes, paid-service activation, and destructive production actions remain prohibited without explicit Owner approval.

@@ -26,6 +26,9 @@ type ConnectorResult = {
   seller?: string;
   location?: string;
   images?: string[];
+  expected_image_count?: number;
+  gallery_complete?: boolean;
+  cloud_status?: string;
   missing?: string[];
   conflicts?: string[];
   draft_fields?: DraftFields;
@@ -38,7 +41,11 @@ type CloudBrowserResult = {
   description?: string;
   listing_text?: string;
   source_price?: string;
+  seller?: string;
+  location?: string;
   images?: string[];
+  expected_image_count?: number;
+  gallery_complete?: boolean;
 };
 
 interface MarketplaceConnector {
@@ -58,58 +65,137 @@ export default async ({ page, context }) => {
   await page.goto(sourceUrl, { waitUntil: "domcontentloaded", timeout: 40000 });
   await new Promise((resolve) => setTimeout(resolve, 2500));
 
-  for (let step = 0; step < 4; step += 1) {
-    await page.evaluate(() => window.scrollBy(0, Math.max(650, window.innerHeight * 0.8)));
-    await new Promise((resolve) => setTimeout(resolve, 650));
-  }
-  await page.evaluate(() => window.scrollTo(0, 0));
-
-  const result = await page.evaluate(() => {
+  const readPage = async () => page.evaluate(() => {
     const text = (value) => typeof value === "string" ? value.replace(/\s+/g, " ").trim() : "";
     const meta = (key) => text(
       document.querySelector('meta[property="' + key + '"]')?.getAttribute("content") ||
       document.querySelector('meta[name="' + key + '"]')?.getAttribute("content") || ""
     );
-    const bodyText = text(document.body?.innerText || "").slice(0, 30000);
+    const rawBodyText = document.body?.innerText || "";
+    const bodyText = text(rawBodyText).slice(0, 30000);
     const finalUrl = location.href;
-    const loginPath = /\/(login|checkpoint|recover|two_factor)(\/|\?|$)/i.test(location.pathname);
-    const loginForm = Boolean(
-      document.querySelector('input[name="email"], input[name="pass"], form[action*="login"], form[action*="checkpoint"]')
-    );
-    const securityText = /log in to facebook|เข้าสู่ระบบ facebook|security check|required to continue/i.test(bodyText.slice(0, 4000));
-    if (loginPath || loginForm || securityText) {
-      return { state: "login_required", final_url: finalUrl };
-    }
-
-    const candidates = [];
-    const addImage = (value, width = 0, height = 0) => {
-      if (!value || !/^https:\/\//i.test(value)) return;
-      if ((width >= 220 && height >= 150) || /fbcdn\.net|fbsbx\.com/i.test(value)) candidates.push(value);
-    };
-    addImage(meta("og:image"), 1200, 630);
-    document.querySelectorAll("img").forEach((node) => {
-      const image = node;
-      addImage(image.currentSrc || image.src, image.naturalWidth, image.naturalHeight);
-    });
-    document.querySelectorAll("video[poster]").forEach((node) => addImage(node.getAttribute("poster"), 1200, 630));
-
     const title = meta("og:title") || text(document.querySelector("h1")?.textContent || "") || text(document.title);
     const description = meta("og:description") || meta("description");
+    const titleWords = title.toLowerCase().split(/\s+/).filter((word) => word.length > 3);
+    const candidates = [];
+    const addImage = (value, width = 0, height = 0, top = 99999, alt = "", force = false) => {
+      if (!value || !/^https:\/\//i.test(value)) return;
+      const trusted = /fbcdn\.net|fbsbx\.com/i.test(value);
+      const altText = text(alt).toLowerCase();
+      const titleMatch = titleWords.some((word) => altText.includes(word));
+      const listingMedia = width >= 420 && height >= 260 && (top < window.innerHeight * 1.8 || titleMatch);
+      if (force || (trusted && listingMedia)) candidates.push(value);
+    };
+    addImage(meta("og:image"), 1200, 630, 0, title, true);
+    document.querySelectorAll("img").forEach((node) => {
+      const image = node;
+      const rect = image.getBoundingClientRect();
+      addImage(image.currentSrc || image.src, image.naturalWidth, image.naturalHeight, rect.top, image.alt || "");
+    });
+    document.querySelectorAll("video[poster]").forEach((node) => addImage(node.getAttribute("poster"), 1200, 630, 0, title, true));
+
     const priceMeta = meta("product:price:amount") || meta("og:price:amount");
     const visiblePrice = bodyText.match(/(?:฿|THB\s*)[\d,]+(?:\.\d{1,2})?/i)?.[0] || "";
     const sourcePrice = text(priceMeta || visiblePrice);
-    const images = [...new Set(candidates)].slice(0, 60);
-    const listingText = [title, description, bodyText].filter(Boolean).join("\n\n").slice(0, 30000);
+    const counters = [...bodyText.matchAll(/\b\d{1,2}\s*(?:of|\/)\s*(\d{1,2})\b/gi)]
+      .map((match) => Number(match[1]))
+      .filter((count) => count > 1 && count <= 60);
+    const expectedImageCount = counters.length ? Math.max(...counters) : 0;
+    const relatedMarker = bodyText.search(/(?:Today's picks|More from this seller|Related listings)/i);
+    const primaryText = relatedMarker > 200 ? bodyText.slice(0, relatedMarker) : bodyText;
+    const seller = text(rawBodyText.match(/(?:Seller|ผู้ขาย)\s*\n+([^\n]+)/i)?.[1] || "");
+    const listedLocation = text(rawBodyText.match(/Listed[^\n]*[·•]\s*([^\n]+)/i)?.[1] || "");
+    const loginPath = /\/(login|checkpoint|recover|two_factor)(\/|\?|$)/i.test(location.pathname);
+    const loginForm = Boolean(document.querySelector('input[name="email"], input[name="pass"], form[action*="login"], form[action*="checkpoint"]'));
+    const securityText = /log in to facebook|เข้าสู่ระบบ facebook|security check|required to continue/i.test(bodyText.slice(0, 4000));
+    const hasListingEvidence = Boolean(title || description || sourcePrice || candidates.length);
+    const listingText = [title, description, primaryText].filter(Boolean).join("\n\n").slice(0, 30000);
     return {
-      state: listingText || images.length ? "ok" : "unavailable",
+      state: (loginPath || ((securityText || loginForm) && !hasListingEvidence))
+        ? "login_required"
+        : (listingText || candidates.length ? "ok" : "unavailable"),
       final_url: finalUrl,
       title,
       description,
       listing_text: listingText,
       source_price: sourcePrice,
-      images,
+      seller,
+      location: listedLocation,
+      images: [...new Set(candidates)].slice(0, 60),
+      expected_image_count: expectedImageCount || undefined,
     };
   });
+
+  const snapshots = [await readPage()];
+  if (snapshots[0].state === "login_required") {
+    return { data: snapshots[0], type: "application/json" };
+  }
+
+  for (let step = 0; step < 4; step += 1) {
+    await page.evaluate(() => window.scrollBy(0, Math.max(650, window.innerHeight * 0.8)));
+    await new Promise((resolve) => setTimeout(resolve, 650));
+    snapshots.push(await readPage());
+  }
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await new Promise((resolve) => setTimeout(resolve, 400));
+
+  const openGallery = await page.evaluate(() => {
+    const images = [...document.querySelectorAll("img")]
+      .map((image) => ({ image, area: image.naturalWidth * image.naturalHeight, rect: image.getBoundingClientRect() }))
+      .filter(({ image, area, rect }) => area >= 420 * 260 && rect.top < window.innerHeight * 1.5 && /fbcdn\.net|fbsbx\.com/i.test(image.currentSrc || image.src))
+      .sort((a, b) => b.area - a.area);
+    const action = images[0]?.image.closest('a, button, [role="button"]');
+    if (!action) return false;
+    action.click();
+    return true;
+  });
+  if (openGallery) await new Promise((resolve) => setTimeout(resolve, 900));
+
+  let repeated = 0;
+  let lastImage = "";
+  for (let step = 0; step < 30; step += 1) {
+    snapshots.push(await readPage());
+    const currentImage = await page.evaluate(() => {
+      const images = [...document.querySelectorAll("img")]
+        .filter((image) => image.naturalWidth >= 600 && image.naturalHeight >= 350)
+        .sort((a, b) => (b.naturalWidth * b.naturalHeight) - (a.naturalWidth * a.naturalHeight));
+      return images[0]?.currentSrc || images[0]?.src || "";
+    });
+    repeated = currentImage && currentImage === lastImage ? repeated + 1 : 0;
+    lastImage = currentImage || lastImage;
+    if (repeated >= 2) break;
+
+    const clicked = await page.evaluate(() => {
+      const label = (element) => [element.getAttribute("aria-label"), element.getAttribute("title"), element.textContent]
+        .filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
+      const nextPattern = /^(?:next(?: photo| image)?|ถัดไป|รูปถัดไป)(?:\s+\d+)?$/i;
+      const elements = [...document.querySelectorAll('button, [role="button"], [aria-label], [title]')];
+      const target = elements.find((element) => {
+        const rect = element.getBoundingClientRect();
+        const visible = rect.width > 0 && rect.height > 0 && rect.bottom > 0 && rect.top < window.innerHeight;
+        return visible && nextPattern.test(label(element));
+      });
+      if (!target) return false;
+      target.click();
+      return true;
+    });
+    if (!clicked) break;
+    await new Promise((resolve) => setTimeout(resolve, 650));
+  }
+
+  const best = snapshots.reduce((selected, item) => {
+    const selectedScore = (selected.listing_text?.length || 0) + (selected.images?.length || 0) * 500;
+    const itemScore = (item.listing_text?.length || 0) + (item.images?.length || 0) * 500;
+    return itemScore > selectedScore ? item : selected;
+  }, snapshots[0]);
+  const allImages = [...new Set(snapshots.flatMap((item) => item.images || []))].slice(0, 60);
+  const expectedImageCount = Math.max(...snapshots.map((item) => item.expected_image_count || 0));
+  const result = {
+    ...best,
+    images: allImages,
+    expected_image_count: expectedImageCount || undefined,
+    gallery_complete: Boolean(expectedImageCount && allImages.length >= expectedImageCount),
+  };
 
   return { data: result, type: "application/json" };
 };`;
@@ -243,13 +329,15 @@ async function importPublicMetadata(sourceUrl: string): Promise<ConnectorResult 
   const price = (priceMetadata.replace(/[^0-9.]/g, "") || priceFromText(listingText)).slice(0, 20);
   if (!title && !description && !image) return null;
   return {
-    status: image ? "partial" : "partial",
+    status: "partial",
     canonical_url: canonical,
     title,
     description,
     listing_text: listingText,
     source_price: price,
     images: image ? [image] : [],
+    gallery_complete: false,
+    cloud_status: "not_configured",
     missing: [
       "Full photo gallery",
       "Seller/contact",
@@ -324,15 +412,30 @@ class BrowserlessMarketplaceConnector implements MarketplaceConnector {
     if (page.state !== "ok") throw new Error("connector_unavailable");
     const listingText = cleanText(page.listing_text);
     const images = Array.isArray(page.images) ? page.images : [];
+    const expectedImageCount = imageCount(page.expected_image_count);
+    const galleryComplete = Boolean(
+      page.gallery_complete
+      && (!expectedImageCount || images.length >= expectedImageCount),
+    ) || Boolean(expectedImageCount && images.length >= expectedImageCount);
     return {
-      status: listingText && images.length ? "imported" : "partial",
+      status: listingText && images.length && galleryComplete ? "imported" : "partial",
       canonical_url: page.final_url,
       title: page.title,
       description: page.description,
       listing_text: listingText,
       source_price: page.source_price,
+      seller: page.seller,
+      location: page.location,
       images,
-      missing: [!listingText ? "Listing text" : "", !images.length ? "Listing images" : ""].filter(Boolean),
+      expected_image_count: expectedImageCount,
+      gallery_complete: galleryComplete,
+      cloud_status: galleryComplete ? "complete" : "partial",
+      missing: [
+        !listingText ? "Listing text" : "",
+        !images.length ? "Listing images" : "",
+        !galleryComplete && expectedImageCount ? `Listing gallery (${images.length} of ${expectedImageCount} images reached)` : "",
+      ].filter(Boolean),
+      draft_fields: draftFieldsFromText(listingText),
     } as ConnectorResult;
   }
 }
@@ -423,36 +526,136 @@ export async function POST(request: Request) {
   }
 
   const publicResult = await importPublicMetadata(sourceUrl).catch(() => null);
-  if (publicResult) {
-    return importedResponse(publicResult, sourceUrl, "Facebook public metadata");
-  }
-
   const configured = configuredConnector();
-  if (!configured) return safeFailure("unavailable", 422);
+  if (!configured) {
+    if (publicResult) {
+      return importedResponse({ ...publicResult, cloud_status: "not_configured" }, sourceUrl, "Facebook public metadata");
+    }
+    return safeFailure("unavailable", 422);
+  }
 
   try {
     const result = await configured.connector.importListing(sourceUrl);
     if (result.status !== "imported" && result.status !== "partial") return safeFailure("unavailable", 422, configured.provider);
-    return importedResponse(result, sourceUrl, configured.provider);
+    return importedResponse(
+      mergeConnectorResults(publicResult, result, result.cloud_status || "complete"),
+      sourceUrl,
+      publicResult ? `Facebook public metadata + ${configured.provider}` : configured.provider,
+    );
   } catch (error) {
     const code = error instanceof Error ? error.message : "unknown";
-    if (code === "cloud_setup_required") return safeFailure("cloud_setup_required", 503);
-    if (code === "facebook_login_required") return safeFailure("login_required", 401);
+    const cloudStatus = code === "cloud_setup_required"
+      ? "setup_required"
+      : code === "facebook_login_required" ? "login_required" : "unavailable";
+    if (publicResult) {
+      return importedResponse(
+        { ...publicResult, cloud_status: cloudStatus },
+        sourceUrl,
+        `Facebook public metadata + ${configured.provider}`,
+      );
+    }
+    if (code === "cloud_setup_required") return safeFailure("cloud_setup_required", 503, configured.provider);
+    if (code === "facebook_login_required") return safeFailure("login_required", 401, configured.provider);
     console.error("Marketplace import failed", code);
     return safeFailure("unavailable", 422, configured.provider);
   }
 }
 
+function uniqueImages(values: unknown[]) {
+  const seen = new Set<string>();
+  const images: string[] = [];
+  for (const value of values) {
+    const image = cleanImageUrl(value);
+    if (!image) continue;
+    const url = new URL(image);
+    const identity = `${url.hostname.toLowerCase()}${url.pathname}`;
+    if (seen.has(identity)) continue;
+    seen.add(identity);
+    images.push(image);
+    if (images.length >= MAX_IMAGES) break;
+  }
+  return images;
+}
+
+function imageCount(value: unknown) {
+  const count = Number(value);
+  return Number.isInteger(count) && count > 1 && count <= 60 ? count : undefined;
+}
+
+function mergeConnectorResults(publicResult: ConnectorResult | null, connectorResult: ConnectorResult, cloudStatus: string) {
+  const expectedImageCount = Math.max(
+    imageCount(publicResult?.expected_image_count) || 0,
+    imageCount(connectorResult.expected_image_count) || 0,
+  ) || undefined;
+  const images = uniqueImages([
+    ...(connectorResult.images || []),
+    ...(publicResult?.images || []),
+  ]);
+  const galleryComplete = Boolean(
+    connectorResult.gallery_complete
+    && (!expectedImageCount || images.length >= expectedImageCount),
+  ) || Boolean(expectedImageCount && images.length >= expectedImageCount);
+  const title = cleanText(connectorResult.title) || cleanText(publicResult?.title);
+  const description = cleanText(connectorResult.description) || cleanText(publicResult?.description);
+  const listingText = cleanText(connectorResult.listing_text)
+    || cleanText(publicResult?.listing_text)
+    || [title, description].filter(Boolean).join("\n\n");
+  const seller = cleanText(connectorResult.seller) || cleanText(publicResult?.seller);
+  const location = cleanText(connectorResult.location) || cleanText(publicResult?.location);
+  const missing = new Set([...(publicResult?.missing || []), ...(connectorResult.missing || [])].filter(Boolean));
+  missing.delete("Full photo gallery");
+  missing.delete("Listing images");
+  missing.delete("Listing text");
+  missing.delete("Seller/contact");
+  missing.delete("Location");
+  missing.delete("Source price");
+  if (!galleryComplete) {
+    missing.add(expectedImageCount
+      ? `Listing gallery (${images.length} of ${expectedImageCount} images reached)`
+      : "Full photo gallery");
+  }
+  if (!listingText) missing.add("Listing text");
+  if (!images.length) missing.add("Listing images");
+  if (!seller) missing.add("Seller/contact");
+  if (!location) missing.add("Location");
+  const sourcePrice = connectorResult.source_price || publicResult?.source_price;
+  if (!sourcePrice) missing.add("Source price");
+
+  return {
+    status: listingText && images.length && galleryComplete ? "imported" : "partial",
+    canonical_url: connectorResult.canonical_url || publicResult?.canonical_url,
+    title,
+    description,
+    listing_text: listingText,
+    source_price: sourcePrice,
+    seller,
+    location,
+    images,
+    expected_image_count: expectedImageCount,
+    gallery_complete: galleryComplete,
+    cloud_status: cloudStatus,
+    missing: [...missing],
+    conflicts: [...(publicResult?.conflicts || []), ...(connectorResult.conflicts || [])],
+    draft_fields: {
+      ...(publicResult?.draft_fields || {}),
+      ...(connectorResult.draft_fields || draftFieldsFromText(listingText)),
+    },
+  } satisfies ConnectorResult;
+}
+
 function importedResponse(result: ConnectorResult, sourceUrl: string, provider: string) {
-  const images = Array.isArray(result.images)
-    ? [...new Set(result.images.map(cleanImageUrl).filter(Boolean))].slice(0, MAX_IMAGES)
-    : [];
+  const images = uniqueImages(Array.isArray(result.images) ? result.images : []);
   const title = cleanText(result.title, 500);
   const description = cleanText(result.description);
   const listingText = cleanText(result.listing_text) || [title, description].filter(Boolean).join("\n\n");
   const price = String(result.source_price ?? "").replace(/[^0-9.]/g, "").slice(0, 20);
   const meaningful = Boolean(title || description || listingText || price || images.length);
   if (!meaningful) return safeFailure("unavailable", 422, provider);
+  const expectedImageCount = imageCount(result.expected_image_count);
+  const galleryComplete = Boolean(
+    result.gallery_complete
+    && (!expectedImageCount || images.length >= expectedImageCount),
+  ) || Boolean(expectedImageCount && images.length >= expectedImageCount);
 
   return NextResponse.json({
     status: result.status,
@@ -467,6 +670,9 @@ function importedResponse(result: ConnectorResult, sourceUrl: string, provider: 
     seller: cleanText(result.seller, 500),
     location: cleanText(result.location, 500),
     images,
+    expected_image_count: expectedImageCount,
+    gallery_complete: galleryComplete,
+    cloud_status: cleanText(result.cloud_status, 100),
     missing: Array.isArray(result.missing) ? result.missing.map((item) => cleanText(item, 100)).filter(Boolean).slice(0, 30) : [],
     conflicts: Array.isArray(result.conflicts) ? result.conflicts.map((item) => cleanText(item, 500)).filter(Boolean).slice(0, 30) : [],
     draft_fields: result.draft_fields || draftFieldsFromText(listingText),

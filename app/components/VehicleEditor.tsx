@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { buildCustomerDescriptionEn, sanitizeCustomerDescriptionEn } from "../lib/domain";
 import type { AiFieldMeta, Vehicle, VehicleCorrection } from "../types";
 
 type FieldKey =
   | "brand" | "model" | "year" | "grade" | "engine" | "engineCapacity"
   | "transmission" | "drive" | "body" | "cabType" | "mileage" | "color"
   | "vinChassis" | "registrationYear" | "sourcePrice" | "seller"
-  | "sourcePlatform" | "listingText" | "location";
+  | "sourcePlatform" | "listingText" | "location" | "customerDescriptionEn";
 type FormValues = Record<FieldKey, string>;
 type PhotoItem = { id: string; name: string; dataUrl: string };
 type Stage = "start" | "fallback" | "review";
@@ -37,6 +38,9 @@ type MarketplaceImport = {
   missing?: string[];
   conflicts?: string[];
   draft_fields?: Partial<FormValues>;
+  expected_image_count?: number;
+  gallery_complete?: boolean;
+  cloud_status?: "complete" | "partial" | "not_configured" | "login_required" | "setup_required" | "unavailable";
 };
 type CloudStatus = { configured: boolean; provider: string };
 type ImportIssue = "" | "setup" | "login" | "unavailable";
@@ -46,7 +50,7 @@ const emptyValues: FormValues = {
   brand: "", model: "", year: "", grade: "", engine: "", engineCapacity: "",
   transmission: "", drive: "", body: "", cabType: "", mileage: "", color: "",
   vinChassis: "", registrationYear: "", sourcePrice: "", seller: "",
-  sourcePlatform: "", listingText: "", location: "",
+  sourcePlatform: "", listingText: "", location: "", customerDescriptionEn: "",
 };
 const reviewFields: { key: FieldKey; label: string }[] = [
   { key: "brand", label: "Brand / ยี่ห้อ" }, { key: "model", label: "Model / รุ่น" },
@@ -71,6 +75,7 @@ function initialFromVehicle(vehicle?: Vehicle): FormValues {
     sourcePrice: vehicle.sourcePrice ? String(vehicle.sourcePrice) : "", seller: vehicle.seller || vehicle.sources?.[0]?.seller || "",
     sourcePlatform: vehicle.sourcePlatform || vehicle.sourceImport?.source_platform || "",
     listingText: vehicle.listingText || vehicle.sourceImport?.source_listing_text || "", location: vehicle.location || "",
+    customerDescriptionEn: vehicle.customerDescriptionEn || "",
   };
 }
 
@@ -246,6 +251,9 @@ export default function VehicleEditor({ initialVehicle, onSave, onCancel, notify
           nextOriginal[key] = result.value;
         }
       });
+      if (!readableValue(nextValues.customerDescriptionEn)) {
+        nextValues.customerDescriptionEn = buildCustomerDescriptionEn(nextValues);
+      }
       setValues(nextValues); setAiMeta(nextMeta); setAiOriginal(nextOriginal);
       setConflicts(payload.conflicts || []); setSummary(payload.summary || ""); setStage("review");
       notify(`NK AI วิเคราะห์ ${payload.image_count || nextPhotos.length} รูปร่วมกันแล้ว`);
@@ -315,9 +323,20 @@ export default function VehicleEditor({ initialVehicle, onSave, onCancel, notify
         setConflicts((current) => [...(imported.conflicts || []), ...(imported.missing || []).map((item) => `Need screenshot/photo evidence: ${item}`), ...current]);
       }
       if (analyzed && imported.status === "partial") {
-        setMessage("We imported what was available. Upload screenshots/photos to complete the details.");
+        const galleryMessage = imported.expected_image_count && importedPhotos.length < imported.expected_image_count
+          ? `Imported ${importedPhotos.length} of ${imported.expected_image_count} listing photos. Add screenshots/photos or reconnect Cloud Browser to complete the gallery.`
+          : imported.gallery_complete
+            ? `Imported all ${importedPhotos.length} reachable listing photos.`
+            : "We imported what was available. Upload screenshots/photos to complete the details.";
+        setMessage(galleryMessage);
       }
       if (!analyzed) {
+        setValues((current) => ({
+          ...current,
+          customerDescriptionEn: readableValue(current.customerDescriptionEn)
+            ? current.customerDescriptionEn
+            : buildCustomerDescriptionEn(current),
+        }));
         setAiMeta((current) => ({
           ...current,
           brand: prefill.brand ? { confidence: 70, status: "Need Review", evidence: ["Facebook public metadata"], alternatives: [] } : current.brand,
@@ -370,6 +389,7 @@ export default function VehicleEditor({ initialVehicle, onSave, onCancel, notify
       cabType: values.cabType || "Need Review", mileage: values.mileage || "Need Review", color: values.color || "Need Review",
       vinChassis: values.vinChassis || "", registrationYear: values.registrationYear || "Need Review", sourcePrice,
       seller: values.seller || "Need Review", sourcePlatform: values.sourcePlatform || "Need Review", listingText: values.listingText,
+      customerDescriptionEn: sanitizeCustomerDescriptionEn(values.customerDescriptionEn) || buildCustomerDescriptionEn(values),
       location: values.location || "Need Review", state: "Waiting Review", image: cover, coverImage: cover,
       images: photos.map((photo) => photo.dataUrl), vinMasked: values.vinChassis ? maskVin(values.vinChassis) : "Need Review",
       sources: [{
@@ -422,10 +442,10 @@ export default function VehicleEditor({ initialVehicle, onSave, onCancel, notify
         <button className="alt-import-button" onClick={() => { setStage("fallback"); setShowText(true); }}><span>≡</span><b>Paste Listing Text</b><small>AI จะอ่านแทนการกรอก Specs</small></button>
       </div>
       <div className={`connector-note ${cloudStatus?.configured ? "connector-connected" : "connector-setup"}`}>
-        <b><i /> Public metadata first · Cloud Browser {cloudStatus === null ? "checking" : cloudStatus.configured ? "connected" : "optional"}</b>
+        <b><i /> Public metadata first · Cloud Browser {cloudStatus === null ? "checking" : cloudStatus.configured ? "connected" : "setup needed for full gallery"}</b>
         <span>{cloudStatus?.configured
-          ? "ระบบจะใช้ metadata สาธารณะก่อน และใช้ Browserless เป็นตัวเสริมเมื่อ metadata ไม่พอ"
-          : "วางลิงก์แล้วดึง title, description และ cover image ได้ก่อน จากนั้นเพิ่ม screenshot/photos เพื่อเติมราคา ผู้ขาย พื้นที่ และรูปทั้งหมด"}</span>
+          ? "ระบบจะใช้ metadata สาธารณะก่อน แล้วเปิดแกลเลอรีเพื่อเก็บรูปที่เข้าถึงได้สูงสุด 30 รูปและอ่านข้อความประกาศทั้งหมด"
+          : "Facebook มักส่งข้อมูลสาธารณะมาเพียงภาพปก หากต้องการรูปทั้งหมดให้เชื่อม Cloud Browser หนึ่งครั้ง หรืออัปโหลด screenshot/photos เพื่อวิเคราะห์ต่อ"}</span>
       </div>
     </section> : null}
 
@@ -484,6 +504,11 @@ export default function VehicleEditor({ initialVehicle, onSave, onCancel, notify
           onChange={(value) => changeField(field.key, value)}
         />)}</div> : <div className="no-extracted-fields"><b>AI ยังยืนยัน Specs ไม่ได้</b><p>เพิ่ม Screenshot ประกาศ ป้าย VIN หรือรูปหน้าปัด แล้วกด Re-analyze</p></div>}
         {values.listingText ? <details className="listing-description"><summary>Listing description</summary><textarea rows={7} value={values.listingText} onChange={(event) => changeField("listingText", event.target.value)} /></details> : null}
+        <label className="customer-description-editor">
+          <span>Customer English Description</span>
+          <small>Public-safe English only. Seller, source, URL, contact, source price and sourcing location are excluded.</small>
+          <textarea rows={6} value={values.customerDescriptionEn} onChange={(event) => changeField("customerDescriptionEn", event.target.value)} />
+        </label>
       </section>
       {message ? <div className="inline-message" role="alert">{message}</div> : null}
       <div className="save-draft-bar"><button className="button secondary" onClick={onCancel}>Cancel</button><div><b>Vehicle Draft</b><small>สถานะหลังบันทึก: Waiting Review</small></div><button className="button primary" onClick={saveDraft}>Save Vehicle Draft →</button></div>

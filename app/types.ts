@@ -38,6 +38,7 @@ export type Vehicle = {
   lastSoldPrice?: number; soldMonth?: string; destination?: string; timeline: TimelineItem[];
   engineCapacity?: string; cabType?: string; vinChassis?: string; registrationYear?: string;
   seller?: string; sourcePlatform?: string; listingText?: string; location?: string;
+  customerDescriptionEn?: string;
   images?: string[]; coverImage?: string; aiMeta?: Record<string, AiFieldMeta>;
   sourceImport?: SourceImport; corrections?: VehicleCorrection[]; aiSummary?: string;
 };

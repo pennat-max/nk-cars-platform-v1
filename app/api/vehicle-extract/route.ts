@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
+import { sanitizeCustomerDescriptionEn } from "../../lib/domain";
 
 export const runtime = "nodejs";
 
 const fieldNames = [
   "brand", "model", "year", "grade", "engine", "engineCapacity", "transmission",
   "drive", "body", "cabType", "mileage", "color", "vinChassis", "registrationYear",
-  "sourcePrice", "seller", "sourcePlatform", "listingText", "location",
+  "sourcePrice", "seller", "sourcePlatform", "listingText", "location", "customerDescriptionEn",
 ] as const;
 
 const fieldSchema = {
@@ -127,8 +128,9 @@ Rules:
 - If confidence is below 75 or evidence is indirect, use Need Review.
 - Extract readable Marketplace title, price, year/model text, location, seller, and description into the appropriate fields.
 - Preserve VIN/chassis exactly only when clearly readable. Do not reconstruct missing characters.
-- sourcePrice must contain digits only, without currency symbols or commas. Keep other values concise and human-readable.
-- evidence entries must identify the source, for example "image 4: odometer", "image 8: VIN plate", "listing text", or "Marketplace screenshot image 2".
+ - sourcePrice must contain digits only, without currency symbols or commas. Keep other values concise and human-readable.
+ - customerDescriptionEn is a concise customer-facing English translation/summary of supported vehicle facts, specifications, features, and mileage. Never include source price, seller/dealer identity, seller contact, source platform, source URL, sourcing location, registration plate, full VIN/chassis, internal notes, or claims without evidence. Public selling price is handled separately. If no safe facts exist, return Unknown.
+ - evidence entries must identify the source, for example "image 4: odometer", "image 8: VIN plate", "listing text", or "Marketplace screenshot image 2".
 - image_count must equal the number of images actually supplied.
 - summary must be a short operational review note, not sales copy.`;
 
@@ -167,7 +169,18 @@ Rules:
     }
     const text = outputText(result);
     if (!text) return NextResponse.json({ error: "NK AI ไม่ได้ส่งผลวิเคราะห์กลับมา" }, { status: 502 });
-    const extraction = JSON.parse(text) as Record<string, unknown>;
+    const extraction = JSON.parse(text) as Record<string, unknown> & { fields?: Record<string, { value?: unknown; confidence?: number; status?: string; evidence?: string[]; alternatives?: string[] }> };
+    const customerField = extraction.fields?.customerDescriptionEn;
+    if (customerField) {
+      const safeDescription = sanitizeCustomerDescriptionEn(customerField.value);
+      customerField.value = safeDescription || "Unknown";
+      if (!safeDescription) {
+        customerField.confidence = 0;
+        customerField.status = "Unknown";
+        customerField.evidence = [];
+        customerField.alternatives = [];
+      }
+    }
     extraction.image_count = images.length;
     return NextResponse.json(extraction, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
