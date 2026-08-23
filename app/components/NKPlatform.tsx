@@ -8,6 +8,14 @@ import VehicleEditor from "./VehicleEditor";
 
 type View = "home" | "vehicles" | "marketplace" | "review" | "detail" | "vehicle360" | "leads" | "wanted" | "more" | "rules" | "add" | "inquiry";
 const stages: LeadStage[] = ["New", "Qualified", "Vehicle Selected", "Availability Check", "Closed"];
+export type NKPlatformView = View;
+
+type NKPlatformProps = {
+  initialRole?: Role;
+  initialView?: View;
+  initialVehicleId?: string;
+  initialEditingId?: string | null;
+};
 
 function Badge({ children, tone = "slate" }: { children: React.ReactNode; tone?: string }) {
   return <span className={`badge badge-${tone}`}>{children}</span>;
@@ -18,18 +26,23 @@ function StatusBadge({ state }: { state: string }) {
   return <Badge tone={tone}>{state}</Badge>;
 }
 
-export default function NKPlatform() {
-  const [role, setRole] = useState<Role>("Owner");
-  const [view, setView] = useState<View>("home");
+export default function NKPlatform({
+  initialRole = "Owner",
+  initialView = "home",
+  initialVehicleId = "v4",
+  initialEditingId = null,
+}: NKPlatformProps) {
+  const [role, setRole] = useState<Role>(initialRole);
+  const [view, setView] = useState<View>(initialView);
   const [vehicles, setVehicles] = useState<Vehicle[]>(demoVehicles);
   const [leads, setLeads] = useState<Lead[]>(demoLeads);
   const [wanted, setWanted] = useState<Wanted[]>(demoWanted);
   const [rules, setRules] = useState<SourcingRule[]>(demoRules);
-  const [selectedId, setSelectedId] = useState("v4");
+  const [selectedId, setSelectedId] = useState(initialVehicleId);
   const [notice, setNotice] = useState("");
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("All");
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(initialEditingId);
   const [inquiry, setInquiry] = useState({ name: "", country: "Kenya", port: "Mombasa", quantity: "1", budget: "", requirement: "" });
   const [chatInput, setChatInput] = useState("");
   const [chat, setChat] = useState<{ from: "ai" | "user"; text: string }[]>([{ from: "ai", text: "Hello — I’m NK AI. Tell me the model, year, quantity, budget, country and port you need." }]);
