@@ -4,6 +4,18 @@
 
 Branch: `codex/production-rebuild`
 
+### Master Specification Intake
+
+- Owner instructed Codex to treat `docs/MASTER_SPECIFICATION.md` in the repository as the authoritative NK Cars product specification and ignore truncated Master Specification chat messages.
+- Current repository source of truth contains detailed Sections 26-46 and preserves Sections 0-25 by accepted binding index/summary pending full text consolidation.
+- Received Master Specification Part 1, sections 0-25, from the Owner. Requirements remain binding and must not be removed or reinterpreted.
+- Received Master Specification Part 2, sections 26-46, from the Owner.
+- Created `docs/MASTER_SPECIFICATION.md` and merged Part 2 into it.
+- Preserved the existing accepted requirements by referencing sections 0-25 as binding until the full Part 1 text is consolidated.
+- Created `docs/GAP_ANALYSIS.md` from the repository Master Specification only.
+- Classified remaining work into V1-V5 and proposed the smallest next V1 milestone: Milestone 2A - Auth, Tenant, And Schema Foundation.
+- Per Owner instruction: no production deployment, no public publish, no existing ChatGPT Site overwrite, and no next milestone coding without approval.
+
 ### Context Read
 
 - Read `AGENTS.md`.
@@ -48,3 +60,12 @@ Started Milestone 1: Next.js shell and visual parity.
 - The build emits Vinext route classification warnings for some routes as expected from static analysis; the build still completed successfully.
 - `.openai/hosting.json` remains unchanged and still points to Sites project `appgprj_6a89acb712e481919bac8101abd6bf7e`.
 - No commit, push, new Sites project, URL change, or public publish was performed.
+
+### Gap Analysis Summary
+
+- V1 remaining work is primarily production foundation plus durable sourcing/import/review/publish/marketplace/lead flow.
+- V2 remaining work centers on Dealer Portal, Wanted reverse marketplace, dealer offers, seller availability, and Seller/Dealer Trust Score.
+- V3 remaining work centers on quote/PI, negotiation approvals, payment control, Purchase Fund, Auto-Buy, deposits/refunds, Customer Trust Score, referral, and multi-vehicle purchase approvals.
+- V4 remaining work centers on procurement, pre-purchase checks, purchase payment controls, Vehicle Secured, inspection, repair/modification, export/shipping, delivery, and after-sales.
+- V5 remaining work centers on 360 pages, employee workflow/KPI, fraud/risk, immutable audit expansion, reporting/forecasting, Owner AI Command Center, and management briefs/reviews.
+- Blocking dependencies include Supabase project/env confirmation, migrations/RLS/storage, durable job provider, compliant Facebook/Marketplace connector approach, AI key/model/cost policy, legal review for Purchase Fund, and Owner approval before production deployment.
