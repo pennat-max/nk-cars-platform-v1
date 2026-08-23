@@ -432,13 +432,14 @@ export default function VehicleEditor({ initialVehicle, onSave, onCancel, notify
     {stage === "fallback" ? <>
       {importBlocked ? <section className="import-failed-card">
         <span>!</span><div>
-          <h2>{importIssue === "setup" ? "Cloud Browser setup required" : importIssue === "login" ? "Facebook login required in Cloud Browser" : "Unable to import this listing automatically"}</h2>
+          <h2>{importIssue === "setup" ? "Cloud Browser setup required" : importIssue === "login" ? "Facebook login required in Cloud Browser" : "Facebook metadata is not available from this session"}</h2>
           <p>{importIssue === "setup"
             ? "ต้องเชื่อม Browserless token + Facebook profile ครั้งเดียว · ทำจากมือถือได้ · ลิงก์เดิมถูกเก็บไว้แล้ว"
             : importIssue === "login"
               ? "เปิด Browserless Profile เพื่อยืนยัน Facebook แล้วกด Try link again · ลิงก์เดิมถูกเก็บไว้แล้ว"
-              : "Facebook ไม่เปิดข้อมูล Listing ให้ Cloud Browser ในครั้งนี้ · ลิงก์เดิมถูกเก็บไว้แล้ว"}</p>
+              : "Facebook ไม่เปิด public metadata ให้ ChatGPT Site ในครั้งนี้ · ลิงก์เดิมถูกเก็บไว้แล้ว · อัปโหลด screenshot/photos เพื่อให้ NK AI วิเคราะห์ต่อ"}</p>
           <div className="cloud-browser-actions">
+            {importIssue === "unavailable" && sourceUrl ? <a className="button secondary" href={sourceUrl} target="_blank" rel="noreferrer">Open Facebook listing ↗</a> : null}
             {(importIssue === "setup" || importIssue === "login") ? <a className="button secondary" href="https://www.browserless.io/account" target="_blank" rel="noreferrer">Open Browserless ↗</a> : null}
             {importIssue === "login" ? <button className="button secondary" disabled={busy} onClick={importMarketplace}>Try link again</button> : null}
           </div>
