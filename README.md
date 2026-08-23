@@ -5,13 +5,20 @@ Private mobile-first prototype and production-rebuild reference for NK Cars' Tha
 The production handoff is complete and lives in:
 
 - [Codex working agreement](AGENTS.md)
+- [Authoritative Master Specification](docs/MASTER_SPECIFICATION.md)
+- [Live AI Broker product-direction amendment](docs/PRODUCT_DIRECTION_LIVE_BROKER.md)
+- [Approved Buying Browser pivot](docs/PRODUCT_PIVOT_BUYING_BROWSER.md)
+- [Buying Browser rebuild plan](docs/BUYING_BROWSER_REBUILD_PLAN.md)
 - [Product and UI handoff](docs/CODEX_HANDOFF.md)
 - [Facebook Marketplace import and AI extraction](docs/AI_MARKETPLACE_IMPORT.md)
 - [Production data model and authorization](docs/DATA_MODEL.md)
 - [Production Next.js architecture](docs/PRODUCTION_ARCHITECTURE.md)
 - [Acceptance and parity tests](docs/ACCEPTANCE_TESTS.md)
 - [Implementation plan](docs/IMPLEMENTATION_PLAN.md)
-- [Current Browserless POC setup](docs/CLOUD_BROWSER_SETUP.md)
+- [Owner-controlled local Marketplace connector](docs/LOCAL_MARKETPLACE_CONNECTOR.md)
+- [Optional Browserless POC setup](docs/CLOUD_BROWSER_SETUP.md)
+
+The approved customer-facing V1 is now the additive Buying Browser under `/buy`: browse, paste, or ask NK AI to find a Thai vehicle; save it as an NK Vehicle Case; normalize and translate the evidence; verify current availability and price; show transparent service pricing; and request inspection. This direction supersedes the older stock-first priority path below where they conflict.
 
 Codex must preserve the current UI, mobile design, screens, flows, business rules, safe failure behavior, and demo behavior. The priority production path is:
 
@@ -51,9 +58,9 @@ Scripts that need writable project-scoped home, npm, XDG, and temporary paths us
 - `examples/d1/` contains an optional D1 example surface
 - `drizzle.config.ts` supports local migration generation when needed
 
-## NK Cars marketplace import
+## NK Cars Buying Browser and marketplace import
 
-The owner-only Add Vehicle flow can use a standard cloud browser to open an authenticated Facebook Marketplace listing, collect reachable listing text and images, and pass the evidence to NK AI. See [docs/CLOUD_BROWSER_SETUP.md](docs/CLOUD_BROWSER_SETUP.md) for the phone-only Browserless profile setup and runtime variables.
+The additive Buying Browser preview lives under `/buy`. Its source boundary can use public metadata, the Owner-controlled local connector, or the existing screenshot/photo fallback without claiming unavailable integrations are live. See [docs/LOCAL_MARKETPLACE_CONNECTOR.md](docs/LOCAL_MARKETPLACE_CONNECTOR.md) and [docs/CLOUD_BROWSER_SETUP.md](docs/CLOUD_BROWSER_SETUP.md).
 
 ## Workspace Auth Headers
 

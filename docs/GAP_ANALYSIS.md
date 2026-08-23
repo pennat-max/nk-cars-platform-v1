@@ -1,189 +1,137 @@
 # NK Cars Gap Analysis
 
-Status: current implementation compared against `docs/MASTER_SPECIFICATION.md`  
-Date: 2026-08-23  
-Branch: `codex/production-rebuild`
+Status: current implementation compared with the authoritative Buying Browser direction
+Date: 2026-08-23
+Branch: `codex/buying-browser-rebuild`
 
 ## Source Of Truth
 
-This analysis uses `docs/MASTER_SPECIFICATION.md` as the authoritative product specification, per Owner instruction. Chat messages that contained truncated Master Specification text are ignored for this analysis.
+Conflict priority for current V1 work:
 
-Current authoritative scope in the repository:
+1. Explicit current Owner instruction.
+2. `docs/PRODUCT_PIVOT_BUYING_BROWSER.md` for the customer-facing V1 Buying Browser.
+3. `docs/PRODUCT_DIRECTION_LIVE_BROKER.md` for authorized live sourcing, adapters, profiles, queueing, and candidate controls.
+4. `docs/MASTER_SPECIFICATION.md` for non-conflicting rules and downstream V2-V5 operations.
+5. Existing acceptance, architecture, handoff, and implementation documents.
 
-- Sections 0-25 are preserved in `MASTER_SPECIFICATION.md` as accepted binding requirements by index/summary, pending full text consolidation.
-- Sections 26-46 are present in detail.
-- Sections 47 and later are not currently present in `MASTER_SPECIFICATION.md`; they are not used as requirements in this gap analysis until merged into the repository document by Owner-approved source-of-truth update.
+The pivot changes V1 from a stock-first dealership experience to an AI-assisted vehicle buying browser. Existing inventory/review/lead and downstream operational modules remain rollback/reference and future building blocks; they are not deleted.
 
-## Current Implementation Snapshot
+## Approved V1 Journey
 
-Implemented:
+Browse supported Thai sources, paste a vehicle link, or ask NK AI to find a vehicle -> inspect a customer-safe source result -> Save Vehicle -> create an NK Vehicle Case -> translate/normalize facts -> request current availability/price -> show deterministic service pricing -> request inspection -> retain case conversation/history -> continue toward a controlled Buy Through NK workflow.
 
-- Mobile-first prototype shell preserved.
-- Internal/public route groups and route-level parity for the existing demo UI.
-- Demo fixture driven screens for dashboard, vehicles, review, marketplace, leads, wanted, sourcing rules, and more.
-- Basic client-side domain helpers for profit, markup, default source, and text extraction.
-- Prototype Marketplace import API abstraction with safe fallback responses.
-- Prototype AI extraction API using an evidence-first structured response contract when `OPENAI_API_KEY` is configured.
-- Basic rendered HTML tests for root and route entry points.
+Important states must remain factual: `Live Market Result`, `Found in Thailand`, `Availability Not Yet Confirmed`, `Verified Available`, and `NK Secured` are not interchangeable.
 
-Not implemented:
+## Current Implementation
 
-- Production Auth, tenant membership, RBAC, database migrations, RLS, Storage policies, repository layer, durable jobs, production persistence, production audit, or production customer/dealer/employee portals.
+Reusable and working:
+
+- Existing responsive Next.js/Vinext shell, route-level stock/review/lead/wanted demo flows, extraction, photo review, and customer redaction.
+- Hybrid link import: public metadata first, optional connector, then screenshot/photo/text fallback.
+- Customer-safe English vehicle descriptions based only on available evidence.
+- Local Playwright connector foundation with a versioned source-adapter contract, dedicated persistent browser profiles, manual login, safe login/checkpoint stop states, concurrency-one FIFO queue, limits/timeouts/cancellation, and deterministic browser fixtures.
+- Existing `MARKETPLACE_CONNECTOR_URL` server boundary and safe provider-error handling.
+- Rollback/reference commit `61d4bc8` on `codex/production-rebuild`.
+
+Not yet complete at this analysis point:
+
+- Additive Buying Browser customer routes and account shell.
+- Browse/search/filter/location and saved-vehicle experience.
+- Vehicle Case persistence and customer/internal DTO separation.
+- Paste Link integrated into the new case workflow.
+- Case-linked Ask NK AI, availability request, messages/history, deterministic pricing, and inspection quote/request.
+- Owner/internal source/case view.
+- Production Auth, tenancy, database, RLS, Storage, durable queue, source-session isolation, and real external integrations.
 
 ## V1 Remaining Work
 
-V1 target from the current Master Specification:
+### Customer Buying Browser
 
-Sourcing Rules -> vehicle import -> AI extraction -> duplicate detection -> Waiting Review -> Owner approval -> Publish -> Marketplace -> customer inquiry / AI sales -> Lead / Wanted Request -> Owner Dashboard.
+- NK customer account shell and mobile navigation.
+- Marketplace-style Browse with text search, year, price, mileage, location, transmission, drive, body/cab filters, pagination/infinite-loading boundary, and saved results.
+- Customer-safe detail with normalized English facts and no misleading NK-owned/verified claims.
+- Paste Vehicle Link through a source adapter plus open-source/share/screenshot fallback.
+- Ask NK AI to Find One with hard-requirement preservation and grounded results.
 
-Remaining V1 foundation:
+### Vehicle Case And Assisted Workflow
 
-- Supabase Auth SSR integration with pinned/current package API.
-- Organization and membership model.
-- Owner/Internal Staff authorization.
-- PostgreSQL schema migrations for organizations, vehicles, images, sources, drafts, import jobs, AI extraction provenance, duplicate candidates, customers, inquiries, leads, wanted requests, sourcing rules, and activity events.
-- RLS, explicit grants, helper functions, and cross-tenant denial tests.
-- Storage buckets and policies for private originals/evidence and public approved derivatives.
-- Repository layer with typed internal DTOs and public-safe DTOs.
-- Demo tenant fixtures and protected Reset Demo isolation.
+- Persistent case identifiers and deduplicated Save behavior.
+- Customer-safe case DTO separate from seller/source/internal DTO.
+- Availability-check request, prepared translation, verification state, case timeline, and messages/history.
+- Deterministic price structure: vehicle price, configurable commission, inspection/travel, domestic transport, repair, export/shipping, and other agreed costs.
+- Deterministic inspection/travel quote and request state distinct from accepted/completed state.
+- Owner/internal case source view and attention states.
 
-Remaining V1 vehicle operations:
+### Source And Production Foundation
 
-- Durable vehicle records instead of demo fixtures.
-- Durable intake drafts.
-- Manual source/listing-text intake.
-- Waiting Review backed by database state.
-- Owner-only Approve & Publish / Reject transitions.
-- Vehicle source management and cheapest verified default-source selection.
-- Source verification status and Last Verified tracking.
-- Internal pricing calculations for source cost, selling price, gross profit, and markup.
-- Server-side state transition invariants and activity events.
-
-Remaining V1 import and AI:
-
-- Persistent import job state machine.
-- Marketplace connector idempotency, retry, progress status, and safe failure states.
-- Screenshot/photo fallback persisted into draft evidence.
-- Multi-photo mobile intake for at least 30 images, including upload progress, reorder, delete, choose cover, and add more later.
-- Whole-vehicle AI extraction from images plus listing text/URL evidence.
-- Field confidence, status, evidence, alternatives, and conflicts.
-- Human correction locks and correction history so AI cannot overwrite confirmed values.
-- Rate limits, cost caps, metrics, and AI/provider kill switch.
-
-Remaining V1 duplicate and availability:
-
-- Exact source URL/listing/VIN/image hash duplicate checks.
-- Possible Duplicate scoring with reasons and Owner resolution.
-- Merge service that preserves source/image/evidence history.
-- Availability watch statuses: Verified, Price Changed, Possibly Unavailable, Verification Required.
-- Review triggers for abnormal price changes.
-
-Remaining V1 customer-facing flow:
-
-- Safe Marketplace projection that never exposes source cost, seller identity, source URL, internal margin, full VIN/registration, or internal notes.
-- Customer inquiry form persistence.
-- NK AI Assistant public-safe tool/data layer.
-- AI requirement capture into Inquiry, Lead, or Wanted Request.
-- Guardrails preventing invented availability, shipping price, discounts, or financial changes.
-- Owner Dashboard KPIs and Need Your Attention items backed by real data.
+- Complete customer-specific source-profile isolation before real multi-user access.
+- Source adapters beyond Facebook and a policy-compliant production connector network path.
+- Live result normalization, ranking, freshness, duplicate matching, and operational snapshot policy.
+- Supabase Auth, individual accounts, tenant membership, least-privilege RBAC, RLS, durable schema, Storage visibility, idempotency, and immutable material-action audit.
+- Durable jobs, observability, retries, alerts, kill switches, backup, and restore.
+- Production AI provider/model, structured extraction/translation, cost policy, retention, and grounded-response evaluation.
 
 ## V2 Remaining Work
 
-- Dealer Portal account and verification preparation.
-- Dealer vehicle submission, photo upload, price/availability updates, own-vehicle view, and sales history.
-- Dealer availability confirmations.
-- Sanitized Wanted Request distribution to eligible dealers.
-- Dealer offers, AI matching/ranking, and Owner shortlist approval.
-- Seller/Dealer Trust Score with internal raw score, simplified dealer-visible level, improvement suggestions, suspension/blacklist workflow, audit evidence, and High Risk Opportunity override.
-- Automated availability monitoring and controlled seller communication.
+- Dealer Portal, verification, submissions, availability updates, dealer history, and sanitized Wanted reverse marketplace.
+- Dealer offers, AI ranking/shortlisting, Owner-approved presentation, source reliability, and Seller/Dealer Trust Score.
+- Controlled seller communications and sourcing automation within platform rules.
+- Customer-specific authorized source sessions at production scale and additional compliant source adapters.
 
 ## V3 Remaining Work
 
-- Quote and Proforma Invoice workflow with USD sales currency and stored FX rate.
-- Negotiation approval workflow with approved floors/counteroffers and material-change invalidation.
-- Payment Reported vs Finance Confirmed payment controls.
-- Order balance/payment status.
-- Purchase Fund architecture, ledger separation, reserves, release/refund behavior, and legal gate before real activation.
-- Auto-Buy Rules with customer-authorized limits.
-- Seller hold/deposit controls and Finance-confirmed refund recovery.
-- Customer Trust Score and Priority Buyer benefits.
-- Customer referral system and future dealer referral system.
-- Multi-vehicle Purchase Approval screen with unresolved-warning exclusion.
+- Final quote, negotiation approval/floor controls, PI, immutable FX rate, payment reporting versus Finance confirmation, and financial audit.
+- Purchase approval, seller payment controls, reservation, multi-vehicle approval, Purchase Fund legal gate/ledger, Auto-Buy, seller deposits/refund recovery, and alerts.
+- Customer Trust Score, referral accounting separated from Purchase Fund, and deterministic commercial rules.
 
 ## V4 Remaining Work
 
-- Procurement routing and Manager-confirmed AI assignment recommendations.
-- Route optimization for multi-stop pickup work.
-- Mobile Pre-Purchase Check with evidence capture and mismatch stop points.
-- Purchase payment control separating Owner approval, employee check, Finance payment, seller receipt, and handover.
-- Vehicle Secured requirements and customer notification.
-- One-trip procurement with remote pre-verification and exact approval reuse.
-- Vehicle inspection checklist and evidence.
-- Repair/Modification Jobs for internal and outsourced work.
-- Owner approval for outsourced commitment/payment and cost overruns.
-- Major unexpected issue stop workflow.
-- Repair completion evidence and customer-safe work visibility.
-- Ready For Export notification.
-- Export/Shipping Job with provider, ports, costs, booking, vessel, container, ETD/ETA, documents, and status.
-- Customer shipping tracking with Pending for unknown data.
-- Delivery completion lifecycle through Customer Received Vehicle, Completed, and After-sales.
-- After-sales feedback, case creation, and explicit marketing permission.
+- Procurement assignment/routing, route optimization, one-trip procurement, pre-purchase check, payment/handover controls, and Vehicle Secured.
+- Inspection checklist/evidence, repair/modification jobs, outsource approval, unexpected-issue stop controls, repair completion, and Ready for Export.
+- Shipping jobs/providers, approved shipping expense, customer tracking, destination clearance, received/completed state, and after-sales cases.
 
 ## V5 Remaining Work
 
-Based on the roadmap already preserved in Sections 0-25:
-
-- Business operating system modules: Vehicle 360, Customer 360, Dealer 360, Order 360.
-- Employee workflow and role-specific operations.
-- KPI reporting.
-- Fraud/anomaly detection.
-- Immutable audit expansion beyond V1 activity events.
-- Reporting and forecasts.
-- Owner AI Command Center.
-- Daily Brief, Evening Summary, Weekly Review, and Monthly Management P&L.
+- Vehicle/Customer/Seller/Order 360, grounded AI summaries, event-driven task engine, employee assistant, deadlines/escalation, and KPI attribution.
+- Owner AI Command Center, dashboard attention queue, daily/evening/weekly/monthly reporting, P&L, and 30-day forecast separated from actuals.
+- Fraud/anomaly detection with evidence, immutable audit expansion, backup/version restore, media/document vault, document intelligence/generation/numbering, global and natural-language search, and notification platform.
 
 ## Technical Blockers
 
-- Supabase project details, region, environment variables, and secret ownership are not configured in the repo.
-- Database migrations are not written; `db/schema.ts` is intentionally empty.
-- `.openai/hosting.json` points to the existing Sites project and must be preserved.
-- Production deploy is blocked by Owner approval requirement.
-- Auth package/API versions must be checked immediately before implementation.
-- Storage bucket names, retention rules, derivative image pipeline, and backup strategy need implementation decisions.
-- Marketplace/Facebook import depends on compliant authorized integration/session/fallback design; hidden brittle scraping is not acceptable.
-- Durable job provider/queue approach is not implemented.
-- AI model, API key ownership, cost caps, retention policy, and kill switch need configuration.
-- Acceptance tests are currently shallow rendered HTML tests; DB/RLS/storage/mobile/API/security tests are missing.
+- Real NK customer authentication, tenant isolation, database project/configuration, RLS, and durable Storage are not connected.
+- Real customer-specific source sessions require an approved encrypted session-storage design and manual user authentication.
+- Facebook/other source UI and access can change; live browser access cannot be a CI dependency.
+- No production connector URL/token, AI model/key, durable worker, monitoring, or alerting configuration is approved.
+- Real inspection provider directory, service areas, availability, and Owner-approved rate table do not yet exist.
+- Production commission/minimum-fee/fleet-tier configuration is not commercially or legally activated.
+- Remote media retention/proxy rights and evidence-retention policy require confirmation before production copying.
 
-## Legal / Business / Integration Blockers
+## Legal And Integration Blockers
 
-- Purchase Fund and real customer-held balances require Thai legal/banking/payment-regulatory review before activation.
-- Real customer/seller messaging requires consent, channel policy, and Owner approval before sending.
-- Seller deposit/hold payments need Finance controls and recovery process before real money use.
-- Facebook/Meta integration must respect platform rules and authentication boundaries.
-- Shipping/carrier integration requires approved provider/API access before automation.
-- Marketing testimonial/media use requires explicit customer permission.
+- Source access must comply with platform terms and use authorized sessions; no password collection, MFA/CAPTCHA bypass, stealth, or rate-limit evasion.
+- Real seller/customer communication requires an approved channel, consent/retention policy, and Owner approval before first live sends.
+- Purchase Fund remains blocked pending Thai legal, banking, and payment-regulatory review.
+- Payment, seller deposit/refund, and shipping integrations require provider contracts, credentials, and deterministic controls.
+- Marketing/media reuse requires explicit customer permission.
 
-## Smallest Next V1 Milestone
+## Current Milestone
 
-Recommended next milestone: Milestone 2A - Auth, Tenant, And Schema Foundation.
+**BB-V1A - Additive Buying Browser Foundation** is the smallest safe rebuild milestone.
 
 Scope:
 
-- Add Supabase dependencies only after confirming package versions.
-- Create `.env.example` entries for Supabase URL/keys and storage buckets without real secrets.
-- Implement initial Drizzle/PostgreSQL schema for organizations, organization_members, vehicles, vehicle_images, vehicle_sources, vehicle_drafts, import_jobs, vehicle_ai_extractions, duplicate_candidates, customers, inquiries, leads, wanted_requests, sourcing_rules, and activity_events.
-- Add migration generation/check workflow.
-- Add repository interfaces and DTO boundaries without replacing the demo UI yet.
-- Add focused tests for schema/domain invariants that can run locally without production credentials.
+- Add `/buy` customer shell without changing the production root.
+- Implement customer-safe Browse/search/filters/location, saved state, detail, and Save -> Vehicle Case.
+- Add source-adapter web contracts and labeled realistic fixtures.
+- Separate customer DTOs from internal seller/source facts.
+- Keep legacy routes, data, `.openai/hosting.json`, and existing Site association unchanged.
 
 Exit gate:
 
-- Schema compiles.
-- Migration generation works.
-- Tests pass.
-- No UI redesign.
-- No production deployment.
-- Existing ChatGPT Site project and `.openai/hosting.json` remain unchanged.
+- Browse-to-case works at iPhone viewport and persists across reloads.
+- Search/filter and duplicate-save behavior pass tests.
+- Customer rendered data passes source/seller/contact/cost/margin redaction checks.
+- Existing regression tests, Buying Browser tests, typecheck, lint, build, and `git diff --check` pass.
+- No production deployment, Site overwrite, secret change, paid service, or real message occurs.
 
-Owner approval requested before coding this milestone.
+After BB-V1A, continue with BB-V1B (Paste/AI/availability/pricing/inspection/history) and BB-V1C (owner view, privacy/accessibility, mobile preview hardening) as defined in `docs/BUYING_BROWSER_REBUILD_PLAN.md`.

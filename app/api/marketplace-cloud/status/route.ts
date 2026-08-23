@@ -8,9 +8,12 @@ export async function GET() {
   const legacyConnector = Boolean(
     process.env.MARKETPLACE_CONNECTOR_URL?.trim() && process.env.MARKETPLACE_CONNECTOR_TOKEN?.trim(),
   );
+  const provider = tokenConfigured || profileConfigured
+    ? "Browserless Cloud Browser"
+    : legacyConnector ? "NK Marketplace Connector" : "Browser connector required";
   return NextResponse.json({
     configured: (tokenConfigured && profileConfigured) || legacyConnector,
-    provider: tokenConfigured || profileConfigured ? "Browserless Cloud Browser" : legacyConnector ? "Marketplace connector" : "Browserless Cloud Browser",
+    provider,
     tokenConfigured,
     profileConfigured,
     mode: "standard_browser",

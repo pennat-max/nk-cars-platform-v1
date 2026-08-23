@@ -456,10 +456,33 @@ class ConfiguredMarketplaceConnector implements MarketplaceConnector {
       },
       body: JSON.stringify({ source_url: sourceUrl, max_images: MAX_IMAGES }),
     });
-    if (!response.ok || !(response.headers.get("content-type") || "").includes("application/json")) {
+    if (!(response.headers.get("content-type") || "").includes("application/json")) {
       throw new Error("connector_unavailable");
     }
-    return limitedJson<ConnectorResult>(response);
+    const payload = await limitedJson<ConnectorResult & { safe_reason_code?: string; status?: string }>(response);
+    if (!response.ok) {
+      const code = cleanText(payload.safe_reason_code || payload.status, 100);
+      if (code === "facebook_login_required" || code === "login_required") throw new Error("facebook_login_required");
+      if (code === "connector_token_required" || response.status === 401 || response.status === 403) {
+        throw new Error("cloud_setup_required");
+      }
+      throw new Error("connector_unavailable");
+    }
+    return payload;
+  }
+}
+
+function validConfiguredConnectorUrl(value: string) {
+  try {
+    const url = new URL(value);
+    if (url.username || url.password || url.hash) return false;
+    if (url.protocol === "https:") return true;
+    const loopback = url.hostname === "127.0.0.1" || url.hostname === "localhost" || url.hostname === "[::1]";
+    return url.protocol === "http:"
+      && loopback
+      && process.env.MARKETPLACE_CONNECTOR_ALLOW_HTTP_LOCALHOST === "true";
+  } catch {
+    return false;
   }
 }
 
@@ -477,13 +500,8 @@ function configuredConnector(): { connector: MarketplaceConnector; provider: str
   const endpoint = process.env.MARKETPLACE_CONNECTOR_URL?.trim();
   const token = process.env.MARKETPLACE_CONNECTOR_TOKEN?.trim();
   if (!endpoint || !token) return null;
-  try {
-    const url = new URL(endpoint);
-    if (url.protocol !== "https:") return null;
-  } catch {
-    return null;
-  }
-  return { connector: new ConfiguredMarketplaceConnector(endpoint, token), provider: "Marketplace connector" };
+  if (!validConfiguredConnectorUrl(endpoint)) return null;
+  return { connector: new ConfiguredMarketplaceConnector(endpoint, token), provider: "NK Marketplace Connector" };
 }
 
 function safeFailure(
@@ -497,8 +515,8 @@ function safeFailure(
       action: "Connect a Browserless token and authenticated Facebook profile, or upload screenshots/photos.",
     },
     login_required: {
-      message: "Facebook login required in Cloud Browser",
-      action: "Refresh the saved Facebook profile in Browserless, then try again.",
+      message: "Facebook login required in the sourcing browser",
+      action: "Reconnect the authorized Facebook browser profile, then try again.",
     },
     unavailable: {
       message: "Unable to import this listing automatically",
@@ -509,7 +527,7 @@ function safeFailure(
     status,
     ...details,
     provider,
-    setup_url: "https://www.browserless.io/account",
+    ...(provider.includes("Browserless") ? { setup_url: "https://www.browserless.io/account" } : {}),
   }, { status: httpStatus, headers: { "Cache-Control": "no-store" } });
 }
 

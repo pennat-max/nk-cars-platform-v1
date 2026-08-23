@@ -1,8 +1,60 @@
 # Codex Progress
 
+## 2026-08-23 - Buying Browser Rebuild
+
+Branch: `codex/buying-browser-rebuild`
+
+### Approved Direction
+
+- Read `docs/PRODUCT_PIVOT_BUYING_BROWSER.md` and applied it as the highest-priority direction for conflicting customer-facing V1 requirements.
+- Preserved `codex/production-rebuild` at commit `61d4bc8` as the stock-first rollback/reference implementation.
+- Created the dedicated additive rebuild branch; the existing root, legacy routes, demo data, `.openai/hosting.json`, and Sites association remain unchanged.
+- Created `docs/BUYING_BROWSER_REBUILD_PLAN.md` covering routes, reuse/replacement, source sessions/fallback, Vehicle Case model, AI and inspection boundaries, pricing, migration, privacy, milestones, and acceptance tests.
+- Replaced `docs/GAP_ANALYSIS.md` with a Buying Browser analysis and current V1-V5 classification.
+
+### Current Work
+
+- `BB-V1A - Additive Buying Browser Foundation`: customer account shell, Browse/search/filters/location, customer-safe source detail, saved state, Vehicle Case creation, and separate customer/internal source DTOs.
+- Reusing the completed local Playwright Source Adapter/profile/queue foundation; it remains isolated from production and uses manual authorized login only.
+
+### Assumptions And Limits
+
+- `/buy` is the preview entry point; changing `/` or replacing the current public Site requires Owner approval.
+- V1 preview uses realistic data explicitly marked Demo wherever no live authorized source is connected.
+- Preview local storage is not production authentication, tenancy, audit, or durable persistence.
+- Default 10% commission and inspection zones are deterministic preview configuration only; production activation requires final Owner/legal/rate approval.
+- Availability checks, translated seller inquiries, and inspection requests record pending workflow state only. No real seller/customer message or provider booking is sent.
+
+### Verification
+
+- Imported `docs/CURRENT_V1.md` from the latest private `origin/main` as the concise active working context.
+- Source-adapter contract tests: 7/7 passed.
+- Real Chrome connector fixture: passed with two queued candidates, a login/checkpoint state, and a three-image gallery.
+- Typecheck: passed.
+- Lint: passed with 0 errors and the existing 13 legacy `<img>` warnings.
+- Build and complete current test suite: 13/13 passed.
+- `git diff --check`: passed; only Git line-ending notices were emitted.
+- Buying Browser UI interaction and 390 x 844 mobile review remain pending.
+
+### Next Recommended Step
+
+- Complete BB-V1A, then implement BB-V1B and BB-V1C through a tested mobile preview. Do not deploy or overwrite the existing Site before Owner approval.
+
 ## 2026-08-23
 
 Branch: `codex/production-rebuild`
+
+### Live AI Broker Direction Amendment
+
+- Read and imported `docs/PRODUCT_DIRECTION_LIVE_BROKER.md` from `origin/main` into the development branch as an authoritative V1 product-direction amendment.
+- Updated source-of-truth order so the Live AI Broker amendment controls conflicting V1 sourcing assumptions while `docs/MASTER_SPECIFICATION.md` remains binding for non-conflicting and future commercial/operational requirements.
+- Reframed the primary V1 journey as customer request -> structured requirement -> controlled authorized source search -> normalized candidates -> customer interest -> current availability/price verification -> Lead/Wanted/Deal.
+- Reclassified published NK inventory and manual intake as valid secondary paths rather than requiring permanent bulk copies of live Facebook inventory.
+- Updated `docs/GAP_ANALYSIS.md` with Live Broker gaps, source-first candidate/snapshot policy, profile/queue requirements, V1-V5 classification, blockers, and redaction/legal constraints.
+- Replaced the V1 milestone sequence in `docs/IMPLEMENTATION_PLAN.md` with a Live Broker plan that preserves the approved mobile UI and V2-V5 boundaries.
+- Proposed the smallest next milestone: `V1-LB1 - Authorized Source Search Foundation` using `SourceAdapter`, `BrowserProfileManager`, a concurrency-one `SearchQueue`, source-first candidates, and a dedicated Playwright profile with manual login only.
+- Work on the local connector was paused when the amendment arrived. Early untested scaffolding remains isolated in the working tree and will be completed only through the new adapter/profile/queue boundaries.
+- No production deployment, Site overwrite, production secret/environment change, real message, or public publication was performed.
 
 ### Master Specification Intake
 
@@ -119,4 +171,4 @@ Started Milestone 1: Next.js shell and visual parity.
 - This is a one-time Owner account/login setup, with occasional re-authentication only when Facebook expires or challenges the saved session. NK Cars does not store the Facebook password and does not bypass checkpoints or CAPTCHA.
 - Until that connection exists, the deployed fallback remains usable: keep the listing URL, import the public cover/title/description, then upload multiple screenshots/photos and analyze them as one vehicle.
 - Before a real customer launch, imported remote images must be copied into first-party durable media storage. The current prototype retains HTTPS gallery URLs, which can expire and can reveal the upstream CDN hostname to a technically inspecting user even though no source is visible in the UI.
-- Owner standing instruction now permits validated changes to be committed and deployed to the existing private ChatGPT Site without repeated approval. Production/public publishing, new Site creation, URL changes, paid-service activation, and destructive production actions remain prohibited without explicit Owner approval.
+- Superseded deployment instruction: completed and tested milestones may be committed and pushed to the development branch, but any production deployment or overwrite of the existing ChatGPT Site now requires explicit Owner approval.

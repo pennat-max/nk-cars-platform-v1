@@ -1,5 +1,7 @@
 # NK Cars Cloud Browser connector
 
+For the Owner-controlled free alternative introduced by the Live AI Broker amendment, see `LOCAL_MARKETPLACE_CONNECTOR.md`. It uses Playwright with a dedicated local Chrome profile and the same connector boundary. Browserless remains an optional hosted adapter, not a required dependency.
+
 The Add Vehicle flow includes a production integration boundary for a standard Browserless Chromium session. It opens a Facebook Marketplace URL, reads only content visible to the authenticated browser, walks the visible listing carousel, collects up to 30 reachable images, and sends that evidence to NK AI as one vehicle.
 
 ## Runtime variables
