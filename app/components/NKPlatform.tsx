@@ -2,12 +2,12 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { demoLeads, demoRules, demoVehicles, demoWanted } from "../data/demo";
-import { defaultSource, extractVehicle, markup, profit, thb } from "../lib/domain";
+import { defaultSource, markup, profit, thb } from "../lib/domain";
 import type { Lead, LeadStage, Role, SourcingRule, Vehicle, Wanted } from "../types";
+import VehicleEditor from "./VehicleEditor";
 
 type View = "home" | "vehicles" | "marketplace" | "review" | "detail" | "vehicle360" | "leads" | "wanted" | "more" | "rules" | "add" | "inquiry";
 const stages: LeadStage[] = ["New", "Qualified", "Vehicle Selected", "Availability Check", "Closed"];
-const stockImage = "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&w=1400&q=82";
 
 function Badge({ children, tone = "slate" }: { children: React.ReactNode; tone?: string }) {
   return <span className={`badge badge-${tone}`}>{children}</span>;
@@ -29,10 +29,7 @@ export default function NKPlatform() {
   const [notice, setNotice] = useState("");
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("All");
-  const [aiText, setAiText] = useState("Toyota Hilux Revo 2020 Double Cab AT 4WD White, 78,000 km. Price THB 790,000. Bangkok. One owner.");
-  const [aiDraft, setAiDraft] = useState<ReturnType<typeof extractVehicle> | null>(null);
-  const [sourceUrl, setSourceUrl] = useState("");
-  const [photoPreview, setPhotoPreview] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [inquiry, setInquiry] = useState({ name: "", country: "Kenya", port: "Mombasa", quantity: "1", budget: "", requirement: "" });
   const [chatInput, setChatInput] = useState("");
   const [chat, setChat] = useState<{ from: "ai" | "user"; text: string }[]>([{ from: "ai", text: "Hello — I’m NK AI. Tell me the model, year, quantity, budget, country and port you need." }]);
@@ -43,14 +40,18 @@ export default function NKPlatform() {
     if (!saved) return;
     try {
       const parsed = JSON.parse(saved);
-      if (parsed.vehicles) setVehicles(parsed.vehicles);
-      if (parsed.leads) setLeads(parsed.leads);
-      if (parsed.wanted) setWanted(parsed.wanted);
-      if (parsed.rules) setRules(parsed.rules);
+      queueMicrotask(() => {
+        if (parsed.vehicles) setVehicles(parsed.vehicles);
+        if (parsed.leads) setLeads(parsed.leads);
+        if (parsed.wanted) setWanted(parsed.wanted);
+        if (parsed.rules) setRules(parsed.rules);
+      });
     } catch { /* Keep seeded demo state if device state is invalid. */ }
   }, []);
   useEffect(() => {
-    window.localStorage.setItem("nk-cars-v1-state", JSON.stringify({ vehicles, leads, wanted, rules }));
+    const persistableVehicles = vehicles.map((vehicle) => ({ ...vehicle, images: undefined }));
+    try { window.localStorage.setItem("nk-cars-v1-state", JSON.stringify({ vehicles: persistableVehicles, leads, wanted, rules })); }
+    catch { /* Large uploaded covers stay in the current session if device storage is full. */ }
   }, [vehicles, leads, wanted, rules]);
 
   const published = vehicles.filter((v) => ["Published", "Reserved", "Sold"].includes(v.state));
@@ -69,6 +70,7 @@ export default function NKPlatform() {
 
   function go(next: View, vehicleId?: string) {
     if (vehicleId) setSelectedId(vehicleId);
+    if (next === "add") setEditingId(vehicleId || null);
     setView(next);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -91,22 +93,14 @@ export default function NKPlatform() {
   function updateVehicle(field: keyof Vehicle, value: string | number | boolean) {
     setVehicles((items) => items.map((v) => v.id === selected.id ? { ...v, [field]: value, timeline: [...v.timeline, { id: `${v.id}-${Date.now()}`, time: "Just now", label: "Staff edited", detail: `${String(field)} updated.` }] } : v));
   }
-  function addVehicle() {
-    const parsed = aiDraft || extractVehicle(aiText);
-    const id = `v${Date.now()}`;
-    const newVehicle: Vehicle = {
-      id, stockNo: `NK-${String(Date.now()).slice(-5)}`, brand: parsed.brand, model: parsed.model, year: parsed.year,
-      grade: parsed.grade, engine: parsed.engine, transmission: parsed.transmission, drive: parsed.drive, body: parsed.body,
-      mileage: parsed.mileage, color: parsed.color, sourcePrice: parsed.sourcePrice, sellingPrice: 0, state: "Waiting Review",
-      availabilityVerified: false, image: photoPreview || stockImage, plateMasked: "Need Review", vinMasked: "Need Review",
-      sources: [{ id: `s-${Date.now()}`, name: "Manual / pasted source", seller: "Need Review", price: parsed.sourcePrice, url: sourceUrl || "Not provided", lastVerified: "Not verified", status: "Needs verification" }],
-      confidence: parsed.confidence, timeline: [
-        { id: `${id}-1`, time: "Just now", label: "Vehicle imported", detail: "Manual/pasted source added." },
-        { id: `${id}-2`, time: "Just now", label: "AI parsed", detail: "Unknown fields kept for review; no values were guessed." },
-      ],
-    };
-    setVehicles((items) => [newVehicle, ...items]);
-    setSelectedId(id); setAiDraft(null); flash("Vehicle added to Waiting Review."); go("review", id);
+  function saveVehicleDraft(vehicle: Vehicle) {
+    setVehicles((items) => items.some((item) => item.id === vehicle.id)
+      ? items.map((item) => item.id === vehicle.id ? vehicle : item)
+      : [vehicle, ...items]);
+    setSelectedId(vehicle.id);
+    setEditingId(null);
+    flash("Draft saved — vehicle is now in Waiting Review.");
+    go("review", vehicle.id);
   }
   function createInquiry() {
     if (!inquiry.name.trim()) return flash("Please enter the customer name.");
@@ -143,7 +137,7 @@ export default function NKPlatform() {
       {view === "leads" && internal && <Leads leads={leads} vehicles={vehicles} setLeads={setLeads} />}
       {view === "wanted" && <WantedPage wanted={wanted} setWanted={setWanted} role={role} flash={flash} />}
       {view === "rules" && internal && <Rules rules={rules} setRules={setRules} />}
-      {view === "add" && internal && <AddVehicle aiText={aiText} setAiText={setAiText} aiDraft={aiDraft} setAiDraft={setAiDraft} sourceUrl={sourceUrl} setSourceUrl={setSourceUrl} photoPreview={photoPreview} setPhotoPreview={setPhotoPreview} addVehicle={addVehicle} />}
+      {view === "add" && internal && <VehicleEditor key={editingId || "new-vehicle"} initialVehicle={editingId ? vehicles.find((vehicle) => vehicle.id === editingId) : undefined} onSave={saveVehicleDraft} onCancel={() => go(editingId ? "review" : "vehicles", editingId || undefined)} notify={flash} />}
       {view === "inquiry" && <Inquiry vehicle={selected} inquiry={inquiry} setInquiry={setInquiry} createInquiry={createInquiry} />}
       {view === "more" && <More internal={internal} go={go} reset={() => { setVehicles(demoVehicles); setLeads(demoLeads); setWanted(demoWanted); setRules(demoRules); flash("DEMO DATA reset complete."); }} />}
     </main>
@@ -180,8 +174,6 @@ function Leads({leads,vehicles,setLeads}:{leads:Lead[];vehicles:Vehicle[];setLea
 function WantedPage({wanted,setWanted,role,flash}:{wanted:Wanted[];setWanted:React.Dispatch<React.SetStateAction<Wanted[]>>;role:Role;flash:(s:string)=>void}) { const [open,setOpen]=useState(false); const [form,setForm]=useState({customer:"",model:"Hilux Revo",yearRange:"2020–2022",transmission:"AT",drive:"4WD",body:"Double Cab",mileage:"< 100,000 km",color:"Any",quantity:"1",budget:"",country:"Kenya",port:"Mombasa"}); function submit(){if(!form.customer||!form.budget)return flash("Customer name and budget are required.");setWanted(items=>[{...form,id:`w${Date.now()}`,quantity:Number(form.quantity),status:"Searching" as const},...items]);setOpen(false);flash("Wanted Request created.");} return <><PageHead eyebrow="Demand-driven sourcing" title="Wanted Requests" action={<button className="button primary" onClick={()=>setOpen(!open)}>＋ Create request</button>} />{open&&<section className="card form-card"><h2>New Wanted Request</h2><div className="form-grid">{Object.entries(form).map(([k,v])=><label key={k}><span>{k.replace(/([A-Z])/g," $1")}</span><input type={k==="quantity"?"number":"text"} value={v} onChange={e=>setForm({...form,[k]:e.target.value})}/></label>)}</div><button className="button primary" onClick={submit}>Create Wanted Request</button></section>}<div className="wanted-grid">{wanted.map(w=><article key={w.id}><div><StatusBadge state={w.status}/><small>{w.id.toUpperCase()} · DEMO DATA</small></div><h2>{w.quantity} × {w.model}</h2><p>{w.yearRange} · {w.transmission} · {w.drive} · {w.body}</p><dl><div><dt>Customer</dt><dd>{w.customer}</dd></div><div><dt>Destination</dt><dd>{w.country} · {w.port}</dd></div><div><dt>Budget</dt><dd>{w.budget}</dd></div><div><dt>Preferences</dt><dd>{w.color} · {w.mileage}</dd></div></dl>{role!=="Customer"&&<select value={w.status} onChange={e=>setWanted(items=>items.map(x=>x.id===w.id?{...x,status:e.target.value as Wanted["status"]}:x))}><option>Searching</option><option>Matched</option><option>Customer Reviewing</option><option>Closed</option></select>}</article>)}</div></>; }
 
 function Rules({rules,setRules}:{rules:SourcingRule[];setRules:React.Dispatch<React.SetStateAction<SourcingRule[]>>}) { const [open,setOpen]=useState(false); const blank={brand:"Toyota",model:"Hilux Revo",years:"2020–2022",maxPrice:"900000",transmission:"AT",drive:"4WD",body:"Double Cab",maxMileage:"100,000 km",color:"Any",area:"Thailand",required:"",excluded:"",priority:"Normal"}; const [form,setForm]=useState(blank); function add(){setRules(items=>[{...form,id:`r${Date.now()}`,maxPrice:Number(form.maxPrice),priority:form.priority as SourcingRule["priority"],active:true},...items]);setOpen(false);} return <><PageHead eyebrow="Future Meta integration input" title="Sourcing Rules" action={<button className="button primary" onClick={()=>setOpen(!open)}>＋ New rule</button>} /><div className="integration-placeholder"><span>↗</span><div><b>Facebook / Meta Integration Placeholder</b><p>V1 accepts Manual Add, pasted source information, URL and photos. Automated sourcing will connect here later.</p></div><Badge>NOT CONNECTED</Badge></div>{open&&<section className="card form-card"><div className="form-grid">{Object.entries(form).map(([k,v])=><label key={k}><span>{k.replace(/([A-Z])/g," $1")}</span><input value={v} onChange={e=>setForm({...form,[k]:e.target.value})}/></label>)}</div><button className="button primary" onClick={add}>Save active rule</button></section>}<div className="rule-list">{rules.map(r=><article key={r.id}><div className="rule-top"><div><Badge tone={r.priority==="Urgent"?"red":r.priority==="High"?"amber":"slate"}>{r.priority}</Badge><h2>{r.brand} {r.model}</h2><p>{r.years} · {r.transmission} · {r.drive} · {r.body}</p></div><label className="switch"><input type="checkbox" checked={r.active} onChange={()=>setRules(items=>items.map(x=>x.id===r.id?{...x,active:!x.active}:x))}/><span></span></label></div><dl><div><dt>Maximum price</dt><dd>{thb(r.maxPrice)}</dd></div><div><dt>Max mileage</dt><dd>{r.maxMileage}</dd></div><div><dt>Color / Area</dt><dd>{r.color} · {r.area}</dd></div><div><dt>Required</dt><dd>{r.required||"None"}</dd></div><div><dt>Excluded</dt><dd>{r.excluded||"None"}</dd></div></dl></article>)}</div></>; }
-
-function AddVehicle({aiText,setAiText,aiDraft,setAiDraft,sourceUrl,setSourceUrl,photoPreview,setPhotoPreview,addVehicle}:{aiText:string;setAiText:(s:string)=>void;aiDraft:ReturnType<typeof extractVehicle>|null;setAiDraft:(v:ReturnType<typeof extractVehicle>|null)=>void;sourceUrl:string;setSourceUrl:(s:string)=>void;photoPreview:string;setPhotoPreview:(s:string)=>void;addVehicle:()=>void}) { return <><PageHead eyebrow="Manual intake" title="Add vehicle" action={<Badge tone="purple">AI ASSISTED</Badge>} /><div className="add-layout"><section className="card"><h2>1. Add source information</h2><label><span>Paste source description</span><textarea rows={8} value={aiText} onChange={e=>setAiText(e.target.value)} placeholder="Paste seller post or vehicle details..."/></label><label><span>Source URL</span><input value={sourceUrl} onChange={e=>setSourceUrl(e.target.value)} placeholder="https://..."/></label><label className="upload"><span>Upload vehicle photos</span><input type="file" accept="image/*" onChange={e=>{const f=e.target.files?.[0];if(f)setPhotoPreview(URL.createObjectURL(f));}}/><b>{photoPreview?"Photo ready":"Tap to choose a photo"}</b></label>{photoPreview&&<img className="upload-preview" src={photoPreview} alt="Vehicle upload preview"/>}<button className="button ai" onClick={()=>setAiDraft(extractVehicle(aiText))}>✦ Analyze with NK AI</button></section><section className="card"><h2>2. AI-assisted extraction</h2><p className="muted">Uncertain values stay “Unknown” or “Need Review”. Nothing is guessed.</p>{aiDraft?<><div className="extraction-list">{Object.entries(aiDraft).filter(([k])=>k!=="confidence").map(([k,v])=><div key={k}><span>{k}</span><b>{String(v)}</b><Badge tone={(aiDraft.confidence[k]||0)>=85?"green":(aiDraft.confidence[k]||0)>0?"amber":"red"}>{aiDraft.confidence[k]||0}%</Badge></div>)}</div><div className="warning">Review every low-confidence or missing field before approval.</div><button className="button primary wide" onClick={addVehicle}>Add to Waiting Review</button></>:<div className="ai-empty"><span>✦</span><b>Ready to extract</b><p>AI results and confidence scores will appear here.</p></div>}</section></div></>; }
 
 function Inquiry({vehicle,inquiry,setInquiry,createInquiry}:{vehicle:Vehicle;inquiry:{name:string;country:string;port:string;quantity:string;budget:string;requirement:string};setInquiry:React.Dispatch<React.SetStateAction<{name:string;country:string;port:string;quantity:string;budget:string;requirement:string}>>;createInquiry:()=>void}) { return <><PageHead eyebrow="Customer inquiry" title="Tell NK Cars what you need" /><div className="inquiry-layout"><article className="selected-vehicle"><img src={vehicle.image} alt={`${vehicle.brand} ${vehicle.model}`}/><div><Badge tone="blue">Vehicle interested</Badge><h2>{vehicle.year} {vehicle.brand} {vehicle.model}</h2><p>{vehicle.stockNo} · {thb(vehicle.sellingPrice)}</p></div></article><section className="card"><div className="form-grid">{Object.entries(inquiry).map(([k,v])=><label key={k}><span>{k}</span>{k==="requirement"?<textarea rows={3} value={v} onChange={e=>setInquiry({...inquiry,[k]:e.target.value})}/>:<input type={k==="quantity"?"number":"text"} value={v} onChange={e=>setInquiry({...inquiry,[k]:e.target.value})}/>}</label>)}</div><div className="info-note">NK staff will verify vehicle availability and shipping before confirming.</div><button className="button primary wide" onClick={createInquiry}>Create Inquiry</button></section></div></>; }
 
