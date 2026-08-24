@@ -24,7 +24,7 @@ Branch: `codex/buying-browser-rebuild`
 
 ### Current Work
 
-- Commit/push the tested correction and update the existing separate owner-only ChatGPT Site review deployment. Production activation remains unapproved.
+- The tested correction is committed, pushed, and deployed to the existing separate owner-only ChatGPT Site review project. Awaiting Owner mobile review; production activation remains unapproved.
 
 ### Next Recommended Step
 
