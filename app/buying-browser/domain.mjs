@@ -114,7 +114,7 @@ function externalHttpsUrl(value) {
 
 /**
  * @param {import("./types").CustomerListing} listing
- * @param {{submittedUrl:string,canonicalUrl?:string,sourcePlatform?:string,captureMethod?:"external_share_link"|"manual_evidence",importStatus?:"imported"|"partial"|"evidence_only"}} input
+ * @param {{submittedUrl:string,canonicalUrl?:string,sourcePlatform?:string,captureMethod?:"external_share_link"|"web_share_target"|"ios_share_extension"|"manual_evidence",importStatus?:"imported"|"partial"|"evidence_only"}} input
  * @param {Date|string} [now]
  * @returns {import("./types").SourceCapture}
  */
@@ -131,7 +131,7 @@ export function createExternalSourceCapture(listing, input, now = new Date()) {
     sourcePlatform: String(input?.sourcePlatform || "Facebook Marketplace").slice(0, 100),
     submittedUrl,
     canonicalUrl,
-    captureMethod: input?.captureMethod === "manual_evidence" ? "manual_evidence" : "external_share_link",
+    captureMethod: ["web_share_target", "ios_share_extension", "manual_evidence"].includes(input?.captureMethod) ? input.captureMethod : "external_share_link",
     importStatus,
     capturedAt: safeTime(now),
   };

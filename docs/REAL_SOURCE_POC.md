@@ -1,8 +1,8 @@
 # NK Cars Real Facebook Source Proof Of Concept
 
-Status: First viable compliant path proven on 2026-08-24
+Status: Superseded by the full feasibility spike in `docs/BUYING_BROWSER_FEASIBILITY_SPIKE.md`; retained as real-listing evidence
 Branch: `codex/buying-browser-rebuild`
-Selected architecture: External Facebook app/browser plus Share or Copy Link handoff to NK
+Selected architecture: External Facebook app/browser plus operating-system Share -> Save to NK Cars; Copy Link/paste is last resort
 
 ## Required Flow
 

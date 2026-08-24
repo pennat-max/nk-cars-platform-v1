@@ -3,11 +3,11 @@
 /* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
 import { AlertCircle, Bot, Camera, CheckCircle2, ClipboardPaste, ExternalLink, FileText, FolderPlus, Globe2, ImagePlus, Link2, LoaderCircle, ShieldCheck, Upload, X } from "lucide-react";
-import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useBuyingBrowser } from "../BuyingBrowserProvider";
 import { createExternalSourceCapture } from "../domain.mjs";
 import { formatMileage, formatThb } from "../format";
-import type { CustomerListing } from "../types";
+import type { CustomerListing, SourceCapture } from "../types";
 
 type ImportPayload = {
   status?: string;
@@ -118,8 +118,8 @@ async function compressImage(file: File): Promise<EvidencePhoto> {
   return { name: file.name, dataUrl: canvas.toDataURL("image/jpeg", 0.7) };
 }
 
-export default function PasteScreen() {
-  const { addImportedListing, saveAsCase } = useBuyingBrowser();
+export default function PasteScreen({ autoCapture = false }: { autoCapture?: boolean }) {
+  const { addImportedListing, saveAsCase, hydrated } = useBuyingBrowser();
   const [url, setUrl] = useState("");
   const [listingText, setListingText] = useState("");
   const [busy, setBusy] = useState(false);
@@ -129,22 +129,30 @@ export default function PasteScreen() {
   const [photos, setPhotos] = useState<EvidencePhoto[]>([]);
   const [aiBusy, setAiBusy] = useState(false);
   const [aiError, setAiError] = useState("");
+  const [resultCapture, setResultCapture] = useState<SourceCapture | null>(null);
+  const autoCaptureStarted = useRef(false);
 
   const validExternalUrl = useMemo(() => { try { const parsed = new URL(url); return parsed.protocol === "https:" ? parsed.href : ""; } catch { return ""; } }, [url]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const sharedUrl = extractFacebookUrl(params.get("url") || params.get("text") || "");
-    if (!sharedUrl) return;
-    let cancelled = false;
-    queueMicrotask(() => { if (!cancelled) setUrl(sharedUrl); });
-    return () => { cancelled = true; };
-  }, []);
+    if (!sharedUrl || !hydrated) return;
+    if (autoCapture && autoCaptureStarted.current) return;
+    if (autoCapture) autoCaptureStarted.current = true;
+    queueMicrotask(() => {
+      setUrl(sharedUrl);
+      if (autoCapture) void importSourceLink(sharedUrl, true);
+    });
+    // importSourceLink intentionally runs once for the operating-system share request.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoCapture, hydrated]);
 
   function changeUrl(value: string) {
     setUrl(value);
     setResult(null);
     setRawResult(null);
+    setResultCapture(null);
     setMessage("");
   }
 
@@ -159,24 +167,33 @@ export default function PasteScreen() {
     }
   }
 
-  async function importLink(event: FormEvent) {
-    event.preventDefault();
-    if (!validExternalUrl) { setMessage("Paste a complete HTTPS vehicle link."); return; }
-    const host = new URL(validExternalUrl).hostname.toLowerCase();
+  async function importSourceLink(sourceUrl: string, createCaseAutomatically = false) {
+    if (!sourceUrl) { setMessage("Paste a complete HTTPS vehicle link."); return; }
+    const host = new URL(sourceUrl).hostname.toLowerCase();
     if (!isFacebookHost(host)) { setMessage("This source does not have a connected importer yet. The link is preserved in this form; add screenshots/photos or listing text below."); return; }
     setBusy(true); setMessage(""); setResult(null);
     try {
-      const response = await fetch("/api/marketplace-import", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ url: validExternalUrl }) });
+      const response = await fetch("/api/marketplace-import", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ url: sourceUrl }) });
       const payload = await response.json() as ImportPayload;
       setRawResult(payload);
       if (!response.ok || !["imported", "partial"].includes(payload.status || "")) { setMessage(payload.message || "This listing could not be read automatically. Continue with screenshots/photos or listing text."); return; }
-      const listing = buildImportedListing(payload, validExternalUrl);
-      const canonicalUrl = facebookSourceCaptureUrl(payload.canonical_url || "") || validExternalUrl;
-      const sourceCapture = createExternalSourceCapture(listing, { submittedUrl: validExternalUrl, canonicalUrl, sourcePlatform: "Facebook Marketplace", captureMethod: "external_share_link", importStatus: payload.status === "imported" ? "imported" : "partial" });
-      addImportedListing(listing, sourceCapture); setResult(listing);
+      const listing = buildImportedListing(payload, sourceUrl);
+      const canonicalUrl = facebookSourceCaptureUrl(payload.canonical_url || "") || sourceUrl;
+      const sourceCapture = createExternalSourceCapture(listing, { submittedUrl: sourceUrl, canonicalUrl, sourcePlatform: "Facebook Marketplace", captureMethod: createCaseAutomatically ? "web_share_target" : "external_share_link", importStatus: payload.status === "imported" ? "imported" : "partial" });
+      addImportedListing(listing, sourceCapture); setResult(listing); setResultCapture(sourceCapture);
+      if (createCaseAutomatically) {
+        const id = saveAsCase(listing, undefined, sourceCapture);
+        window.location.replace(`/buy/cases/${encodeURIComponent(id)}?captured=share`);
+        return;
+      }
       setMessage(payload.status === "partial" ? "Only part of the listing was accessible. Review the facts and add screenshots/photos for missing evidence." : "Accessible listing evidence imported. Availability is still not confirmed.");
     } catch { setMessage("The source could not be reached from this session. Continue with screenshots/photos or listing text."); }
     finally { setBusy(false); }
+  }
+
+  async function importLink(event: FormEvent) {
+    event.preventDefault();
+    await importSourceLink(validExternalUrl);
   }
 
   async function choosePhotos(event: ChangeEvent<HTMLInputElement>) {
@@ -213,11 +230,11 @@ export default function PasteScreen() {
     addImportedListing(listing, sourceCapture); setResult(listing); setMessage("Evidence case prepared. Specifications, source price, and availability remain unconfirmed.");
   }
 
-  function openCase() { if (!result) return; const id = saveAsCase(result); window.location.assign(`/buy/cases/${encodeURIComponent(id)}`); }
+  function openCase() { if (!result) return; const id = saveAsCase(result, undefined, resultCapture || undefined); window.location.assign(`/buy/cases/${encodeURIComponent(id)}`); }
 
   return (
     <>
-      <section className="bb-page-heading"><div><p className="bb-kicker">External Facebook handoff</p><h1>Save a Facebook Vehicle to NK</h1><p>Browse with your own Facebook session, then bring only the selected listing link back to NK.</p></div></section>
+      <section className="bb-page-heading"><div><p className="bb-kicker">{autoCapture ? "Save to NK Cars" : "Last-resort link fallback"}</p><h1>{autoCapture ? "Creating your Vehicle Case" : "Paste a Facebook Vehicle Link"}</h1><p>{autoCapture ? "NK is importing the vehicle you shared and will open its case automatically." : "Use this only when Save to NK Cars is unavailable on your device."}</p></div></section>
       <section className="bb-facebook-handoff" data-facebook-external-handoff>
         <div><span><Globe2 size={21} /></span><div><b>Browse in Facebook Marketplace</b><p>Facebook opens outside NK and keeps your login, MFA, and session under Facebook control.</p></div></div>
         <a className="bb-button primary" href="https://www.facebook.com/marketplace/" target="_blank" rel="noreferrer">Open Facebook Marketplace<ExternalLink size={16} /></a>

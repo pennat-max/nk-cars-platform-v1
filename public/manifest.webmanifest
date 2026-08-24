@@ -15,7 +15,7 @@
     }
   ],
   "share_target": {
-    "action": "/buy/paste",
+    "action": "/buy/share",
     "method": "GET",
     "enctype": "application/x-www-form-urlencoded",
     "params": {

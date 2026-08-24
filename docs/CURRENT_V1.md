@@ -2,7 +2,7 @@
 
 Status: Active working context for Codex
 Purpose: Keep routine development fast and token-efficient.
-Implementation status: External Facebook Share/Copy Link proof of concept proven with a real listing on 2026-08-24; production activation is not approved.
+Implementation status: Authenticated-browser feasibility spike selected Success Option B. One-action PWA share capture is implemented for supported Chromium installs; iPhone requires a native Share Extension and remains blocked. Production activation is not approved.
 
 Use this file with `AGENTS.md` as the default context. Consult larger product specs only when necessary.
 
@@ -12,9 +12,9 @@ NK Cars is being rebuilt as an **AI Vehicle Buying Browser / Buying Platform for
 
 Primary real-source customer journey:
 
-**Open Facebook Marketplace outside NK with the customer's own session**
+**Open real Facebook Marketplace outside NK with the customer's own session**
 -> customer browses/selects a real listing
--> Share or Copy Link back to NK
+-> Share -> Save to NK Cars where the installed platform supports it
 -> create Vehicle Case
 -> AI translates/normalizes vehicle information
 -> Check Availability
@@ -31,9 +31,11 @@ Mobile-first, especially iPhone.
 Primary source experience:
 - open Facebook Marketplace outside NK so Facebook retains the customer's authenticated session
 - browse/select in Facebook
-- return the selected listing through Share/Copy Link, user-triggered clipboard paste, or supported URL handoff
+- return the selected listing through the operating-system `Save to NK Cars` share target
 - capture permitted listing URL/data internally and create a customer-safe Vehicle Case
 - retain screenshots/photos/listing-text fallback when Facebook evidence is inaccessible
+
+Copy Link -> return -> paste is last resort only. Safari/iPhone does not support Web Share Target; the intended iPhone delivery requires a signed NK Cars iOS Share Extension. See `docs/BUYING_BROWSER_FEASIBILITY_SPIKE.md`.
 
 The existing NK vehicle grid, search, filters, and saved vehicles remain secondary fallback/downstream tools.
 
@@ -203,7 +205,7 @@ Preview state is intentionally browser-local and demo/source-adapter backed. Pro
 
 Approach 1, embedding Facebook Marketplace inside NK, is blocked by Facebook's `X-Frame-Options: DENY` response and must not be bypassed.
 
-Approach 2 is selected and proven with an actual Facebook Marketplace share URL. NK resolved the canonical listing, imported accessible real metadata, kept unavailable price/seller/location/gallery/availability fields Pending, stored an internal SourceCapture, and created a customer-safe Vehicle Case. See `docs/REAL_SOURCE_POC.md`.
+Approach 2 is selected and proven with an actual Facebook Marketplace share URL. Supported installed Chromium PWAs now receive that URL through `/buy/share` and create the Vehicle Case automatically. iPhone needs the native extension described in `docs/BUYING_BROWSER_FEASIBILITY_SPIKE.md`.
 
 Approach 3, a remote isolated browser session, remains a contingency and was not selected because approach 2 works without NK taking custody of the customer's Facebook session.
 

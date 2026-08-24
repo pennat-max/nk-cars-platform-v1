@@ -79,7 +79,7 @@ export type SourceCapture = {
   sourcePlatform: string;
   submittedUrl: string;
   canonicalUrl: string;
-  captureMethod: "external_share_link" | "manual_evidence";
+  captureMethod: "external_share_link" | "web_share_target" | "ios_share_extension" | "manual_evidence";
   importStatus: "imported" | "partial" | "evidence_only";
   capturedAt: string;
 };
@@ -137,10 +137,12 @@ export type BuyingBrowserState = {
 };
 
 export type BuyingBrowserView =
+  | "source"
   | "browse"
   | "saved"
   | "vehicle"
   | "paste"
+  | "share"
   | "cases"
   | "case"
   | "inspections"

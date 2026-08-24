@@ -1,6 +1,6 @@
 # NK Cars Gap Analysis
 
-Status: Real external Facebook handoff proven; production identity, persistence, and integrations remain
+Status: Buying Browser feasibility spike selects one-action share handoff; native iPhone delivery, production identity, persistence, and integrations remain
 Date: 2026-08-24
 Branch: `codex/buying-browser-rebuild`
 
@@ -18,9 +18,9 @@ The pivot changes V1 from a stock-first dealership experience to an AI-assisted 
 
 ## Approved V1 Journey
 
-Open Facebook Marketplace outside NK with the customer's own authenticated session -> browse/select a real listing -> Share or Copy Link back to NK -> capture permitted source evidence internally -> inspect a customer-safe result -> Save Vehicle -> create an NK Vehicle Case -> translate/normalize facts -> request current availability/price -> show deterministic service pricing -> request inspection -> retain case conversation/history -> continue toward a controlled Buy Through NK workflow.
+Open real Facebook Marketplace outside NK with the customer's own authenticated session -> browse/select a real listing -> Share -> Save to NK Cars -> capture permitted source evidence and atomically create a customer-safe Vehicle Case -> translate/normalize facts -> request current availability/price -> show deterministic service pricing -> request inspection -> retain case conversation/history -> continue toward a controlled Buy Through NK workflow.
 
-The existing NK demo Browse grid, direct link paste, photo/text fallback, and Ask NK AI remain useful secondary paths. Demo cards are not evidence of real Marketplace access.
+The existing NK demo Browse grid, Ask NK AI, direct link paste, and photo/text fallback remain secondary paths in that order. Copy/paste is last resort. Demo cards are not evidence of real Marketplace access.
 
 Important states must remain factual: `Live Market Result`, `Found in Thailand`, `Availability Not Yet Confirmed`, `Verified Available`, and `NK Secured` are not interchangeable.
 
@@ -55,6 +55,16 @@ Real Facebook source proof of concept completed on 2026-08-24:
 - Imported the accessible real title/specification evidence, kept inaccessible source price, seller/contact, exact location, full gallery, and availability Pending, and created a real-listing Vehicle Case.
 - Added internal `SourceCapture` records and case linkage while keeping submitted/canonical URLs out of customer-facing vehicle/case DTOs and views.
 - Kept the existing remote isolated browser foundation as an unactivated contingency rather than claiming it is a working production integration.
+
+Authenticated-browser feasibility spike completed on 2026-08-24:
+
+- Confirmed the actual Facebook Marketplace and listing responses set `X-Frame-Options: DENY`; iframe/proxy bypass is rejected.
+- Rejected NK-controlled WebView login because it does not safely reuse the customer's normal Facebook session and gives the host custody/access to credentials and cookies.
+- Kept the remote isolated browser as an unproven contingency because no authorized customer session, compliant streaming runtime, encrypted session custody, or production approval exists.
+- Implemented Success Option B for supported installed Chromium PWAs: OS Share -> Save to NK Cars -> `/buy/share` -> real import -> SourceCapture -> Vehicle Case -> case opens automatically.
+- Verified current browser compatibility data: Web Share Target is unsupported in Safari/iOS. Best iPhone UX requires a signed native NK Cars Share Extension and durable authenticated case API; this is an Owner/external integration blocker, not a web-code defect.
+- Moved the demo grid to `/buy/browse`; `/buy` is the real Facebook source launch and `/buy/paste` is explicitly last resort.
+- Full evidence and test matrix: `docs/BUYING_BROWSER_FEASIBILITY_SPIKE.md`.
 
 ## V1 Production Activation Remaining
 
