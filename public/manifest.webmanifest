@@ -1,0 +1,27 @@
+{
+  "name": "NK Cars Buying Browser",
+  "short_name": "NK Cars",
+  "description": "Save vehicle listings to NK Cars and manage Vehicle Cases.",
+  "start_url": "/buy",
+  "display": "standalone",
+  "background_color": "#f5f7f8",
+  "theme_color": "#0b293f",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "share_target": {
+    "action": "/buy/paste",
+    "method": "GET",
+    "enctype": "application/x-www-form-urlencoded",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  }
+}

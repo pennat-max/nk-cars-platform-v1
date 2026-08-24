@@ -133,14 +133,14 @@ test("renders additive Buying Browser routes without customer source leakage", a
   const { default: worker } = await import(workerUrl.href);
   const env = { ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) } };
   const ctx = { waitUntil() {}, passThroughOnException() {} };
-  const routes = ["/buy", "/buy/saved", "/buy/paste", "/buy/ask", "/buy/cases", "/buy/inspections", "/buy/messages", "/buy/account", "/buy/vehicle/th-demo-001"];
+  const routes = ["/buy/browse", "/buy/saved", "/buy/paste", "/buy/ask", "/buy/cases", "/buy/inspections", "/buy/messages", "/buy/account", "/buy/vehicle/th-demo-001"];
   for (const route of routes) {
     const response = await worker.fetch(new Request(`http://localhost${route}`, { headers: { accept: "text/html" } }), env, ctx);
     assert.equal(response.status, 200, route);
     const html = await response.text();
     assert.match(html, /data-buying-browser-v1/i, route);
     assert.doesNotMatch(html, /Siam Pickup Demo|\+66 81 000 0101|example\.invalid\/internal|Demo partner feed|Bang Kapi/i, route);
-    if (route === "/buy") {
+    if (route === "/buy/browse") {
       assert.match(html, /data-browse-marketplace-v2/i);
       assert.match(html, /data-vehicle-card-v2/i);
       assert.doesNotMatch(html, /Explore customer-safe vehicle results|Demo market results|Primary Buying Browser actions/i);
@@ -160,6 +160,26 @@ test("renders additive Buying Browser routes without customer source leakage", a
       assert.doesNotMatch(html, /Live Market Result/i);
     }
   }
+});
+
+test("Buying Browser entry redirects to real-source intake and exposes an installable share target", async () => {
+  const workerUrl = new URL("../dist/server/index.js", import.meta.url);
+  workerUrl.searchParams.set("test", `buying-entry-${process.pid}-${Date.now()}`);
+  const { default: worker } = await import(workerUrl.href);
+  const env = { ASSETS: { fetch: async (request) => {
+    if (new URL(request.url).pathname === "/manifest.webmanifest") {
+      return new Response(await import("node:fs/promises").then((fs) => fs.readFile(new URL("../public/manifest.webmanifest", import.meta.url), "utf8")), { headers: { "content-type": "application/manifest+json" } });
+    }
+    return new Response("Not found", { status: 404 });
+  } } };
+  const ctx = { waitUntil() {}, passThroughOnException() {} };
+  const entry = await worker.fetch(new Request("http://localhost/buy", { redirect: "manual" }), env, ctx);
+  assert.ok([301, 302, 303, 307, 308].includes(entry.status));
+  assert.equal(new URL(entry.headers.get("location"), "http://localhost").pathname, "/buy/paste");
+
+  const manifest = JSON.parse(await import("node:fs/promises").then((fs) => fs.readFile(new URL("../public/manifest.webmanifest", import.meta.url), "utf8")));
+  assert.equal(manifest.share_target.action, "/buy/paste");
+  assert.equal(manifest.share_target.params.url, "url");
 });
 
 test("renders owner demo source view separately from customer routes", async () => {
