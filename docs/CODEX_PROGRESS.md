@@ -1,5 +1,35 @@
 # Codex Progress
 
+## 2026-08-24 - Customer Browse UX Correction
+
+Branch: `codex/buying-browser-rebuild`
+
+### Completed
+
+- Reworked only the customer-facing `/buy` Browse presentation into a compact mobile marketplace: header, search, filter/sort controls, horizontal location chips, result count, and an immediate two-column vehicle grid.
+- Removed the large Browse/Paste/Ask feature panel and source explanation from the main viewport. Paste Vehicle Link and Ask NK AI remain available as small secondary tools.
+- Reduced Demo treatment to small badges and reordered vehicle cards around photo, price, year/model, mileage, and general location.
+- Reordered vehicle detail as photo, customer-safe summary, normalized specifications/description, then Save Vehicle, Ask NK AI, Check Availability, Request Inspection, and Buy Through NK actions.
+- Preserved Vehicle Cases, pricing, inspection/travel quotes, progressive translation states, customer/internal DTO separation, Owner view, bottom navigation, source adapters, provider state, and all deterministic business rules.
+- Kept the original NK Cars Sites project and `.openai/hosting.json` unchanged. The approved deployment target is the separate owner-only review Site at `https://nk-cars-buying-browser-v1-review-32d38b1.pennat.chatgpt.site/buy`.
+
+### Verification
+
+- `npm.cmd test`: passed with production build and 20/20 tests.
+- Typecheck: passed with `tsc --noEmit --incremental false`.
+- Lint: passed with 0 errors and 13 existing legacy `<img>` warnings outside Buying Browser.
+- Browser checks passed at 390 x 844: six vehicle cards intersected the first viewport, the first vehicle image appeared above bottom navigation, filters/search worked, and no horizontal overflow or console warning/error was found.
+- Desktop regression check passed at 1280 x 900 with a four-column grid and no removed feature panel.
+- Customer detail showed no internal source URL, seller/contact, or exact source location and rendered all five approved actions after normalized vehicle information.
+
+### Current Work
+
+- Commit/push the tested correction and update the existing separate owner-only ChatGPT Site review deployment. Production activation remains unapproved.
+
+### Next Recommended Step
+
+- Owner reviews the corrected mobile marketplace preview. Keep `BB-V1D - Production Identity And Durable Cases` blocked until the preview is accepted and production infrastructure is approved.
+
 ## 2026-08-24 - Buying Browser V1 Preview Complete
 
 Branch: `codex/buying-browser-rebuild`

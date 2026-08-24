@@ -108,8 +108,18 @@ test("renders additive Buying Browser routes without customer source leakage", a
     const html = await response.text();
     assert.match(html, /data-buying-browser-v1/i, route);
     assert.doesNotMatch(html, /Siam Pickup Demo|\+66 81 000 0101|example\.invalid\/internal|Demo partner feed|Bang Kapi/i, route);
+    if (route === "/buy") {
+      assert.match(html, /data-browse-marketplace-v2/i);
+      assert.match(html, /data-vehicle-card-v2/i);
+      assert.doesNotMatch(html, /Explore customer-safe vehicle results|Demo market results|Primary Buying Browser actions/i);
+    }
     if (route === "/buy/vehicle/th-demo-001") {
-      assert.match(html, /Demo Market Result/i);
+      assert.match(html, /data-vehicle-detail-v2/i);
+      assert.match(html, /data-vehicle-actions-v2/i);
+      const actionLabels = ["Save Vehicle", "Ask NK AI", "Check Availability", "Request Inspection", "Buy Through NK"];
+      const actionPositions = actionLabels.map((label) => html.indexOf(label));
+      assert.ok(actionPositions.every((position) => position >= 0), "all vehicle actions render");
+      assert.deepEqual(actionPositions, [...actionPositions].sort((a, b) => a - b), "vehicle actions render in the approved order");
       assert.doesNotMatch(html, /Live Market Result/i);
     }
   }
