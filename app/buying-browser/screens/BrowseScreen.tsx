@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Bot, Check, ChevronDown, Link2, MapPin, RotateCcw, Search, SlidersHorizontal, X } from "lucide-react";
+import { ArrowUpDown, Bot, Link2, MapPin, RotateCcw, Search, SlidersHorizontal, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useBuyingBrowser } from "../BuyingBrowserProvider";
 import { DEFAULT_FILTERS, filterListings } from "../domain.mjs";
@@ -25,32 +25,29 @@ export default function BrowseScreen({ savedOnly = false }: { savedOnly?: boolea
 
   return (
     <>
-      <section className="bb-page-heading bb-browse-heading">
+      {savedOnly && <section className="bb-page-heading bb-browse-heading">
         <div><p className="bb-kicker">NK Cars · Thailand vehicle search</p><h1>{savedOnly ? "Saved Vehicles" : "Browse Vehicles"}</h1><p>{savedOnly ? "Vehicles saved on this preview account." : "Explore customer-safe vehicle results, then save one as an NK Vehicle Case."}</p></div>
-        {!savedOnly && <span className="bb-result-count">{visibleListings.length} results</span>}
-      </section>
-
-      {!savedOnly && <section className="bb-entry-actions" aria-label="Primary Buying Browser actions">
-        <Link href="/buy" className="active"><Search size={21} /><span><b>Browse Vehicles</b><small>Search Thai vehicle results</small></span><Check size={16} /></Link>
-        <Link href="/buy/paste"><Link2 size={21} /><span><b>Paste Vehicle Link</b><small>Import or use a safe fallback</small></span></Link>
-        <Link href="/buy/ask"><Bot size={21} /><span><b>Ask NK AI to Find One</b><small>Describe your requirements</small></span></Link>
+        <span className="bb-result-count">{visibleListings.length} results</span>
       </section>}
 
-      {!savedOnly && <div className={sourceStatus.live ? "bb-source-state live" : "bb-source-state"} role="status">
-        <span>{sourceStatus.live ? <Check size={16} /> : <span className="bb-status-dot" />}</span>
-        <div><b>{sourceStatus.live ? "Live source connected" : "Demo market results"}</b><p>{sourceStatus.message}</p></div>
-      </div>}
+      <section className={savedOnly ? "bb-marketplace-toolbar saved" : "bb-marketplace-toolbar"} aria-label="Vehicle search and filters" data-browse-marketplace-v2={!savedOnly ? true : undefined}>
+        {!savedOnly && <h1 className="bb-sr-only">Browse Vehicles</h1>}
+        <div className="bb-market-search-row">
+          <label className="bb-search-field"><Search size={19} /><input value={filters.query} onChange={(event) => setFilter("query", event.target.value)} placeholder="Search vehicles" aria-label="Search vehicles" />{filters.query && <button onClick={() => setFilter("query", "")} aria-label="Clear search"><X size={17} /></button>}</label>
+          <button className={activeFilterCount ? "bb-filter-button active" : "bb-filter-button"} onClick={() => setFilterOpen(true)} aria-label="Open vehicle filters" title="Filters"><SlidersHorizontal size={18} /><span className="bb-filter-text">Filters</span>{activeFilterCount > 0 && <i>{activeFilterCount}</i>}</button>
+          <label className="bb-sort-button" title="Sort vehicles"><ArrowUpDown size={18} /><span>Sort</span><select value={filters.sort} onChange={(event) => setFilter("sort", event.target.value as BrowseFilters["sort"])} aria-label="Sort vehicles"><option value="recommended">Recommended</option><option value="price-low">Price: low first</option><option value="price-high">Price: high first</option><option value="year-new">Newest year</option><option value="mileage-low">Lowest mileage</option></select></label>
+        </div>
 
-      <section className="bb-search-tools" aria-label="Vehicle search and filters">
-        <label className="bb-search-field"><Search size={19} /><input value={filters.query} onChange={(event) => setFilter("query", event.target.value)} placeholder="Search make, model, grade, or location" aria-label="Search vehicles" />{filters.query && <button onClick={() => setFilter("query", "")} aria-label="Clear search"><X size={17} /></button>}</label>
-        <button className={activeFilterCount ? "bb-filter-button active" : "bb-filter-button"} onClick={() => setFilterOpen(true)}><SlidersHorizontal size={18} />Filters{activeFilterCount > 0 && <span>{activeFilterCount}</span>}</button>
-        <label className="bb-sort-field"><span>Sort</span><select value={filters.sort} onChange={(event) => setFilter("sort", event.target.value as BrowseFilters["sort"])} aria-label="Sort vehicles"><option value="recommended">Recommended</option><option value="price-low">Price: low first</option><option value="price-high">Price: high first</option><option value="year-new">Newest year</option><option value="mileage-low">Lowest mileage</option></select><ChevronDown size={15} /></label>
+        <div className="bb-quick-filters">
+          <button className={filters.location === "All Thailand" ? "active" : ""} onClick={() => setFilter("location", "All Thailand")}><MapPin size={14} />Thailand</button>
+          {locations.slice(1, 5).map((location) => <button key={location} className={filters.location === location ? "active" : ""} onClick={() => setFilter("location", location)}>{location}</button>)}
+        </div>
+
+        {!savedOnly && <div className="bb-marketplace-meta">
+          <div><b>{visibleListings.length}</b> vehicles <span className={sourceStatus.live ? "live" : "demo"} role="status">{sourceStatus.live ? "Live" : "Demo"}</span></div>
+          <nav aria-label="More vehicle search tools"><Link href="/buy/paste" title="Paste Vehicle Link"><Link2 size={14} />Paste link</Link><Link href="/buy/ask" title="Ask NK AI"><Bot size={14} />Ask NK AI</Link></nav>
+        </div>}
       </section>
-
-      <div className="bb-quick-filters">
-        <button className={filters.location === "All Thailand" ? "active" : ""} onClick={() => setFilter("location", "All Thailand")}><MapPin size={14} />All Thailand</button>
-        {locations.slice(1, 5).map((location) => <button key={location} className={filters.location === location ? "active" : ""} onClick={() => setFilter("location", location)}>{location}</button>)}
-      </div>
 
       {visibleListings.length ? <section className="bb-listing-grid" aria-label="Vehicle results">{visibleListings.map((listing) => <ListingCard key={listing.id} listing={listing} />)}</section> : <section className="bb-empty-state"><Search size={30} /><h2>{savedOnly ? "No saved vehicles yet" : "No vehicles match these filters"}</h2><p>{savedOnly ? "Use the heart button while browsing, or save a vehicle as a case." : "Change one or more filters. Hard requirements are never relaxed automatically."}</p><button className="bb-button secondary" onClick={() => setFilters({ ...DEFAULT_FILTERS })}><RotateCcw size={17} />Reset filters</button></section>}
 

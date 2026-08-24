@@ -42,6 +42,8 @@ Buying Browser V1 preview completed on 2026-08-24:
 - Deduplicated Vehicle Cases, availability requests, case timeline, My Cases, messages/history, grounded NK AI preview responses, deterministic pricing, and deterministic inspection/travel requests.
 - Separate Owner/internal demo view and customer redaction tests.
 - Manual browser verification at 390 x 844 and 1280 x 900 with no horizontal overflow or console errors.
+- Corrected customer Browse UX to a compact marketplace-first mobile layout with vehicle results in the first viewport; Paste Link and Ask NK AI are secondary tools instead of a dominant feature panel.
+- Corrected customer vehicle detail to be photo-first, followed by normalized specifications/description and the five approved NK actions, without changing domain logic or internal visibility boundaries.
 
 ## V1 Production Activation Remaining
 
