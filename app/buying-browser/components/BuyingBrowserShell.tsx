@@ -7,7 +7,7 @@ import { useBuyingBrowser } from "../BuyingBrowserProvider";
 import type { BuyingBrowserView } from "../types";
 
 const navItems = [
-  { key: "browse", label: "Browse", href: "/buy/browse", icon: Search },
+  { key: "browse", label: "Browse", href: "/buy", icon: Search },
   { key: "saved", label: "Saved", href: "/buy/saved", icon: Heart },
   { key: "cases", label: "My Cases", href: "/buy/cases", icon: FolderKanban },
   { key: "inspections", label: "Inspections", href: "/buy/inspections", icon: ClipboardCheck },
@@ -15,7 +15,7 @@ const navItems = [
 ] as const;
 
 function activeKey(view: BuyingBrowserView) {
-  if (view === "vehicle" || view === "paste" || view === "ask") return "browse";
+  if (view === "source" || view === "vehicle" || view === "paste" || view === "share" || view === "ask") return "browse";
   if (view === "case") return "cases";
   if (view === "account") return "messages";
   return view;
@@ -28,7 +28,7 @@ export default function BuyingBrowserShell({ view, children }: { view: BuyingBro
     <div className="buying-browser" data-buying-browser-v1>
       <header className="bb-header">
         <div className="bb-header-inner">
-          <Link className="bb-brand" href="/buy/paste" aria-label="NK Cars Buying Browser home">
+          <Link className="bb-brand" href="/buy" aria-label="NK Cars Buying Browser home">
             <span>NK</span>
             <div><b>Cars</b><small>Buying Browser</small></div>
           </Link>

@@ -1,5 +1,34 @@
 # Codex Progress
 
+## 2026-08-24 - Authenticated Facebook Buying Browser Feasibility Spike
+
+Branch: `codex/buying-browser-rebuild`
+
+### Completed
+
+- Re-aligned the source experience: `/buy` launches the real Facebook source journey, `/buy/browse` keeps the demo/NK grid secondary, and `/buy/paste` is last resort.
+- Tested the Owner-supplied real Marketplace item and Marketplace root; both return `X-Frame-Options: DENY`, so iframe embedding is blocked and will not be bypassed.
+- Evaluated system browser/in-app browser tab, NK-controlled WebView, remote isolated browser, PWA Web Share Target, native iOS Share Extension, iPhone, Android, and desktop constraints.
+- Implemented a Chromium-compatible PWA Web Share Target at `/buy/share`.
+- Shared Facebook URLs now import permitted real evidence, record `captureMethod: web_share_target`, create/link a customer-safe Vehicle Case atomically, and open the case automatically.
+- Preserved all existing Vehicle Case, pricing, inspection, customer-redaction, Owner source, source-adapter, and NK AI boundaries.
+- Added `docs/BUYING_BROWSER_FEASIBILITY_SPIKE.md` with evidence, architecture matrix, exact limitations, and production gates.
+
+### Owner / External Blockers
+
+- iPhone Safari does not implement Web Share Target. The intended one-share iPhone UX requires an Apple Developer team, signed NK Cars iOS containing app + Share Extension, authenticated durable case API, Universal Links, and TestFlight/App Store installation.
+- A customer-presented remote Facebook browser remains unproven and unapproved; it requires platform/legal review, encrypted isolated session custody, remote streaming infrastructure, and a real customer-authorized login test.
+- No production deployment, live-site overwrite, real seller message, password/OTP/MFA/CAPTCHA capture, or security-control bypass was performed.
+
+### Checks
+
+- Typecheck passed.
+- Lint passed with 0 errors and 13 pre-existing legacy `<img>` warnings.
+- Build passed.
+- Automated tests passed: 24/24.
+- Real Owner-supplied Facebook URL passed the `/buy/share` browser flow and opened `NK-CASE-2026-001245` automatically with real Toyota/Hilux/Revo evidence and no Facebook URL/item ID in the customer DOM.
+- Mobile 390 x 844 and desktop 1280 x 900 checks passed with no horizontal overflow, no demo cards on `/buy`, and no browser console errors.
+
 ## 2026-08-24 - Real Facebook Source Proof Of Concept
 
 Branch: `codex/buying-browser-rebuild`

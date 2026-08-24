@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import BuyingBrowserRoute from "../buying-browser/BuyingBrowserRoute";
 
 export default function BuyPage() {
-  redirect("/buy/paste");
+  return <BuyingBrowserRoute view="source" />;
 }

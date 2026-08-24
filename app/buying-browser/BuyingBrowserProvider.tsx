@@ -13,7 +13,7 @@ type BuyingBrowserContextValue = {
   hydrated: boolean;
   isSaved: (listingId: string) => boolean;
   toggleSaved: (listingId: string) => void;
-  saveAsCase: (listing: CustomerListing, action?: "availability" | "inspection") => string;
+  saveAsCase: (listing: CustomerListing, action?: "availability" | "inspection", sourceCapture?: SourceCapture) => string;
   findCaseById: (caseId: string) => VehicleCase | undefined;
   findCaseByListing: (listingId: string) => VehicleCase | undefined;
   requestCaseAvailability: (caseId: string) => void;
@@ -101,14 +101,16 @@ export function BuyingBrowserProvider({
     }));
   }
 
-  function saveAsCase(listing: CustomerListing, action?: "availability" | "inspection") {
+  function saveAsCase(listing: CustomerListing, action?: "availability" | "inspection", explicitSourceCapture?: SourceCapture) {
     const existing = state.cases.find((item) => item.listingId === listing.id);
-    const sourceCapture = state.sourceCaptures.find((item) => item.listingId === listing.id);
+    const sourceCapture = explicitSourceCapture || state.sourceCaptures.find((item) => item.listingId === listing.id);
     const { caseRecord } = createVehicleCase(listing, state.cases, customer.id, new Date(), sourceCapture?.id || null);
     const nextRecord = action === "availability" ? requestAvailability(caseRecord) : action === "inspection" ? requestInspection(caseRecord) : caseRecord;
     setState((current) => ({
       ...current,
       savedListingIds: current.savedListingIds.includes(listing.id) ? current.savedListingIds : [listing.id, ...current.savedListingIds],
+      importedListings: listing.demo ? current.importedListings : [listing, ...current.importedListings.filter((item) => item.id !== listing.id)],
+      sourceCaptures: sourceCapture ? [sourceCapture, ...current.sourceCaptures.filter((item) => item.id !== sourceCapture.id)] : current.sourceCaptures,
       cases: existing ? current.cases.map((item) => item.id === existing.id ? nextRecord : item) : [nextRecord, ...current.cases],
     }));
     return nextRecord.id;
