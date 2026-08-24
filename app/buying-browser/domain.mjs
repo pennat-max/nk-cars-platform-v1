@@ -94,7 +94,7 @@ export function calculatePricing(input) {
 
 /** @returns {import("./types").BuyingBrowserState} */
 export function initialBuyingBrowserState() {
-  return { version: 1, savedListingIds: [], cases: [], importedListings: [], generalMessages: [{ id: "welcome", sender: "NK AI", text: "Tell me the model, year, transmission, drive, body type, budget, and preferred Thai search area. I will only use available vehicle facts and will mark unknown information clearly.", createdAt: "2026-08-23T09:00:00.000Z" }] };
+  return { version: 1, savedListingIds: [], cases: [], importedListings: [], sourceCaptures: [], generalMessages: [{ id: "welcome", sender: "NK AI", text: "Tell me the model, year, transmission, drive, body type, budget, and preferred Thai search area. I will only use available vehicle facts and will mark unknown information clearly.", createdAt: "2026-08-23T09:00:00.000Z" }] };
 }
 
 function nextCaseId(existingCases, now) {
@@ -103,16 +103,69 @@ function nextCaseId(existingCases, now) {
   return `NK-CASE-${year}-${String(highest + 1).padStart(6, "0")}`;
 }
 
-export function createVehicleCase(listing, existingCases, customerId, now = new Date()) {
+function externalHttpsUrl(value) {
+  try {
+    const url = new URL(String(value || ""));
+    return url.protocol === "https:" ? url.toString() : "";
+  } catch {
+    return "";
+  }
+}
+
+/**
+ * @param {import("./types").CustomerListing} listing
+ * @param {{submittedUrl:string,canonicalUrl?:string,sourcePlatform?:string,captureMethod?:"external_share_link"|"manual_evidence",importStatus?:"imported"|"partial"|"evidence_only"}} input
+ * @param {Date|string} [now]
+ * @returns {import("./types").SourceCapture}
+ */
+export function createExternalSourceCapture(listing, input, now = new Date()) {
+  const submittedUrl = externalHttpsUrl(input?.submittedUrl);
+  if (!submittedUrl) throw new Error("valid_source_url_required");
+  const canonicalUrl = externalHttpsUrl(input?.canonicalUrl) || submittedUrl;
+  const importStatus = ["imported", "partial", "evidence_only"].includes(input?.importStatus) ? input.importStatus : "partial";
+  return {
+    id: `capture-${listing.id}`,
+    listingId: listing.id,
+    sourceReference: listing.sourceReference,
+    adapterId: listing.adapterId,
+    sourcePlatform: String(input?.sourcePlatform || "Facebook Marketplace").slice(0, 100),
+    submittedUrl,
+    canonicalUrl,
+    captureMethod: input?.captureMethod === "manual_evidence" ? "manual_evidence" : "external_share_link",
+    importStatus,
+    capturedAt: safeTime(now),
+  };
+}
+
+/**
+ * @param {import("./types").CustomerListing} listing
+ * @param {import("./types").VehicleCase[]} existingCases
+ * @param {string} customerId
+ * @param {Date|string} [now]
+ * @param {string|null} [sourceCaptureId]
+ */
+export function createVehicleCase(listing, existingCases, customerId, now = new Date(), sourceCaptureId = null) {
   const existing = existingCases.find((item) => item.listingId === listing.id);
-  if (existing) return { caseRecord: existing, created: false };
+  if (existing) {
+    if (!sourceCaptureId || existing.sourceCaptureId === sourceCaptureId) return { caseRecord: existing, created: false };
+    const linkedAt = safeTime(now);
+    return {
+      caseRecord: {
+        ...existing,
+        sourceCaptureId,
+        updatedAt: linkedAt,
+        timeline: [...existing.timeline, { id: `${existing.id}-source-${linkedAt}`, title: "Source link captured", detail: "External source link captured internally and linked to this customer-safe Vehicle Case.", createdAt: linkedAt }],
+      },
+      created: false,
+    };
+  }
   const createdAt = safeTime(now);
   const caseId = nextCaseId(existingCases, createdAt);
   const quote = inspectionQuoteForLocation(listing.generalLocation);
   const caseRecord = {
-    id: caseId, customerId, listingId: listing.id, sourceReference: listing.sourceReference, createdAt, updatedAt: createdAt, status: "Saved", availability: "Availability Not Yet Confirmed", vehicle: { ...listing, availability: "Availability Not Yet Confirmed" }, commissionRate: DEFAULT_COMMISSION_RATE, inspectionQuote: quote, domesticTransportThb: null, repairModificationThb: null, exportShippingThb: null, otherAgreedThb: null,
+    id: caseId, customerId, listingId: listing.id, sourceReference: listing.sourceReference, sourceCaptureId, createdAt, updatedAt: createdAt, status: "Saved", availability: "Availability Not Yet Confirmed", vehicle: { ...listing, availability: "Availability Not Yet Confirmed" }, commissionRate: DEFAULT_COMMISSION_RATE, inspectionQuote: quote, domesticTransportThb: null, repairModificationThb: null, exportShippingThb: null, otherAgreedThb: null,
     messages: [{ id: `${caseId}-welcome`, sender: "NK AI", text: `I created ${caseId} for this ${listing.title}. Availability and the current seller price have not been verified yet.`, createdAt, delivery: "Local preview" }],
-    timeline: [{ id: `${caseId}-saved`, title: "Vehicle saved", detail: "Customer-safe source result saved as an NK Vehicle Case.", createdAt }],
+    timeline: [{ id: `${caseId}-saved`, title: "Vehicle saved", detail: sourceCaptureId ? "External source link captured internally and customer-safe listing data saved as an NK Vehicle Case." : "Customer-safe source result saved as an NK Vehicle Case.", createdAt }],
   };
   return { caseRecord, created: true };
 }
@@ -144,7 +197,7 @@ export function buildGroundedAssistantReply(caseRecord, question) {
     return `The known subtotal is THB ${pricing.knownSubtotalThb.toLocaleString("en-US")}, including a ${pricing.commissionRate}% NK service fee applied only to the observed vehicle price. ${pricing.pendingCount} cost line${pricing.pendingCount === 1 ? " is" : "s are"} still pending and excluded from that subtotal.`;
   }
   if (/inspection|inspect|condition/.test(text)) return !caseRecord.inspectionQuote ? "The vehicle location does not match a configured inspection zone yet. NK must confirm the location before quoting; I will not estimate the fee." : `The configured inspection and travel quote is THB ${caseRecord.inspectionQuote.totalThb.toLocaleString("en-US")} for ${caseRecord.inspectionQuote.region}. Current status: ${caseRecord.inspectionQuote.status}.`;
-  if (/mileage|engine|transmission|drive|spec|model|year/.test(text)) return `${vehicle.title}: ${vehicle.engine || "engine unknown"}, ${vehicle.transmission}, ${vehicle.drive}, ${vehicle.body}, ${vehicle.mileageKm === null ? "mileage needs review" : `${vehicle.mileageKm.toLocaleString("en-US")} km`}. These are normalized from the available demo evidence and remain subject to verification.`;
+  if (/mileage|engine|transmission|drive|spec|model|year/.test(text)) return `${vehicle.title}: ${vehicle.engine || "engine unknown"}, ${vehicle.transmission}, ${vehicle.drive}, ${vehicle.body}, ${vehicle.mileageKm === null ? "mileage needs review" : `${vehicle.mileageKm.toLocaleString("en-US")} km`}. These are normalized from the available ${vehicle.demo ? "labeled demo evidence" : "captured listing evidence"} and remain subject to verification.`;
   return `${vehicle.summary} Availability, current price, VIN, and condition must be verified before purchase. Ask me about specifications, pricing, availability, or inspection and I will answer only from this case.`;
 }
 

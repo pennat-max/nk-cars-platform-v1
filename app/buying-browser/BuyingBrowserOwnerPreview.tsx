@@ -19,13 +19,24 @@ export default function BuyingBrowserOwnerPreview({ records, storageCustomerId }
     queueMicrotask(() => setState(nextState));
   }, [storageCustomerId]);
   const caseByListing = new Map((state?.cases || []).map((item) => [item.listingId, item]));
+  const importedListingById = new Map((state?.importedListings || []).map((item) => [item.id, item]));
+  const caseByCapture = new Map((state?.cases || []).filter((item) => item.sourceCaptureId).map((item) => [item.sourceCaptureId, item]));
+  const sourceCaptures = state?.sourceCaptures || [];
   return (
     <div className="buying-browser bb-owner-preview" data-buying-browser-owner-preview>
       <header className="bb-owner-header"><Link href="/buy"><ArrowLeft size={18} />Customer preview</Link><div><span>NK</span><div><b>Buying Browser</b><small>Owner / Internal Source Preview</small></div></div></header>
       <main>
-        <section className="bb-page-heading"><div><p className="bb-kicker">Internal data boundary</p><h1>Source & Case Control</h1><p>Demo source facts are visible here but excluded from customer DTOs and customer routes.</p></div><span className="bb-status-chip pending"><ShieldAlert size={13} />Demo · not an auth boundary</span></section>
-        <div className="bb-owner-warning"><LockKeyhole size={18} /><div><b>Production control required</b><p>This route contains demo data only. Real source/seller records require server-enforced Owner/Staff RBAC, tenant isolation, audit, and no client-side role switch.</p></div></div>
-        <section className="bb-owner-kpis"><article><Database size={20} /><span><small>Source adapter</small><b>demo-thai-market</b></span></article><article><Gauge size={20} /><span><small>Adapter state</small><b>Fallback Ready</b></span></article><article><UserRound size={20} /><span><small>Preview cases</small><b>{state?.cases.length ?? 0}</b></span></article><article><EyeOff size={20} /><span><small>Customer redaction</small><b>Separate DTO</b></span></article></section>
+        <section className="bb-page-heading"><div><p className="bb-kicker">Internal data boundary</p><h1>Source & Case Control</h1><p>Customer-submitted source links and demo source facts stay outside customer-facing case details.</p></div><span className="bb-status-chip pending"><ShieldAlert size={13} />Preview · not an auth boundary</span></section>
+        <div className="bb-owner-warning"><LockKeyhole size={18} /><div><b>Production control required</b><p>This preview can show a customer-submitted real source link from browser-local state. Production requires server-enforced Owner/Staff RBAC, tenant isolation, encrypted persistence, audit, and no client-side role switch.</p></div></div>
+        <section className="bb-owner-kpis"><article><Database size={20} /><span><small>Real source captures</small><b>{sourceCaptures.length}</b></span></article><article><Gauge size={20} /><span><small>Selected path</small><b>External Share Link</b></span></article><article><UserRound size={20} /><span><small>Preview cases</small><b>{state?.cases.length ?? 0}</b></span></article><article><EyeOff size={20} /><span><small>Customer redaction</small><b>Separate DTO</b></span></article></section>
+        {sourceCaptures.length > 0 && <section className="bb-owner-source-list bb-real-source-captures" data-real-source-captures>
+          <div className="bb-section-heading"><div><p className="bb-kicker">External browser handoff</p><h2>Real source captures</h2></div><span>{sourceCaptures.length} captured link{sourceCaptures.length === 1 ? "" : "s"}</span></div>
+          {sourceCaptures.map((capture) => { const listing = importedListingById.get(capture.listingId); const vehicleCase = caseByCapture.get(capture.id); if (!listing) return null; return <article key={capture.id}>
+            <VehiclePhoto listing={listing} />
+            <div className="bb-owner-source-main"><header><div><small>{capture.sourceReference} · {capture.sourcePlatform}</small><h3>{listing.title}</h3></div><span className={vehicleCase ? "bb-status-chip requested" : "bb-status-chip pending"}>{vehicleCase ? vehicleCase.status : "Not saved as case"}</span></header><dl><div><dt>Capture method</dt><dd>External Share / Copy Link</dd></div><div><dt>Import status</dt><dd>{capture.importStatus}</dd></div><div><dt>Captured at</dt><dd>{formatDateTime(capture.capturedAt)}</dd></div><div><dt>Canonical source</dt><dd>{capture.canonicalUrl.includes("/marketplace/item/") ? "Marketplace item URL" : "Shared Facebook URL"}</dd></div><div><dt>Customer case</dt><dd>{vehicleCase?.id || "Pending"}</dd></div></dl><p>The Facebook login session stayed outside NK. Only the submitted link and accessible listing evidence were captured.</p></div>
+            <div className="bb-owner-source-actions"><a className="bb-button secondary" href={capture.canonicalUrl} target="_blank" rel="noreferrer">Internal source URL<ExternalLink size={15} /></a>{vehicleCase && <Link className="bb-button primary" href={`/buy/cases/${encodeURIComponent(vehicleCase.id)}`}>Open customer case</Link>}</div>
+          </article>; })}
+        </section>}
         <section className="bb-owner-source-list">
           <div className="bb-section-heading"><div><p className="bb-kicker">Internal records</p><h2>Source results</h2></div><span>{records.length} demo records</span></div>
           {records.map((record) => { const vehicleCase = caseByListing.get(record.id); return <article key={record.id}>
