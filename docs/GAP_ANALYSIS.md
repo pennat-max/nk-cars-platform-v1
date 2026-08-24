@@ -1,6 +1,6 @@
 # NK Cars Gap Analysis
 
-Status: Buying Browser V1 preview complete; production and external integration gaps remain
+Status: Real external Facebook handoff proven; production identity, persistence, and integrations remain
 Date: 2026-08-24
 Branch: `codex/buying-browser-rebuild`
 
@@ -18,7 +18,9 @@ The pivot changes V1 from a stock-first dealership experience to an AI-assisted 
 
 ## Approved V1 Journey
 
-Browse supported Thai sources, paste a vehicle link, or ask NK AI to find a vehicle -> inspect a customer-safe source result -> Save Vehicle -> create an NK Vehicle Case -> translate/normalize facts -> request current availability/price -> show deterministic service pricing -> request inspection -> retain case conversation/history -> continue toward a controlled Buy Through NK workflow.
+Open Facebook Marketplace outside NK with the customer's own authenticated session -> browse/select a real listing -> Share or Copy Link back to NK -> capture permitted source evidence internally -> inspect a customer-safe result -> Save Vehicle -> create an NK Vehicle Case -> translate/normalize facts -> request current availability/price -> show deterministic service pricing -> request inspection -> retain case conversation/history -> continue toward a controlled Buy Through NK workflow.
+
+The existing NK demo Browse grid, direct link paste, photo/text fallback, and Ask NK AI remain useful secondary paths. Demo cards are not evidence of real Marketplace access.
 
 Important states must remain factual: `Live Market Result`, `Found in Thailand`, `Availability Not Yet Confirmed`, `Verified Available`, and `NK Secured` are not interchangeable.
 
@@ -45,6 +47,15 @@ Buying Browser V1 preview completed on 2026-08-24:
 - Corrected customer Browse UX to a compact marketplace-first mobile layout with vehicle results in the first viewport; Paste Link and Ask NK AI are secondary tools instead of a dominant feature panel.
 - Corrected customer vehicle detail to be photo-first, followed by normalized specifications/description and the five approved NK actions, without changing domain logic or internal visibility boundaries.
 
+Real Facebook source proof of concept completed on 2026-08-24:
+
+- Tested an actual Facebook share URL supplied from the Owner's Facebook session and resolved it to Marketplace item `1716607786274590`.
+- Rejected embedded Facebook because the real response sets `X-Frame-Options: DENY`; the implementation does not bypass that control.
+- Selected external Facebook app/browser plus Share or Copy Link as the first viable approach. Facebook retains the customer's password, MFA, CAPTCHA, cookies, and authenticated session.
+- Imported the accessible real title/specification evidence, kept inaccessible source price, seller/contact, exact location, full gallery, and availability Pending, and created a real-listing Vehicle Case.
+- Added internal `SourceCapture` records and case linkage while keeping submitted/canonical URLs out of customer-facing vehicle/case DTOs and views.
+- Kept the existing remote isolated browser foundation as an unactivated contingency rather than claiming it is a working production integration.
+
 ## V1 Production Activation Remaining
 
 The approved Buying Browser V1 preview acceptance criteria are complete. The following are production gaps and external integrations, not simulated preview features:
@@ -58,7 +69,9 @@ The approved Buying Browser V1 preview acceptance criteria are complete. The fol
 
 ### Live Sources And AI
 
-- Complete customer-specific source-profile isolation before real multi-user access.
+- Persist external Share/Copy Link captures and Vehicle Cases in authenticated tenant-scoped server storage; browser-local state is proof-of-concept only.
+- Add a supported mobile share target only after browser/PWA/native compatibility testing; manual Share/Copy Link remains the proven baseline.
+- Complete customer-specific source-profile isolation only if the remote-browser contingency is activated for real multi-user access.
 - Source adapters beyond Facebook and a policy-compliant production connector network path.
 - Live result normalization, ranking, freshness, duplicate matching, and operational snapshot policy.
 - Production AI provider/model, structured extraction/translation, cost policy, retention, and grounded-response evaluation.
@@ -97,7 +110,8 @@ The approved Buying Browser V1 preview acceptance criteria are complete. The fol
 ## Technical Blockers
 
 - Real NK customer authentication, tenant isolation, database project/configuration, RLS, and durable Storage are not connected.
-- Real customer-specific source sessions require an approved encrypted session-storage design and manual user authentication.
+- Embedded Facebook Marketplace is technically blocked by Facebook's `X-Frame-Options: DENY` response and must remain external.
+- A remote customer-specific source session, if later activated, requires an approved encrypted session-storage design and manual user authentication.
 - Facebook/other source UI and access can change; live browser access cannot be a CI dependency.
 - No production connector URL/token, AI model/key, durable worker, monitoring, or alerting configuration is approved.
 - Real inspection provider directory, service areas, availability, and Owner-approved rate table do not yet exist.
@@ -117,6 +131,7 @@ The approved Buying Browser V1 preview acceptance criteria are complete. The fol
 - `BB-V1A - Additive Buying Browser Foundation`: Complete.
 - `BB-V1B - Assisted Buying Workflow`: Complete.
 - `BB-V1C - Internal View And Preview Hardening`: Complete.
+- `BB-V1-POC - Real Facebook External Handoff`: Complete with a real Marketplace listing; external Share/Copy Link is the selected baseline.
 
 The smallest next V1 production milestone is **BB-V1D - Production Identity And Durable Cases**:
 

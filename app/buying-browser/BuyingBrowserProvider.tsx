@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { addCaseQuestion, createVehicleCase, initialBuyingBrowserState, requestAvailability, requestInspection } from "./domain.mjs";
 import { clearPreviewMedia, hydratePreviewMedia, persistPreviewMedia, stateForLocalStorage } from "./preview-media";
-import type { BuyingBrowserState, CustomerIdentity, CustomerListing, GeneralMessage, SourceAdapterStatus, VehicleCase } from "./types";
+import type { BuyingBrowserState, CustomerIdentity, CustomerListing, GeneralMessage, SourceAdapterStatus, SourceCapture, VehicleCase } from "./types";
 
 type BuyingBrowserContextValue = {
   customer: CustomerIdentity;
@@ -19,7 +19,7 @@ type BuyingBrowserContextValue = {
   requestCaseAvailability: (caseId: string) => void;
   requestCaseInspection: (caseId: string) => void;
   askCaseQuestion: (caseId: string, question: string) => void;
-  addImportedListing: (listing: CustomerListing) => void;
+  addImportedListing: (listing: CustomerListing, sourceCapture?: SourceCapture) => void;
   askFindOne: (question: string) => void;
   resetPreview: () => void;
 };
@@ -55,7 +55,11 @@ export function BuyingBrowserProvider({
         const raw = window.localStorage.getItem(storageKey);
         if (raw) {
           const parsed: unknown = JSON.parse(raw);
-          if (validStoredState(parsed)) nextState = await hydratePreviewMedia(storageKey, parsed);
+          if (validStoredState(parsed)) nextState = await hydratePreviewMedia(storageKey, {
+            ...parsed,
+            sourceCaptures: Array.isArray(parsed.sourceCaptures) ? parsed.sourceCaptures : [],
+            cases: parsed.cases.map((record) => ({ ...record, sourceCaptureId: record.sourceCaptureId || null })),
+          });
         }
       } catch {
         // A blocked or corrupt local preview store falls back to a fresh state.
@@ -99,7 +103,8 @@ export function BuyingBrowserProvider({
 
   function saveAsCase(listing: CustomerListing, action?: "availability" | "inspection") {
     const existing = state.cases.find((item) => item.listingId === listing.id);
-    const { caseRecord } = createVehicleCase(listing, state.cases, customer.id);
+    const sourceCapture = state.sourceCaptures.find((item) => item.listingId === listing.id);
+    const { caseRecord } = createVehicleCase(listing, state.cases, customer.id, new Date(), sourceCapture?.id || null);
     const nextRecord = action === "availability" ? requestAvailability(caseRecord) : action === "inspection" ? requestInspection(caseRecord) : caseRecord;
     setState((current) => ({
       ...current,
@@ -125,9 +130,15 @@ export function BuyingBrowserProvider({
     updateCase(caseId, (record) => addCaseQuestion(record, question));
   }
 
-  function addImportedListing(listing: CustomerListing) {
+  function addImportedListing(listing: CustomerListing, sourceCapture?: SourceCapture) {
     void persistPreviewMedia(storageKey, listing.id, listing.imageUrls);
-    setState((current) => ({ ...current, importedListings: [listing, ...current.importedListings.filter((item) => item.id !== listing.id)] }));
+    setState((current) => ({
+      ...current,
+      importedListings: [listing, ...current.importedListings.filter((item) => item.id !== listing.id)],
+      sourceCaptures: sourceCapture
+        ? [sourceCapture, ...current.sourceCaptures.filter((item) => item.id !== sourceCapture.id)]
+        : current.sourceCaptures,
+    }));
   }
 
   function askFindOne(question: string) {

@@ -2,7 +2,7 @@
 
 Status: Active working context for Codex
 Purpose: Keep routine development fast and token-efficient.
-Implementation status: Buying Browser V1 preview complete on 2026-08-24; production activation is not approved.
+Implementation status: External Facebook Share/Copy Link proof of concept proven with a real listing on 2026-08-24; production activation is not approved.
 
 Use this file with `AGENTS.md` as the default context. Consult larger product specs only when necessary.
 
@@ -10,10 +10,11 @@ Use this file with `AGENTS.md` as the default context. Consult larger product sp
 
 NK Cars is being rebuilt as an **AI Vehicle Buying Browser / Buying Platform for Thailand**.
 
-Primary customer journey:
+Primary real-source customer journey:
 
-**Browse Vehicles OR Paste Vehicle Link OR Ask NK AI to Find One**
--> customer selects/saves a vehicle
+**Open Facebook Marketplace outside NK with the customer's own session**
+-> customer browses/selects a real listing
+-> Share or Copy Link back to NK
 -> create Vehicle Case
 -> AI translates/normalizes vehicle information
 -> Check Availability
@@ -21,19 +22,20 @@ Primary customer journey:
 -> transparent NK pricing
 -> later Buy Through NK / procurement / export.
 
-The old stock-first implementation remains a rollback/reference and must not be destructively removed before the new preview is approved.
+The NK demo vehicle grid and old stock-first implementation remain fallback/downstream and rollback/reference. Do not treat demo cards as proof of real Marketplace browsing.
 
 ## 2. Current customer UX direction
 
 Mobile-first, especially iPhone.
 
-Browse experience:
-- NK-branded marketplace-style vehicle grid
-- search
-- year / price / mileage / transmission / drive / body filters
-- Thai vehicle search area/location
-- saved vehicles
-- progressive AI translation/analysis
+Primary source experience:
+- open Facebook Marketplace outside NK so Facebook retains the customer's authenticated session
+- browse/select in Facebook
+- return the selected listing through Share/Copy Link, user-triggered clipboard paste, or supported URL handoff
+- capture permitted listing URL/data internally and create a customer-safe Vehicle Case
+- retain screenshots/photos/listing-text fallback when Facebook evidence is inaccessible
+
+The existing NK vehicle grid, search, filters, and saved vehicles remain secondary fallback/downstream tools.
 
 Customer location/destination country is separate from Search Location.
 
@@ -196,6 +198,14 @@ All 18 Buying Browser V1 preview targets are implemented additively under `/buy`
 - responsive verification at 390 x 844 and 1280 x 900 with no horizontal overflow or browser console errors.
 
 Preview state is intentionally browser-local and demo/source-adapter backed. Production Auth, tenant isolation, RLS, durable storage, encrypted source sessions, real AI, real provider assignment, and real messaging remain blocked integrations rather than simulated successes.
+
+### Real-source proof of concept
+
+Approach 1, embedding Facebook Marketplace inside NK, is blocked by Facebook's `X-Frame-Options: DENY` response and must not be bypassed.
+
+Approach 2 is selected and proven with an actual Facebook Marketplace share URL. NK resolved the canonical listing, imported accessible real metadata, kept unavailable price/seller/location/gallery/availability fields Pending, stored an internal SourceCapture, and created a customer-safe Vehicle Case. See `docs/REAL_SOURCE_POC.md`.
+
+Approach 3, a remote isolated browser session, remains a contingency and was not selected because approach 2 works without NK taking custody of the customer's Facebook session.
 
 ## 10. Current technical strategy
 

@@ -2,9 +2,10 @@
 
 /* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
-import { AlertCircle, Bot, Camera, CheckCircle2, ExternalLink, FileText, FolderPlus, ImagePlus, Link2, LoaderCircle, ShieldCheck, Upload, X } from "lucide-react";
-import { ChangeEvent, FormEvent, useMemo, useState } from "react";
+import { AlertCircle, Bot, Camera, CheckCircle2, ClipboardPaste, ExternalLink, FileText, FolderPlus, Globe2, ImagePlus, Link2, LoaderCircle, ShieldCheck, Upload, X } from "lucide-react";
+import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 import { useBuyingBrowser } from "../BuyingBrowserProvider";
+import { createExternalSourceCapture } from "../domain.mjs";
 import { formatMileage, formatThb } from "../format";
 import type { CustomerListing } from "../types";
 
@@ -49,6 +50,29 @@ function referenceFromUrl(value: string) {
 function isFacebookHost(hostname: string) {
   const host = hostname.toLowerCase().replace(/^www\./, "");
   return host === "facebook.com" || host.endsWith(".facebook.com") || host === "fb.com" || host.endsWith(".fb.com");
+}
+
+function extractFacebookUrl(value: string) {
+  const candidates = value.match(/https:\/\/[^\s]+/gi) || [];
+  for (const candidate of candidates) {
+    const cleaned = candidate.replace(/[),.;]+$/, "");
+    try {
+      const url = new URL(cleaned);
+      if (isFacebookHost(url.hostname)) return url.href;
+    } catch {
+      // Ignore non-URL text from the operating-system share sheet.
+    }
+  }
+  return "";
+}
+
+function facebookSourceCaptureUrl(value: string) {
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" && isFacebookHost(url.hostname) ? url.href : "";
+  } catch {
+    return "";
+  }
 }
 
 function buildImportedListing(payload: ImportPayload, submittedUrl: string): CustomerListing {
@@ -108,11 +132,31 @@ export default function PasteScreen() {
 
   const validExternalUrl = useMemo(() => { try { const parsed = new URL(url); return parsed.protocol === "https:" ? parsed.href : ""; } catch { return ""; } }, [url]);
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const sharedUrl = extractFacebookUrl(params.get("url") || params.get("text") || "");
+    if (!sharedUrl) return;
+    let cancelled = false;
+    queueMicrotask(() => { if (!cancelled) setUrl(sharedUrl); });
+    return () => { cancelled = true; };
+  }, []);
+
   function changeUrl(value: string) {
     setUrl(value);
     setResult(null);
     setRawResult(null);
     setMessage("");
+  }
+
+  async function pasteSourceLink() {
+    try {
+      const sharedUrl = extractFacebookUrl(await navigator.clipboard.readText());
+      if (!sharedUrl) { setMessage("The clipboard does not contain a Facebook vehicle link."); return; }
+      changeUrl(sharedUrl);
+      setMessage("Facebook link pasted. Import it when ready.");
+    } catch {
+      setMessage("Clipboard access is unavailable. Paste the Facebook link into the field manually.");
+    }
   }
 
   async function importLink(event: FormEvent) {
@@ -127,7 +171,9 @@ export default function PasteScreen() {
       setRawResult(payload);
       if (!response.ok || !["imported", "partial"].includes(payload.status || "")) { setMessage(payload.message || "This listing could not be read automatically. Continue with screenshots/photos or listing text."); return; }
       const listing = buildImportedListing(payload, validExternalUrl);
-      addImportedListing(listing); setResult(listing);
+      const canonicalUrl = facebookSourceCaptureUrl(payload.canonical_url || "") || validExternalUrl;
+      const sourceCapture = createExternalSourceCapture(listing, { submittedUrl: validExternalUrl, canonicalUrl, sourcePlatform: "Facebook Marketplace", captureMethod: "external_share_link", importStatus: payload.status === "imported" ? "imported" : "partial" });
+      addImportedListing(listing, sourceCapture); setResult(listing);
       setMessage(payload.status === "partial" ? "Only part of the listing was accessible. Review the facts and add screenshots/photos for missing evidence." : "Accessible listing evidence imported. Availability is still not confirmed.");
     } catch { setMessage("The source could not be reached from this session. Continue with screenshots/photos or listing text."); }
     finally { setBusy(false); }
@@ -152,7 +198,9 @@ export default function PasteScreen() {
       const values = Object.fromEntries(Object.entries(payload.fields).map(([key, field]) => [key, field.value === "Unknown" ? "" : field.value || ""]));
       const ref = validExternalUrl ? referenceFromUrl(validExternalUrl) : `UPLOAD-${Date.now()}`;
       const listing: CustomerListing = { id:`imported-${ref.toLowerCase()}`,adapterId:"uploaded-evidence",sourceReference:ref,title:[values.year,values.brand,values.model,values.grade].filter(Boolean).join(" ") || "Vehicle from uploaded evidence",summary:values.customerDescriptionEn || "Uploaded evidence saved for manual specification review.",brand:values.brand || "Need Review",model:values.model || "Need Review",year:numeric(values.year),grade:values.grade || "Need Review",engine:values.engine || values.engineCapacity || "Need Review",transmission:values.transmission === "AT" || values.transmission === "MT" ? values.transmission : "Unknown",drive:values.drive === "2WD" || values.drive === "4WD" ? values.drive : "Unknown",body:values.body || values.cabType || "Need Review",mileageKm:numeric(values.mileage),color:values.color || "Need Review",observedPriceThb:numeric(values.sourcePrice),observedAt:new Date().toISOString(),generalLocation:broadLocation(values.location),imageUrls:photos.map((photo) => photo.dataUrl),availability:"Availability Not Yet Confirmed",translationState:values.brand && values.model ? "Normalized" : "Need Review",evidenceLabels:[`${photos.length} uploaded image${photos.length === 1 ? "" : "s"}`,listingText.trim() ? "Pasted listing text" : "No listing text", "NK AI structured extraction"],demo:false };
-      addImportedListing(listing); setResult(listing); setMessage("NK AI analyzed the uploaded evidence as one vehicle. Review unknown or low-confidence facts before verification.");
+      const facebookUrl = facebookSourceCaptureUrl(validExternalUrl);
+      const sourceCapture = facebookUrl ? createExternalSourceCapture(listing, { submittedUrl: facebookUrl, canonicalUrl: facebookUrl, sourcePlatform: "Facebook Marketplace", captureMethod: "manual_evidence", importStatus: "evidence_only" }) : undefined;
+      addImportedListing(listing, sourceCapture); setResult(listing); setMessage("NK AI analyzed the uploaded evidence as one vehicle. Review unknown or low-confidence facts before verification.");
     } catch { setAiError("NK AI could not be reached. You can still save an evidence case for manual review."); }
     finally { setAiBusy(false); }
   }
@@ -160,17 +208,24 @@ export default function PasteScreen() {
   function saveEvidenceOnly() {
     const ref = validExternalUrl ? referenceFromUrl(validExternalUrl) : `UPLOAD-${Date.now()}`;
     const listing: CustomerListing = { id:`imported-${ref.toLowerCase()}`,adapterId:"manual-evidence",sourceReference:ref,title:"Vehicle evidence awaiting review",summary:"Customer-supplied screenshots/photos and listing text were preserved in this local preview case. Vehicle facts still need manual or AI review.",brand:"Need Review",model:"Need Review",year:null,grade:"Need Review",engine:"Need Review",transmission:"Unknown",drive:"Unknown",body:"Need Review",mileageKm:null,color:"Need Review",observedPriceThb:null,observedAt:new Date().toISOString(),generalLocation:"Thailand",imageUrls:photos.map((photo) => photo.dataUrl),availability:"Availability Not Yet Confirmed",translationState:"Need Review",evidenceLabels:[`${photos.length} uploaded image${photos.length === 1 ? "" : "s"}`,listingText.trim() ? "Pasted listing text" : "Details pending"],demo:false };
-    addImportedListing(listing); setResult(listing); setMessage("Evidence case prepared. Specifications, source price, and availability remain unconfirmed.");
+    const facebookUrl = facebookSourceCaptureUrl(validExternalUrl);
+    const sourceCapture = facebookUrl ? createExternalSourceCapture(listing, { submittedUrl: facebookUrl, canonicalUrl: facebookUrl, sourcePlatform: "Facebook Marketplace", captureMethod: "manual_evidence", importStatus: "evidence_only" }) : undefined;
+    addImportedListing(listing, sourceCapture); setResult(listing); setMessage("Evidence case prepared. Specifications, source price, and availability remain unconfirmed.");
   }
 
   function openCase() { if (!result) return; const id = saveAsCase(result); window.location.assign(`/buy/cases/${encodeURIComponent(id)}`); }
 
   return (
     <>
-      <section className="bb-page-heading"><div><p className="bb-kicker">Bring your own vehicle result</p><h1>Paste Vehicle Link</h1><p>NK imports only accessible evidence. When a source blocks access, keep the link and continue with screenshots, photos, or listing text.</p></div></section>
+      <section className="bb-page-heading"><div><p className="bb-kicker">External Facebook handoff</p><h1>Save a Facebook Vehicle to NK</h1><p>Browse with your own Facebook session, then bring only the selected listing link back to NK.</p></div></section>
+      <section className="bb-facebook-handoff" data-facebook-external-handoff>
+        <div><span><Globe2 size={21} /></span><div><b>Browse in Facebook Marketplace</b><p>Facebook opens outside NK and keeps your login, MFA, and session under Facebook control.</p></div></div>
+        <a className="bb-button primary" href="https://www.facebook.com/marketplace/" target="_blank" rel="noreferrer">Open Facebook Marketplace<ExternalLink size={16} /></a>
+        <ol><li>Browse and select a real vehicle</li><li>Use Share or Copy Link</li><li>Return here and paste the link</li></ol>
+      </section>
       <section className="bb-paste-tool">
-        <form onSubmit={importLink}><label><Link2 size={20} /><input value={url} onChange={(event) => changeUrl(event.target.value)} placeholder="https://www.facebook.com/marketplace/item/..." inputMode="url" aria-label="Vehicle listing URL" /></label><button className="bb-button primary" disabled={busy || !url.trim()} type="submit">{busy ? <LoaderCircle className="spin" size={18} /> : <Bot size={18} />}Import & Analyze</button></form>
-        <div className="bb-source-safety"><ShieldCheck size={16} /><p>NK does not collect source passwords, bypass MFA/CAPTCHA, or claim blocked data was imported.</p></div>
+        <form onSubmit={importLink}><label><Link2 size={20} /><input value={url} onChange={(event) => changeUrl(event.target.value)} placeholder="https://www.facebook.com/marketplace/item/..." inputMode="url" aria-label="Vehicle listing URL" /></label><button className="bb-button secondary bb-paste-clipboard" type="button" onClick={pasteSourceLink}><ClipboardPaste size={17} />Paste</button><button className="bb-button primary" disabled={busy || !url.trim()} type="submit">{busy ? <LoaderCircle className="spin" size={18} /> : <Bot size={18} />}Import & Analyze</button></form>
+        <div className="bb-source-safety"><ShieldCheck size={16} /><p>NK stores the selected listing link and accessible evidence only. NK does not collect Facebook passwords, copy session cookies, or bypass MFA/CAPTCHA.</p></div>
         {message && <div className={result ? "bb-import-message success" : "bb-import-message"}><span>{result ? <CheckCircle2 size={19} /> : <AlertCircle size={19} />}</span><p>{message}</p>{validExternalUrl && !result && <a href={validExternalUrl} target="_blank" rel="noreferrer">Open source listing<ExternalLink size={15} /></a>}</div>}
       </section>
 

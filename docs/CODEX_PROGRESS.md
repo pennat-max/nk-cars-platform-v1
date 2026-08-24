@@ -1,5 +1,51 @@
 # Codex Progress
 
+## 2026-08-24 - Real Facebook Source Proof Of Concept
+
+Branch: `codex/buying-browser-rebuild`
+
+### Completed
+
+- Stopped treating the demo vehicle grid as proof of Marketplace access and tested the three approved source approaches in order.
+- Rejected embedded Facebook after the real listing response returned `X-Frame-Options: DENY`; no frame, proxy-header, authentication, MFA, CAPTCHA, or session-control bypass was attempted.
+- Selected external Facebook app/browser plus Share or Copy Link as the first viable compliant architecture. The customer's authenticated Facebook session remains entirely under Facebook control.
+- Proved the path with the Owner-supplied real share URL. NK resolved Marketplace item `1716607786274590`, imported available public evidence for a 2025 Toyota Hilux Revo GR Sport Wide, left unavailable fields Pending, and created `NK-CASE-2026-001245`.
+- Added an external Facebook handoff to `/buy/paste`, user-triggered clipboard paste, and `?url=` / `?text=` handoff support.
+- Added an internal `SourceCapture` linked to `VehicleCase.sourceCaptureId`. Submitted/canonical source URLs stay out of the customer vehicle DTO and customer case UI, while `/buy/owner` can resolve the internal capture.
+- Preserved screenshot/photo/listing-text fallback and the existing downstream case, AI, pricing, availability, and inspection workflows.
+- Documented evidence, constraints, and production gaps in `docs/REAL_SOURCE_POC.md`; updated `docs/CURRENT_V1.md` and `docs/GAP_ANALYSIS.md` to make the real external handoff the primary V1 source path.
+
+### Current Work
+
+- Real-source proof of concept implementation and verification are complete. Production activation remains unapproved.
+
+### Owner Blockers
+
+- Production deployment remains explicitly unapproved.
+- Durable multi-user activation requires approved Auth/database configuration, tenant-scoped RLS, server-side source/case persistence, audit, backup, and private media policy.
+
+### External Integration Blockers
+
+- Facebook blocks embedded Marketplace with `X-Frame-Options: DENY`; this control is authoritative and will not be bypassed.
+- Public Facebook metadata exposed only one listing image and omitted seller/contact, source price, exact location, full gallery, and current availability. These remain Pending unless the customer supplies evidence or an approved connector is configured.
+- Remote isolated browsing remains a contingency requiring customer-authorized manual login, secure isolated profile storage, and an approved compliant runtime. It was not selected because external Share/Copy Link works without NK taking custody of the Facebook session.
+
+### Verification
+
+- Real source path passed in browser: external share URL -> NK import -> customer-safe listing -> Save as Vehicle Case -> internal source capture.
+- Customer case body contained no Facebook URL, Marketplace item ID, seller identity, or seller contact; Owner/internal view retained the canonical source URL.
+- Mobile check passed at 390 x 844 with the external Facebook action, three-step handoff, prefilled link, paste/import actions, and no horizontal overflow.
+- Fresh mobile browser verification created `NK-CASE-2026-001245`, linked it to `https://www.facebook.com/marketplace/item/1716607786274590/` internally, and produced no application console warning/error.
+- `npm.cmd test`: passed with a production build and 22/22 tests.
+- `npm.cmd run build`: passed independently.
+- Typecheck: passed with `tsc --noEmit --incremental false`.
+- Lint: passed with 0 errors and 13 existing legacy `<img>` warnings outside Buying Browser.
+- `git diff --check`: passed; only Git line-ending notices were emitted.
+
+### Next Recommended Step
+
+- After this POC is committed and pushed, retain external Share/Copy Link as the production baseline. The next production milestone remains authenticated durable Vehicle Cases and internal SourceCapture persistence; do not activate production without Owner approval.
+
 ## 2026-08-24 - Customer Browse UX Correction
 
 Branch: `codex/buying-browser-rebuild`

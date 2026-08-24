@@ -71,11 +71,25 @@ export type InspectionQuote = {
   requestedAt?: string;
 };
 
+export type SourceCapture = {
+  id: string;
+  listingId: string;
+  sourceReference: string;
+  adapterId: string;
+  sourcePlatform: string;
+  submittedUrl: string;
+  canonicalUrl: string;
+  captureMethod: "external_share_link" | "manual_evidence";
+  importStatus: "imported" | "partial" | "evidence_only";
+  capturedAt: string;
+};
+
 export type VehicleCase = {
   id: string;
   customerId: string;
   listingId: string;
   sourceReference: string;
+  sourceCaptureId: string | null;
   createdAt: string;
   updatedAt: string;
   status: "Saved" | "Availability Requested" | "Inspection Requested";
@@ -118,6 +132,7 @@ export type BuyingBrowserState = {
   savedListingIds: string[];
   cases: VehicleCase[];
   importedListings: CustomerListing[];
+  sourceCaptures: SourceCapture[];
   generalMessages: GeneralMessage[];
 };
 

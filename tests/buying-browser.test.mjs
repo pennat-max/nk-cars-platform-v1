@@ -4,6 +4,7 @@ import {
   DEFAULT_FILTERS,
   addCaseQuestion,
   calculatePricing,
+  createExternalSourceCapture,
   createVehicleCase,
   filterListings,
   inspectionQuoteForLocation,
@@ -80,6 +81,7 @@ test("Vehicle Case deduplicates save and records honest pending workflows", () =
   const created = createVehicleCase(listing, [], "customer-1", "2026-08-23T10:00:00.000Z");
   assert.equal(created.created, true);
   assert.equal(created.caseRecord.id, "NK-CASE-2026-001245");
+  assert.equal(created.caseRecord.sourceCaptureId, null);
   assert.equal(created.caseRecord.availability, "Availability Not Yet Confirmed");
   const duplicate = createVehicleCase(listing, [created.caseRecord], "customer-1", "2026-08-23T10:01:00.000Z");
   assert.equal(duplicate.created, false);
@@ -93,6 +95,36 @@ test("Vehicle Case deduplicates save and records honest pending workflows", () =
   assert.match(inspection.messages.at(-1).text, /No provider is assigned or booked yet/i);
   const answered = addCaseQuestion(inspection, "Is this available?", "2026-08-23T10:04:00.000Z");
   assert.match(answered.messages.at(-1).text, /not confirmed|requested/i);
+});
+
+test("external Facebook handoff captures the source internally and links it to a customer-safe case", () => {
+  const listing = { ...presentCustomerListing(source), demo: false };
+  const capture = createExternalSourceCapture(listing, {
+    submittedUrl: "https://www.facebook.com/share/1DF6CzLM1A/",
+    canonicalUrl: "https://www.facebook.com/marketplace/item/1716607786274590/",
+    sourcePlatform: "Facebook Marketplace",
+    captureMethod: "external_share_link",
+    importStatus: "partial",
+  }, "2026-08-24T01:00:00.000Z");
+  const created = createVehicleCase(listing, [], "customer-1", "2026-08-24T01:01:00.000Z", capture.id);
+  assert.equal(capture.listingId, listing.id);
+  assert.equal(capture.canonicalUrl, "https://www.facebook.com/marketplace/item/1716607786274590/");
+  assert.equal(created.caseRecord.sourceCaptureId, capture.id);
+  assert.match(created.caseRecord.timeline[0].detail, /source link captured internally/i);
+  assert.doesNotMatch(JSON.stringify(created.caseRecord.vehicle), /facebook\.com|1716607786274590/i);
+
+  const legacyCase = createVehicleCase(listing, [], "customer-1", "2026-08-24T00:59:00.000Z").caseRecord;
+  const linked = createVehicleCase(listing, [legacyCase], "customer-1", "2026-08-24T01:02:00.000Z", capture.id);
+  assert.equal(linked.created, false);
+  assert.equal(linked.caseRecord.sourceCaptureId, capture.id);
+  assert.match(linked.caseRecord.timeline.at(-1).detail, /linked to this customer-safe Vehicle Case/i);
+});
+
+test("external source capture rejects non-HTTPS source references", () => {
+  const listing = { ...presentCustomerListing(source), demo: false };
+  assert.throws(() => createExternalSourceCapture(listing, {
+    submittedUrl: "http://www.facebook.com/marketplace/item/1716607786274590/",
+  }), /valid_source_url_required/);
 });
 
 test("renders additive Buying Browser routes without customer source leakage", async () => {
@@ -112,6 +144,11 @@ test("renders additive Buying Browser routes without customer source leakage", a
       assert.match(html, /data-browse-marketplace-v2/i);
       assert.match(html, /data-vehicle-card-v2/i);
       assert.doesNotMatch(html, /Explore customer-safe vehicle results|Demo market results|Primary Buying Browser actions/i);
+    }
+    if (route === "/buy/paste") {
+      assert.match(html, /data-facebook-external-handoff/i);
+      assert.match(html, /Open Facebook Marketplace/i);
+      assert.match(html, /Facebook opens outside NK/i);
     }
     if (route === "/buy/vehicle/th-demo-001") {
       assert.match(html, /data-vehicle-detail-v2/i);
@@ -134,5 +171,5 @@ test("renders owner demo source view separately from customer routes", async () 
   const html = await response.text();
   assert.match(html, /data-buying-browser-owner-preview/i);
   assert.match(html, /Siam Pickup Demo/);
-  assert.match(html, /Demo · not an auth boundary/i);
+  assert.match(html, /Preview · not an auth boundary/i);
 });
