@@ -36,7 +36,7 @@ Branch: `codex/buying-browser-rebuild` (implemented in the isolated preview work
 
 ### Current Work / Next
 
-- Run final lint, typecheck, web tests, Windows build/smoke, and diff checks; then promote the stable milestone to `codex/buying-browser-rebuild` and push.
+- Cross-platform POC milestone was promoted to `codex/buying-browser-rebuild` and pushed to the private GitHub repository after all available checks passed.
 - Next milestone: `BB-NATIVE-2 - Device Validation And Signed Fallbacks`. No production deployment or live Site overwrite is authorized.
 
 ## 2026-08-24 - Authenticated Facebook Buying Browser Feasibility Spike
