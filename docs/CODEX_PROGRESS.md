@@ -29,7 +29,12 @@ Branch: `codex/buying-browser-rebuild`
 
 - This milestone is a deliberate one-car snapshot, not automatic Google Sheet synchronization and not a live Marketplace feed. Adding more vehicles still requires an explicit authorized capture/import step.
 - Durable authenticated Vehicle Cases, tenant-scoped database/media storage, and server-side Google Sheet/Drive synchronization remain Owner/integration blockers for production.
-- Mobile verification is complete. Next: update only the separate Owner review Site. Do not overwrite the existing NK Cars Site or deploy production.
+- Mobile verification is complete. A local-network preview is running from the development machine for same-network iPhone review.
+
+### Owner Blocker
+
+- `.openai/hosting.json` resolves to the existing live `nk-cars-platform-v1` Site rather than a separate review project. No Sites deployment was performed because that would overwrite or modify the existing Site without explicit production approval.
+- Next online step requires either explicit approval to update that existing Site or an approved, separately configured review Site. Do not create a new Site project implicitly.
 
 ## 2026-08-25 - Windows WebView2 Manual Marketplace POC
 

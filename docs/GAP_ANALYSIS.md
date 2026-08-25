@@ -150,6 +150,7 @@ The approved Buying Browser V1 preview acceptance criteria are complete. The fol
 - A remote customer-specific source session, if later activated, requires an approved encrypted session-storage design and manual user authentication.
 - Facebook/other source UI and access can change; live browser access cannot be a CI dependency.
 - No production connector URL/token, AI model/key, durable worker, monitoring, or alerting configuration is approved.
+- The persisted Sites project ID points to the existing live NK Cars Site. A separate review Site is not configured in this working tree, so review deployment remains blocked by the no-overwrite/no-production rule; local-network preview remains available.
 - Real inspection provider directory, service areas, availability, and Owner-approved rate table do not yet exist.
 - Production commission/minimum-fee/fleet-tier configuration is not commercially or legally activated.
 - Remote media retention/proxy rights and evidence-retention policy require confirmation before production copying.
