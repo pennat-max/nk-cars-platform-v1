@@ -53,3 +53,20 @@ test('native adapters recognize only HTTPS Facebook Marketplace item URLs', asyn
   assert.equal(listingPattern.test('https://evil.example/marketplace/item/1716607786274590/'), false)
   assert.equal(listingPattern.test('https://www.facebook.com/marketplace/'), false)
 })
+
+test('Windows technical shell exposes the required manual browser controls and persistent profile', async () => {
+  const [xaml, windows] = await Promise.all([
+    read('native/windows/NKCars.BuyingBrowser/MainWindow.xaml'),
+    read('native/windows/NKCars.BuyingBrowser/MainWindow.xaml.cs'),
+  ])
+
+  for (const control of ['BackButton', 'ForwardButton', 'AddressBar', 'SaveButton', 'View Vehicle Case']) {
+    assert.match(xaml, new RegExp(control.replaceAll(' ', '\\s+')))
+  }
+  for (const handler of ['Reload_Click', 'Home_Click', 'Go_Click', 'Save_Click']) {
+    assert.match(xaml, new RegExp(handler))
+  }
+  assert.match(windows, /CoreWebView2Environment\.CreateAsync\(userDataFolder: _profileFolder\)/)
+  assert.match(windows, /LocalApplicationData/)
+  assert.match(windows, /AddressBar\.Text = _currentUri\?\.AbsoluteUri/)
+})

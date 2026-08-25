@@ -2,30 +2,39 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
-        Title="NK Cars Buying Browser" Height="860" Width="430" MinHeight="640" MinWidth="360"
+        Title="NK Browser - Facebook Marketplace Test" Height="860" Width="1100" MinHeight="640" MinWidth="760"
         Background="#F4F7F8" WindowStartupLocation="CenterScreen">
   <Grid>
     <Grid.RowDefinitions>
-      <RowDefinition Height="58" />
+      <RowDefinition Height="96" />
       <RowDefinition Height="*" />
       <RowDefinition Height="72" />
     </Grid.RowDefinitions>
 
     <Border Grid.Row="0" Background="White" BorderBrush="#D9E1E5" BorderThickness="0,0,0,1">
-      <Grid Margin="10,8">
-        <Grid.ColumnDefinitions>
-          <ColumnDefinition Width="42" />
-          <ColumnDefinition Width="*" />
-          <ColumnDefinition Width="42" />
-          <ColumnDefinition Width="42" />
-        </Grid.ColumnDefinitions>
-        <Button x:Name="BackButton" Grid.Column="0" Content="&#x2190;" FontSize="20" Click="Back_Click" ToolTip="Back" />
-        <StackPanel Grid.Column="1" Margin="10,0" VerticalAlignment="Center">
-          <TextBlock Text="NK Cars Browser" FontWeight="Bold" Foreground="#102B3E" />
-          <TextBlock x:Name="DomainText" Text="facebook.com" FontSize="11" Foreground="#58717F" TextTrimming="CharacterEllipsis" />
-        </StackPanel>
-        <Button Grid.Column="2" Content="&#x21BB;" FontSize="18" Click="Reload_Click" ToolTip="Reload" />
-        <Button Grid.Column="3" Content="&#x2197;" FontSize="17" Click="External_Click" ToolTip="Open externally" />
+      <Grid Margin="10,7">
+        <Grid.RowDefinitions><RowDefinition Height="38" /><RowDefinition Height="44" /></Grid.RowDefinitions>
+        <Grid Grid.Row="0">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="42" /><ColumnDefinition Width="42" /><ColumnDefinition Width="42" /><ColumnDefinition Width="42" />
+            <ColumnDefinition Width="*" /><ColumnDefinition Width="42" />
+          </Grid.ColumnDefinitions>
+          <Button x:Name="BackButton" Grid.Column="0" Content="&#x2190;" FontSize="18" Click="Back_Click" ToolTip="Back" IsEnabled="False" />
+          <Button x:Name="ForwardButton" Grid.Column="1" Content="&#x2192;" FontSize="18" Click="Forward_Click" ToolTip="Forward" IsEnabled="False" />
+          <Button Grid.Column="2" Content="&#x21BB;" FontSize="17" Click="Reload_Click" ToolTip="Reload" />
+          <Button Grid.Column="3" Content="&#x2302;" FontSize="17" Click="Home_Click" ToolTip="Facebook Marketplace home" />
+          <StackPanel Grid.Column="4" Margin="10,0" VerticalAlignment="Center">
+            <TextBlock Text="NK Browser - Technical Test" FontWeight="Bold" Foreground="#102B3E" />
+            <TextBlock x:Name="DomainText" Text="facebook.com" FontSize="10" Foreground="#58717F" TextTrimming="CharacterEllipsis" />
+          </StackPanel>
+          <Button Grid.Column="5" Content="&#x2197;" FontSize="16" Click="External_Click" ToolTip="Open externally" />
+        </Grid>
+        <Grid Grid.Row="1" Margin="0,5,0,0">
+          <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="64" /></Grid.ColumnDefinitions>
+          <TextBox x:Name="AddressBar" Grid.Column="0" VerticalContentAlignment="Center" Padding="10,0"
+                   Text="https://www.facebook.com/marketplace/" KeyDown="AddressBar_KeyDown" ToolTip="Current URL" />
+          <Button Grid.Column="1" Margin="6,0,0,0" Content="Go" Click="Go_Click" />
+        </Grid>
       </Grid>
     </Border>
 
@@ -37,6 +46,7 @@
           <TextBlock Text="Saved to NK Cars" FontWeight="Bold" FontSize="16" Foreground="#0B6E61" />
           <TextBlock x:Name="CaseIdText" Margin="0,5,0,0" Foreground="#102B3E" />
           <TextBlock Text="The case uses customer-safe vehicle data. Availability is not confirmed." Margin="0,4,0,0" FontSize="11" Foreground="#58717F" TextWrapping="Wrap" />
+          <Button Content="View Vehicle Case" Margin="0,10,0,0" Padding="10,6" HorizontalAlignment="Left" Click="ViewCase_Click" />
         </StackPanel>
       </Border>
     </Grid>
@@ -50,7 +60,7 @@
           <ColumnDefinition />
           <ColumnDefinition />
         </Grid.ColumnDefinitions>
-        <Button x:Name="SaveButton" Grid.Column="0" Content="Save to NK" Click="Save_Click" IsEnabled="False" Margin="2" />
+        <Button x:Name="SaveButton" Grid.Column="0" Content="Save to NK" Click="Save_Click" IsEnabled="False" Margin="2" ToolTip="Available only on a real Facebook Marketplace vehicle listing" />
         <Button x:Name="TranslateButton" Grid.Column="1" Content="Translate" Click="Translate_Click" IsEnabled="False" Margin="2" />
         <Button x:Name="AskButton" Grid.Column="2" Content="Ask NK AI" Click="Ask_Click" IsEnabled="False" Margin="2" />
         <Button x:Name="CheckButton" Grid.Column="3" Content="Check Car" Click="Check_Click" IsEnabled="False" Margin="2" />

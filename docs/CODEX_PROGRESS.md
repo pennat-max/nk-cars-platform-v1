@@ -1,5 +1,32 @@
 # Codex Progress
 
+## 2026-08-25 - Windows WebView2 Manual Marketplace POC
+
+Branch: `codex/buying-browser-rebuild`
+
+### Completed
+
+- Kept the Windows proof-of-concept deliberately small and separate from the NK website UI.
+- Added WebView2 browser area, editable current-URL address bar, Back, Forward, Reload, Home, external-open fallback, and Save to NK.
+- Retained a stable per-Windows-user WebView2 profile under local application data so Facebook cookies/session can survive close and reopen.
+- Save to NK is enabled only on a real HTTPS Facebook Marketplace item URL and forwards that selected URL through the existing `/buy/share` import and Vehicle Case flow.
+- Added Case ID confirmation and a View Vehicle Case action after case navigation.
+- Navigation failures show the WebView2 error status without bypassing Facebook security controls.
+
+### Automated Verification
+
+- Windows Release build: passed with 0 warnings and 0 errors.
+- Native browser contract and Windows shell tests: 4/4 passed.
+- Real public Marketplace listing smoke: navigation passed, listing detection passed, current URL capture passed, and persistent profile folder exists.
+- `git diff --check`: passed with line-ending notices only.
+
+### Manual Owner Test Pending
+
+- Facebook login and close/reopen session persistence.
+- Search for `Revo`, Marketplace filters, real listing details, and photo navigation.
+- Save to NK through the private review Site and resulting Vehicle Case ID.
+- Android and iOS remain intentionally paused until this Windows test is completed.
+
 ## 2026-08-25 - Web Buying Browser Companion
 
 Branch: `codex/buying-browser-rebuild`

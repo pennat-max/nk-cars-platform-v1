@@ -4,6 +4,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Windows;
+using System.Windows.Input;
 using Microsoft.Web.WebView2.Core;
 
 namespace NKCars.BuyingBrowser;
@@ -19,6 +20,7 @@ public partial class MainWindow : Window
     private readonly string? _startUrl;
     private bool _smokeCompleted;
     private Uri? _currentUri;
+    private Uri? _createdCaseUri;
 
     public MainWindow()
     {
@@ -74,6 +76,7 @@ public partial class MainWindow : Window
     {
         _currentUri = Uri.TryCreate(Browser.Source?.AbsoluteUri, UriKind.Absolute, out var uri) ? uri : null;
         DomainText.Text = _currentUri?.Host ?? "Unknown source";
+        AddressBar.Text = _currentUri?.AbsoluteUri ?? string.Empty;
         var isListing = IsMarketplaceListing(_currentUri);
         SaveButton.IsEnabled = isListing;
         TranslateButton.IsEnabled = isListing;
@@ -86,8 +89,14 @@ public partial class MainWindow : Window
     private async void Browser_NavigationCompleted(object? sender, CoreWebView2NavigationCompletedEventArgs e)
     {
         BackButton.IsEnabled = Browser.CanGoBack;
+        ForwardButton.IsEnabled = Browser.CanGoForward;
+        if (!e.IsSuccess)
+        {
+            SetStatus($"Navigation failed: {e.WebErrorStatus}. No security control was bypassed.");
+        }
         if (_currentUri?.AbsolutePath.StartsWith("/buy/cases/", StringComparison.OrdinalIgnoreCase) == true)
         {
+            _createdCaseUri = _currentUri;
             var caseId = _currentUri.AbsolutePath.Split('/', StringSplitOptions.RemoveEmptyEntries).LastOrDefault() ?? "Vehicle Case";
             CaseIdText.Text = caseId;
             ConfirmationPanel.Visibility = Visibility.Visible;
@@ -143,12 +152,32 @@ public partial class MainWindow : Window
     }
 
     private void Back_Click(object sender, RoutedEventArgs e) { if (Browser.CanGoBack) Browser.GoBack(); }
+    private void Forward_Click(object sender, RoutedEventArgs e) { if (Browser.CanGoForward) Browser.GoForward(); }
     private void Reload_Click(object sender, RoutedEventArgs e) => Browser.Reload();
+    private void Home_Click(object sender, RoutedEventArgs e) => Browser.CoreWebView2.Navigate(MarketplaceUrl);
+    private void Go_Click(object sender, RoutedEventArgs e) => NavigateAddressBar();
+    private void AddressBar_KeyDown(object sender, KeyEventArgs e) { if (e.Key == Key.Enter) NavigateAddressBar(); }
     private void Save_Click(object sender, RoutedEventArgs e) => OpenNkCase("save");
     private void Translate_Click(object sender, RoutedEventArgs e) => OpenNkCase("translate");
     private void Ask_Click(object sender, RoutedEventArgs e) => OpenNkCase("ask_ai");
     private void Check_Click(object sender, RoutedEventArgs e) => OpenNkCase("check_car");
     private void More_Click(object sender, RoutedEventArgs e) => Browser.CoreWebView2.Navigate(_nkBaseUrl + "/buy");
+    private void ViewCase_Click(object sender, RoutedEventArgs e)
+    {
+        ConfirmationPanel.Visibility = Visibility.Collapsed;
+        if (_createdCaseUri is not null) Browser.CoreWebView2.Navigate(_createdCaseUri.AbsoluteUri);
+    }
+
+    private void NavigateAddressBar()
+    {
+        var value = AddressBar.Text.Trim();
+        if (!Uri.TryCreate(value, UriKind.Absolute, out var uri) || uri.Scheme != Uri.UriSchemeHttps)
+        {
+            SetStatus("Enter a complete HTTPS URL.");
+            return;
+        }
+        Browser.CoreWebView2.Navigate(uri.AbsoluteUri);
+    }
 
     private void External_Click(object sender, RoutedEventArgs e)
     {
