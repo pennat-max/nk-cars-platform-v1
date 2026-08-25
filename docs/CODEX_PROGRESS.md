@@ -1,5 +1,32 @@
 # Codex Progress
 
+## 2026-08-25 - Web Buying Browser Companion
+
+Branch: `codex/buying-browser-rebuild`
+
+### Completed
+
+- Added `/buy/browser`, a zero-install browser-style NK companion for iPhone, Android, and Windows browsers.
+- Added compact browser chrome, real Facebook Marketplace launch, clipboard/manual vehicle-link capture, and Save/Translate/Ask NK AI/Check Car actions.
+- Routed explicit actions through `/buy/share` with `web_browser_companion` provenance so the existing real import and Vehicle Case flow is reused.
+- Kept Facebook login, cookies, MFA, CAPTCHA, searches, and page content entirely with Facebook; no iframe, proxy, DOM access, credential form, or simulated integration was added.
+- Added the new experiment to the `/buy` source screen without changing the demo Browse, Vehicle Case, pricing, inspection, Owner source, or customer-safe DTO behavior.
+
+### Verification
+
+- Build and complete Node suite: 27/27 passed.
+- Typecheck: passed.
+- Lint: passed with 0 errors and 13 pre-existing `<img>` warnings.
+- `git diff --check`: passed with line-ending notices only.
+- iPhone viewport 390 x 844: no horizontal overflow; Save and all four NK toolbar actions fit without overlap.
+- Real Marketplace item URL enables Save, Translate, Ask NK AI, and Check Car actions.
+- Desktop viewport 1280 x 900: no horizontal overflow and no browser console errors.
+
+### Limitation / Next
+
+- A web app cannot place Facebook itself inside the NK page while retaining the customer's real Facebook session. `/buy/browser` is an honest external-tab companion; same-window browsing requires native WKWebView/WebView/WebView2 validation.
+- Next: publish only to the separate Owner review Site if review deployment is authorized; production and the existing live NK Cars Site remain untouched.
+
 ## 2026-08-25 - Cross-Platform Buying Browser POC
 
 Branch: `codex/buying-browser-rebuild` (implemented in the isolated preview worktree before promotion)

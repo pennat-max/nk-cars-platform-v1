@@ -15,7 +15,7 @@ const navItems = [
 ] as const;
 
 function activeKey(view: BuyingBrowserView) {
-  if (view === "source" || view === "vehicle" || view === "paste" || view === "share" || view === "ask") return "browse";
+  if (view === "source" || view === "web-browser" || view === "vehicle" || view === "paste" || view === "share" || view === "ask") return "browse";
   if (view === "case") return "cases";
   if (view === "account") return "messages";
   return view;

@@ -86,6 +86,7 @@ export type SourceCapture = {
     | "ios_wkwebview"
     | "android_webview"
     | "windows_webview2"
+    | "web_browser_companion"
     | "manual_evidence";
   importStatus: "imported" | "partial" | "evidence_only";
   capturedAt: string;
@@ -145,6 +146,7 @@ export type BuyingBrowserState = {
 
 export type BuyingBrowserView =
   | "source"
+  | "web-browser"
   | "browse"
   | "saved"
   | "vehicle"
