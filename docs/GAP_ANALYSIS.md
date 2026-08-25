@@ -1,14 +1,14 @@
 # NK Cars Gap Analysis
 
-Status: Buying Browser feasibility spike selects one-action share handoff; native iPhone delivery, production identity, persistence, and integrations remain
-Date: 2026-08-24
+Status: Owner-approved native cross-platform Buying Browser POC is implemented; Windows real-listing navigation is proven, mobile runtime validation remains
+Date: 2026-08-25
 Branch: `codex/buying-browser-rebuild`
 
 ## Source Of Truth
 
 Conflict priority for current V1 work:
 
-1. Explicit current Owner instruction.
+1. Explicit current Owner instruction, including the approved iOS WKWebView + Android WebView + Windows WebView2 direction.
 2. `docs/PRODUCT_PIVOT_BUYING_BROWSER.md` for the customer-facing V1 Buying Browser.
 3. `docs/PRODUCT_DIRECTION_LIVE_BROKER.md` for authorized live sourcing, adapters, profiles, queueing, and candidate controls.
 4. `docs/MASTER_SPECIFICATION.md` for non-conflicting rules and downstream V2-V5 operations.
@@ -18,7 +18,19 @@ The pivot changes V1 from a stock-first dealership experience to an AI-assisted 
 
 ## Approved V1 Journey
 
-Open real Facebook Marketplace outside NK with the customer's own authenticated session -> browse/select a real listing -> Share -> Save to NK Cars -> capture permitted source evidence and atomically create a customer-safe Vehicle Case -> translate/normalize facts -> request current availability/price -> show deterministic service pricing -> request inspection -> retain case conversation/history -> continue toward a controlled Buy Through NK workflow.
+Open real Facebook Marketplace inside the NK native browser adapter where permitted -> customer authenticates directly with Facebook -> browse/select a real listing -> use the compact native NK action bar -> capture only the explicitly selected listing URL and atomically create a customer-safe Vehicle Case -> translate/normalize facts -> request current availability/price -> show deterministic service pricing -> request inspection -> retain case conversation/history -> continue toward a controlled Buy Through NK workflow.
+
+External Share to NK Cars and Copy Link remain platform fallbacks. The earlier iframe `X-Frame-Options` failure does not apply to a top-level native WebView navigation, but no native adapter may bypass a Facebook login, checkpoint, MFA, CAPTCHA, or access control.
+
+## Cross-Platform POC Status
+
+| Target | Adapter | Build/runtime evidence | Remaining gap |
+| --- | --- | --- | --- |
+| Windows | Microsoft WebView2 | Release build passes. A real Marketplace item loaded successfully and its current URL was recognized/capturable in a persistent local profile. | Human Facebook login, search/filter interaction, restart session check, and explicit Save-to-case UI evidence still require a customer-operated session. |
+| Android | Android WebView | Source adapter, isolated profile, native toolbar, explicit capture, ACTION_SEND share fallback, and external-open fallback are implemented and covered by shared contract tests. | APK build requires acceptance/installation of Android SDK 35; emulator/physical-device Facebook behavior and session persistence are untested. |
+| iOS | WKWebView | XcodeGen source, persistent app-sandbox data store, native toolbar, explicit capture, external-open fallback, and policy tests are implemented. | A Mac with Xcode, signing team, simulator/device, and human Facebook session is required; no iOS runtime claim is made from Windows. |
+
+The smallest next V1 milestone is **BB-NATIVE-2 - Device Validation And Signed Fallbacks**: build Android after SDK license acceptance, run the real listing plus restart/session test on Android, build/run iOS with Xcode and a signed Share Extension fallback, and validate explicit Save creates a durable/authenticated Vehicle Case. This precedes production identity activation and does not deploy or overwrite the live Site.
 
 The existing NK demo Browse grid, Ask NK AI, direct link paste, and photo/text fallback remain secondary paths in that order. Copy/paste is last resort. Demo cards are not evidence of real Marketplace access.
 
@@ -120,7 +132,7 @@ The approved Buying Browser V1 preview acceptance criteria are complete. The fol
 ## Technical Blockers
 
 - Real NK customer authentication, tenant isolation, database project/configuration, RLS, and durable Storage are not connected.
-- Embedded Facebook Marketplace is technically blocked by Facebook's `X-Frame-Options: DENY` response and must remain external.
+- Web iframe embedding remains blocked by Facebook's `X-Frame-Options: DENY`. Native top-level browser adapters are now the approved experiment; runtime support must be reported per platform and external Share/Copy Link retained wherever blocked.
 - A remote customer-specific source session, if later activated, requires an approved encrypted session-storage design and manual user authentication.
 - Facebook/other source UI and access can change; live browser access cannot be a CI dependency.
 - No production connector URL/token, AI model/key, durable worker, monitoring, or alerting configuration is approved.

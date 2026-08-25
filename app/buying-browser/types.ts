@@ -79,7 +79,14 @@ export type SourceCapture = {
   sourcePlatform: string;
   submittedUrl: string;
   canonicalUrl: string;
-  captureMethod: "external_share_link" | "web_share_target" | "ios_share_extension" | "manual_evidence";
+  captureMethod:
+    | "external_share_link"
+    | "web_share_target"
+    | "ios_share_extension"
+    | "ios_wkwebview"
+    | "android_webview"
+    | "windows_webview2"
+    | "manual_evidence";
   importStatus: "imported" | "partial" | "evidence_only";
   capturedAt: string;
 };

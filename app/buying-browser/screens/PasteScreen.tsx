@@ -6,6 +6,7 @@ import { AlertCircle, Bot, Camera, CheckCircle2, ClipboardPaste, ExternalLink, F
 import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useBuyingBrowser } from "../BuyingBrowserProvider";
 import { createExternalSourceCapture } from "../domain.mjs";
+import { nativeCaptureMethod } from "../native-bridge";
 import { formatMileage, formatThb } from "../format";
 import type { CustomerListing, SourceCapture } from "../types";
 
@@ -137,12 +138,13 @@ export default function PasteScreen({ autoCapture = false }: { autoCapture?: boo
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const sharedUrl = extractFacebookUrl(params.get("url") || params.get("text") || "");
+    const captureMethod = nativeCaptureMethod(params.get("source"));
     if (!sharedUrl || !hydrated) return;
     if (autoCapture && autoCaptureStarted.current) return;
     if (autoCapture) autoCaptureStarted.current = true;
     queueMicrotask(() => {
       setUrl(sharedUrl);
-      if (autoCapture) void importSourceLink(sharedUrl, true);
+      if (autoCapture) void importSourceLink(sharedUrl, true, captureMethod);
     });
     // importSourceLink intentionally runs once for the operating-system share request.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -167,7 +169,7 @@ export default function PasteScreen({ autoCapture = false }: { autoCapture?: boo
     }
   }
 
-  async function importSourceLink(sourceUrl: string, createCaseAutomatically = false) {
+  async function importSourceLink(sourceUrl: string, createCaseAutomatically = false, captureMethod: SourceCapture["captureMethod"] = "external_share_link") {
     if (!sourceUrl) { setMessage("Paste a complete HTTPS vehicle link."); return; }
     const host = new URL(sourceUrl).hostname.toLowerCase();
     if (!isFacebookHost(host)) { setMessage("This source does not have a connected importer yet. The link is preserved in this form; add screenshots/photos or listing text below."); return; }
@@ -179,7 +181,7 @@ export default function PasteScreen({ autoCapture = false }: { autoCapture?: boo
       if (!response.ok || !["imported", "partial"].includes(payload.status || "")) { setMessage(payload.message || "This listing could not be read automatically. Continue with screenshots/photos or listing text."); return; }
       const listing = buildImportedListing(payload, sourceUrl);
       const canonicalUrl = facebookSourceCaptureUrl(payload.canonical_url || "") || sourceUrl;
-      const sourceCapture = createExternalSourceCapture(listing, { submittedUrl: sourceUrl, canonicalUrl, sourcePlatform: "Facebook Marketplace", captureMethod: createCaseAutomatically ? "web_share_target" : "external_share_link", importStatus: payload.status === "imported" ? "imported" : "partial" });
+      const sourceCapture = createExternalSourceCapture(listing, { submittedUrl: sourceUrl, canonicalUrl, sourcePlatform: "Facebook Marketplace", captureMethod: createCaseAutomatically ? captureMethod : "external_share_link", importStatus: payload.status === "imported" ? "imported" : "partial" });
       addImportedListing(listing, sourceCapture); setResult(listing); setResultCapture(sourceCapture);
       if (createCaseAutomatically) {
         const id = saveAsCase(listing, undefined, sourceCapture);

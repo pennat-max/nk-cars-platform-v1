@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "marketplaceStartUrl": "https://www.facebook.com/marketplace/",
+  "listingUrlPattern": "^https://(?:[^/]+\\.)?facebook\\.com/marketplace/item/[0-9]+/?(?:[?#].*)?$",
+  "nkSharePath": "/buy/share",
+  "captureSources": [
+    "ios_wkwebview",
+    "android_webview",
+    "windows_webview2"
+  ],
+  "toolbarActions": [
+    "save",
+    "translate",
+    "ask_ai",
+    "check_car",
+    "more"
+  ],
+  "security": {
+    "injectBridgeIntoFacebook": false,
+    "collectFacebookPassword": false,
+    "persistFacebookPassword": false,
+    "bypassMfaCaptchaOrCheckpoint": false,
+    "captureOnlyAfterExplicitSave": true
+  }
+}

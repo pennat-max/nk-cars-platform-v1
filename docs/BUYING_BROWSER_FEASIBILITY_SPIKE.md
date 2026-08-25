@@ -1,12 +1,12 @@
 # NK Cars Buying Browser - Authenticated Facebook Feasibility Spike
 
-Status: Success Option B implemented where the operating system supports it; iPhone native delivery remains externally blocked
+Status: Superseded for primary architecture by the Owner-approved native cross-platform direction on 2026-08-25. External Share remains a required fallback and the evidence below remains historical context.
 Date: 2026-08-24
 Branch: `codex/buying-browser-rebuild`
 
-## Decision
+## Historical Decision
 
-NK must not present Facebook login inside an NK-controlled WebView and must not proxy Facebook pages to remove security headers. The safest viable customer architecture is:
+This decision was superseded by the explicit Owner direction to test top-level WKWebView, Android WebView, and WebView2 adapters. The no-proxy, no-security-bypass, no-NK-credential-collection rules remain binding. The historical selected architecture was:
 
 1. Open the real Facebook Marketplace in the customer's external Facebook app or system browser, preserving the customer's own authenticated session.
 2. The customer chooses a real listing and invokes the operating-system Share action.
