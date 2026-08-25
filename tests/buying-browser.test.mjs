@@ -133,7 +133,7 @@ test("renders additive Buying Browser routes without customer source leakage", a
   const { default: worker } = await import(workerUrl.href);
   const env = { ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) } };
   const ctx = { waitUntil() {}, passThroughOnException() {} };
-  const routes = ["/buy", "/buy/browser", "/buy/browse", "/buy/saved", "/buy/paste", "/buy/share", "/buy/ask", "/buy/cases", "/buy/cases/NK-CASE-2026-000001", "/buy/inspections", "/buy/messages", "/buy/account", "/buy/vehicle/th-demo-001", "/buy/vehicle/nk-poc-2026-0001"];
+  const routes = ["/buy", "/buy/browser", "/buy/browse", "/buy/saved", "/buy/paste", "/buy/share", "/buy/ask", "/buy/cases", "/buy/cases/NK-CASE-2026-000001", "/buy/inspections", "/buy/messages", "/buy/account", "/buy/vehicle/nk-market-2026-0825-01", "/buy/vehicle/nk-market-2026-0825-05"];
   for (const route of routes) {
     const response = await worker.fetch(new Request(`http://localhost${route}`, { headers: { accept: "text/html" } }), env, ctx);
     assert.equal(response.status, 200, route);
@@ -143,15 +143,16 @@ test("renders additive Buying Browser routes without customer source leakage", a
     assert.doesNotMatch(html, /facebook\.com\/marketplace\/item\/1716607786274590|1IXEZTH2EYcIeM6HQKJ2Qfk4LZYsVWu4ipNolXoTnxhw|1oR6RF0CZpokbnEcWQ7iMtWiplnskWEB1/i, route);
     assert.doesNotMatch(html, /4406225212934069|1078557808193843|Pranee Pra Jaideaw|080 632 3247/i, route);
     if (route === "/buy") {
-      assert.match(html, /data-real-source-launch/i);
-      assert.match(html, /Browse real Facebook Marketplace/i);
-      assert.doesNotMatch(html, /data-vehicle-card-v2/i);
+      assert.match(html, /data-browse-marketplace-v2/i);
+      assert.match(html, /data-vehicle-card-v2/i);
+      assert.match(html, /10 selected/i);
+      assert.doesNotMatch(html, /data-real-source-launch/i);
     }
     if (route === "/buy/browse") {
       assert.match(html, /data-browse-marketplace-v2/i);
       assert.match(html, /data-vehicle-card-v2/i);
-      assert.match(html, /2025 Toyota Hilux Revo 2\.8 4WD GR Sport Wide/i);
-      assert.match(html, /1 captured/i);
+      assert.match(html, /2020 Toyota Hilux Revo Rocco 2\.4 AT/i);
+      assert.match(html, /10 selected/i);
       assert.doesNotMatch(html, /Explore customer-safe vehicle results|Demo market results|Primary Buying Browser actions/i);
     }
     if (route === "/buy/browser") {
@@ -165,10 +166,10 @@ test("renders additive Buying Browser routes without customer source leakage", a
       assert.match(html, /Open Facebook Marketplace/i);
       assert.match(html, /Facebook opens outside NK/i);
     }
-    if (route === "/buy/vehicle/th-demo-001" || route === "/buy/vehicle/nk-poc-2026-0001") {
+    if (route === "/buy/vehicle/nk-market-2026-0825-01" || route === "/buy/vehicle/nk-market-2026-0825-05") {
       assert.match(html, /data-vehicle-detail-v2/i);
       assert.match(html, /data-vehicle-actions-v2/i);
-      const actionLabels = [route.includes("nk-poc") ? "Saved" : "Save Vehicle", "Ask NK AI", "Check Availability", "Request Inspection", "Buy Through NK"];
+      const actionLabels = ["Save Vehicle", "Ask NK AI", "Check Availability", "Request Inspection", "Buy Through NK"];
       const actionPositions = actionLabels.map((label) => html.indexOf(label));
       assert.ok(actionPositions.every((position) => position >= 0), "all vehicle actions render");
       assert.deepEqual(actionPositions, [...actionPositions].sort((a, b) => a - b), "vehicle actions render in the approved order");
@@ -234,4 +235,19 @@ test("browser capture evidence contains ten real listings and 167 local images",
   assert.equal(listingFolders.length, 10);
   assert.equal(images.flat().length, 167);
   assert.ok(images.every((files) => files.length >= 12));
+});
+
+test("customer marketplace exposes ten reviewed listings with only reviewed media", async () => {
+  const { readFile, readdir } = await import("node:fs/promises");
+  const moduleText = await readFile(new URL("../app/buying-browser/source-adapters/captured-customer-data.ts", import.meta.url), "utf8");
+  const root = new URL("../public/vehicle-marketplace/owner-reviewed-2026-08-26/", import.meta.url);
+  const listingFolders = (await readdir(root, { withFileTypes: true })).filter((entry) => entry.isDirectory());
+  const images = await Promise.all(listingFolders.map((entry) => readdir(new URL(`${entry.name}/`, root))));
+
+  assert.equal(listingFolders.length, 10);
+  assert.equal(images.flat().length, 30);
+  assert.ok(images.every((files) => files.length === 3));
+  for (const secret of ["facebook.com", "sellerName", "sellerPhone", "sourceUrl", "nk-capture-batch-2026-08-25", "Pranee Pra Jaideaw", "080 632 3247"]) {
+    assert.doesNotMatch(moduleText, new RegExp(secret.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"));
+  }
 });

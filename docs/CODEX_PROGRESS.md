@@ -495,3 +495,34 @@ Started Milestone 1: Next.js shell and visual parity.
 ### Next Recommended Step
 
 - After Owner review of the ten internal records, run the smallest publication milestone: select customer-safe covers/gallery media, mask registration/source clues, create customer-safe DTOs for approved records, and add only those approved records to Browse and Vehicle Cases.
+
+## 2026-08-26 - Ten-Vehicle Customer Marketplace Review
+
+### Completed
+
+- Replaced the customer Browse demo feed with ten customer-safe snapshots derived from the real Owner capture batch. `/buy` now opens the Marketplace-style Browse experience directly; the source-launch and link/share fallback code remains available as rollback/reference.
+- Added an explicit customer-only DTO module and source adapter. It does not import the internal capture records and contains no seller identity, seller phone, source URL, exact source location, or internal notes.
+- Selected and visually reviewed 30 customer-safe photos, three per vehicle. The public asset paths use NK references rather than Facebook listing IDs, and the selected set excludes visible registration plates and direct source identifiers.
+- Preserved all 167 raw images and complete source/seller evidence in the authenticated Owner boundary. No source record, source URL, or internal media was deleted.
+- Kept price and availability honest: cards show the observed vehicle price while every listing remains `Availability Not Yet Confirmed`; seller contact and purchase commitment are not automated.
+- Corrected one internal/customer mileage field to 247,356 km from the captured odometer image and retained `Need Review` for condition and modifications.
+
+### Verification
+
+- `git diff --check`: passed.
+- `npm.cmd exec tsc -- --noEmit`: passed.
+- `npm.cmd run lint`: passed with zero errors and 13 pre-existing prototype `<img>` optimization warnings.
+- `npm.cmd test`: passed, including the production build and 30/30 Node tests.
+- iPhone viewport checks at 390 x 844 passed for Browse, search, and vehicle detail. Browse rendered ten cards, `Rocco` search returned three, detail rendered three reviewed images and all five actions, and no customer-page horizontal overflow, missing image, console error, or source/seller leakage was found.
+- `.openai/hosting.json` remains unchanged and still points to the existing NK Cars Site. The separate ChatGPT Site review deployment is the current release task; the existing Site will not be overwritten.
+
+### Current Limits
+
+- The ten records are reviewed static snapshots, not a live Marketplace feed. Current seller price, availability, condition, documents, and ownership claims still require NK verification.
+- Customer account state, saved vehicles, Vehicle Cases, and conversations remain browser-local preview state; durable tenant-scoped persistence is not connected.
+- Raw source media remains repository-local and must move to authenticated private storage before production activation.
+- No production deployment, existing Site overwrite, seller/customer message, payment, or purchase commitment was performed.
+
+### Next Recommended Milestone
+
+- `BB-V1D-01 - Durable Review And Cases`: persist publication decisions, saved vehicles, Vehicle Cases, timeline, and conversation history under approved customer identity/RLS while retaining the current customer-safe DTO and private-source boundary.

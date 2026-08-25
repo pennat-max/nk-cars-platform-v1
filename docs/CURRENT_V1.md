@@ -196,7 +196,7 @@ All 18 Buying Browser V1 preview targets are implemented additively under `/buy`
 - customer shell, Browse, Saved, Vehicle detail, My Cases, Inspections, Messages, Account, and separate Owner demo routes;
 - text search plus year, price, mileage, location, transmission, drive, body, and sort controls;
 - Paste Link through the real import boundary when supported, with an honest photo/text/manual fallback when blocked and a reload-safe multi-photo preview gallery;
-- customer-safe normalized English vehicle facts, one Owner-selected captured snapshot plus labeled demo data, deterministic grounded NK AI preview replies, and no invented facts;
+- customer-safe normalized English vehicle facts, ten Owner-reviewed capture snapshots in the default Marketplace, deterministic grounded NK AI preview replies, and no invented facts;
 - deduplicated Vehicle Cases, availability requests, inspection requests, case timelines, and conversation history;
 - deterministic 10% preview commission on vehicle price only, explicit inspection/travel zones, and Pending pass-through costs;
 - separate customer and internal source DTOs with customer redaction tests;
@@ -204,11 +204,11 @@ All 18 Buying Browser V1 preview targets are implemented additively under `/buy`
 
 Preview state is intentionally browser-local and snapshot/demo source-adapter backed. Production Auth, tenant isolation, RLS, durable storage, encrypted source sessions, real AI, real provider assignment, and real messaging remain blocked integrations rather than simulated successes.
 
-### One-car captured snapshot
+### Reviewed capture snapshots
 
-`NK-POC-2026-0001` is the first Owner-selected real listing snapshot shown in the Buying Browser. It has a seeded customer-safe Vehicle Case, reviewed English facts, nine customer-safe images, deterministic preview pricing, and the existing case actions. The 18 original images, source URL, seller/source notes, and Google Sheet/Drive evidence stay behind the internal preview boundary.
+The default `/buy` Marketplace contains ten customer-safe snapshots produced from the Owner's authenticated browser capture batch. Each vehicle has evidence-backed English facts, three visually reviewed customer photos, deterministic preview pricing, and the existing case actions. Public asset paths use NK references rather than upstream listing IDs. All 167 raw images, source URLs, seller identity/contact, exact source location, and internal notes remain behind the authenticated Owner boundary.
 
-This is not a live Marketplace or Google Sheet integration. The UI labels it `Captured`, the adapter reports `snapshot`, and availability remains unverified. The odometer image shows 24,623 km while listing text states 24,000 km, so mileage remains an explicit evidence conflict requiring review.
+This is not a live Marketplace feed. The UI labels the records `NK Selection`, the adapter reports `snapshot`, and price/availability remain unverified. The legacy one-car Google Sheet POC and labeled demo records remain available as rollback/reference but are not the default customer Browse feed.
 
 ### Real-source proof of concept
 

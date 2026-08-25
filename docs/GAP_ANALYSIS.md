@@ -208,3 +208,32 @@ BB-V1D is blocked on approved production project/configuration and must not depl
 ### Smallest Next V1 Milestone
 
 `BB-V1-POC3 - Review-To-Publish Ten Vehicles`: add persisted review decisions for the ten captures, produce plate/source-redacted customer media for Owner-approved vehicles, generate customer-safe listing DTOs, and verify Browse/detail/case flows without publishing or contacting sellers.
+
+## Ten-Vehicle Marketplace Review Update - 2026-08-26
+
+### Implemented
+
+- Ten real capture snapshots now appear in the customer Marketplace through a dedicated customer-safe adapter; the eight demo cards and one-car POC are no longer the default Browse feed.
+- Thirty visually reviewed images are available under NK-only public references. The selected set excludes visible registration plates and source-identifying URLs/names; all 167 raw files remain restricted to the authenticated Owner route.
+- `/buy` is now the Marketplace-first customer entry. Search, location/year/price/spec filters, saved vehicles, detail gallery, Ask NK AI, availability, inspection, Buy Through NK, and Vehicle Case contracts remain intact.
+- Automated tests now verify ten customer records, thirty reviewed assets, customer module separation, and rendered-route non-disclosure.
+
+### Remaining V1 Gaps
+
+- **Durable review/publish state:** the ten publication decisions are code-backed snapshots rather than database records with Approve/Edit/Reject history and audit.
+- **Identity and persistence:** customer auth, tenant-scoped saved vehicles/Cases/messages, RLS, idempotency, and backups are not connected.
+- **Private media:** raw source evidence still needs private object storage, signed access, visibility metadata, retention, and restore policy before production.
+- **Freshness and operations:** source price, availability, duplicate state, seller response, and condition are unverified; no seller messages were sent.
+- **Automated ingestion:** scheduled search/capture, session health, retries, compliant source policies, and additional source adapters remain external/integration work.
+
+### V1-V5 Impact
+
+- **V1:** customer Marketplace preview is complete for the reviewed batch. Remaining work is durable identity/cases, review audit, private media, freshness, compliant ingestion, and operational verification.
+- **V2:** dealer portal, source network, offers, seller trust, and controlled sourcing automation remain unchanged.
+- **V3:** quote/PI, negotiation approval, payment, Purchase Fund, deposits/refunds, and purchase approval remain unchanged.
+- **V4:** procurement, secured-vehicle controls, inspection operations, repair, export/shipping, delivery, and after-sales remain unchanged.
+- **V5:** 360 pages, task/KPI engine, risk detection, immutable audit expansion, reporting, forecast, and Owner command center remain unchanged.
+
+### Smallest Next V1 Milestone
+
+`BB-V1D-01 - Durable Review And Cases`: connect the approved development identity/database boundary and persist review decisions, saved vehicles, Vehicle Cases, timeline, and messages under tenant-scoped RLS. Keep the current Marketplace UI, deterministic pricing, inspection rules, customer-safe DTOs, and internal source records unchanged.

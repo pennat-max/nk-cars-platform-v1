@@ -26,11 +26,11 @@ export default function VehicleScreen({ sourceId }: { sourceId?: string }) {
       <Link className="bb-back-link" href="/buy"><ArrowLeft size={18} />Browse Vehicles</Link>
       <article className="bb-vehicle-detail" data-vehicle-detail-v2>
         <section className="bb-gallery">
-          <div className="bb-gallery-main"><VehiclePhoto listing={listing} imageUrl={listing.imageUrls[imageIndex] || listing.imageUrls[0]} alt={`${listing.title} view ${imageIndex + 1}`} /><span>{listing.demo ? "Demo" : "Imported evidence"}</span></div>
+          <div className="bb-gallery-main"><VehiclePhoto listing={listing} imageUrl={listing.imageUrls[imageIndex] || listing.imageUrls[0]} alt={`${listing.title} view ${imageIndex + 1}`} /><span>{listing.demo ? "Demo" : `${imageIndex + 1} of ${listing.imageUrls.length}`}</span></div>
           {!listing.demo && listing.imageUrls.length > 1 && <div className="bb-gallery-thumbs">{listing.imageUrls.map((image, index) => <button key={image} className={index === imageIndex ? "active" : ""} onClick={() => setImageIndex(index)} aria-label={`Show vehicle image ${index + 1}`}><img src={image} alt="" /></button>)}</div>}
         </section>
         <section className="bb-vehicle-summary">
-          <div className="bb-status-row"><span className="bb-status-chip market">{listing.demo ? "Demo" : "Imported Evidence"}</span><span className="bb-status-chip pending"><Clock3 size={13} />{listing.availability}</span></div>
+          <div className="bb-status-row"><span className="bb-status-chip market">{listing.demo ? "Demo" : "NK Selection"}</span><span className="bb-status-chip pending"><Clock3 size={13} />{listing.availability}</span></div>
           <h1>{listing.title}</h1>
           <p className="bb-grade">{listing.grade} · {listing.color}</p>
           <strong className="bb-vehicle-price">{formatThb(listing.observedPriceThb)}</strong>

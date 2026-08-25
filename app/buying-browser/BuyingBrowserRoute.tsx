@@ -1,7 +1,7 @@
 import { getChatGPTUser } from "../chatgpt-auth";
 import BuyingBrowserApp from "./BuyingBrowserApp";
 import { DEFAULT_FILTERS } from "./domain.mjs";
-import { demoThaiMarketAdapter } from "./source-adapters/demo-adapter";
+import { customerMarketplaceAdapter } from "./source-adapters/customer-marketplace-adapter";
 import { createCapturedPocCase } from "./source-adapters/sheet-poc-data";
 import type { BuyingBrowserView, CustomerIdentity } from "./types";
 
@@ -16,8 +16,8 @@ export default async function BuyingBrowserRoute({ view, sourceId, caseId }: { v
     ? { id: customerIdFromEmail(signedIn.email), displayName: signedIn.displayName, email: signedIn.email, country: "Not set", destinationPort: "Not set", isPreview: false }
     : { id: "preview-james-mwangi", displayName: "James Mwangi", email: null, country: "Kenya", destinationPort: "Mombasa", isPreview: true };
   const [sourceStatus, result] = await Promise.all([
-    demoThaiMarketAdapter.getStatus(),
-    demoThaiMarketAdapter.search({ customerId: customer.id, searchArea: "Thailand", filters: { ...DEFAULT_FILTERS }, limit: 50 }),
+    customerMarketplaceAdapter.getStatus(),
+    customerMarketplaceAdapter.search({ customerId: customer.id, searchArea: "Thailand", filters: { ...DEFAULT_FILTERS }, limit: 50 }),
   ]);
   return <BuyingBrowserApp view={view} sourceId={sourceId} caseId={caseId} customer={customer} sourceStatus={sourceStatus} listings={result.results} seedCases={[createCapturedPocCase(customer.id)]} />;
 }

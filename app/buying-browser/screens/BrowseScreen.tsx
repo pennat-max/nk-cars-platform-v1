@@ -19,7 +19,7 @@ export default function BrowseScreen({ savedOnly = false }: { savedOnly?: boolea
   const visibleListings = useMemo(() => filterListings(sourceListings, filters), [filters, sourceListings]);
   const activeFilterCount = [filters.location !== "All Thailand", filters.yearFrom, filters.yearTo, filters.priceMin, filters.priceMax, filters.mileageMax, filters.transmission !== "Any", filters.drive !== "Any", filters.body !== "Any"].filter(Boolean).length;
   const capturedCount = listings.filter((item) => !item.demo).length;
-  const sourceLabel = sourceStatus.live ? "Live" : capturedCount ? `${capturedCount} captured` : "Demo";
+  const sourceLabel = sourceStatus.live ? "Live" : capturedCount ? `${capturedCount} selected` : "Demo";
 
   function setFilter<Key extends keyof BrowseFilters>(key: Key, value: BrowseFilters[Key]) {
     setFilters((current) => ({ ...current, [key]: value }));
