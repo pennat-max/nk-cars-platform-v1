@@ -32,6 +32,10 @@ External Share to NK Cars and Copy Link remain platform fallbacks. The earlier i
 
 The smallest next V1 milestone is **BB-NATIVE-2 - Device Validation And Signed Fallbacks**: build Android after SDK license acceptance, run the real listing plus restart/session test on Android, build/run iOS with Xcode and a signed Share Extension fallback, and validate explicit Save creates a durable/authenticated Vehicle Case. This precedes production identity activation and does not deploy or overwrite the live Site.
 
+### Web Browser Companion
+
+The additive `/buy/browser` route is complete as the closest zero-install web fallback. It provides browser chrome, Facebook launch, clipboard/manual listing capture, and the NK action bar on mobile and desktop. Facebook remains in its own real tab/app because cross-origin browser controls and Facebook framing policy prevent a normal web application from embedding or reading the customer's Facebook page/session. A true same-window Facebook experience still requires the native adapters or an approved remote-browser service.
+
 The existing NK demo Browse grid, Ask NK AI, direct link paste, and photo/text fallback remain secondary paths in that order. Copy/paste is last resort. Demo cards are not evidence of real Marketplace access.
 
 Important states must remain factual: `Live Market Result`, `Found in Thailand`, `Availability Not Yet Confirmed`, `Verified Available`, and `NK Secured` are not interchangeable.

@@ -133,7 +133,7 @@ test("renders additive Buying Browser routes without customer source leakage", a
   const { default: worker } = await import(workerUrl.href);
   const env = { ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) } };
   const ctx = { waitUntil() {}, passThroughOnException() {} };
-  const routes = ["/buy", "/buy/browse", "/buy/saved", "/buy/paste", "/buy/share", "/buy/ask", "/buy/cases", "/buy/inspections", "/buy/messages", "/buy/account", "/buy/vehicle/th-demo-001"];
+  const routes = ["/buy", "/buy/browser", "/buy/browse", "/buy/saved", "/buy/paste", "/buy/share", "/buy/ask", "/buy/cases", "/buy/inspections", "/buy/messages", "/buy/account", "/buy/vehicle/th-demo-001"];
   for (const route of routes) {
     const response = await worker.fetch(new Request(`http://localhost${route}`, { headers: { accept: "text/html" } }), env, ctx);
     assert.equal(response.status, 200, route);
@@ -149,6 +149,12 @@ test("renders additive Buying Browser routes without customer source leakage", a
       assert.match(html, /data-browse-marketplace-v2/i);
       assert.match(html, /data-vehicle-card-v2/i);
       assert.doesNotMatch(html, /Explore customer-safe vehicle results|Demo market results|Primary Buying Browser actions/i);
+    }
+    if (route === "/buy/browser") {
+      assert.match(html, /data-web-browser-companion/i);
+      assert.match(html, /Open Facebook Marketplace/i);
+      assert.match(html, /Save to NK/i);
+      assert.doesNotMatch(html, /iframe/i);
     }
     if (route === "/buy/paste" || route === "/buy/share") {
       assert.match(html, /data-facebook-external-handoff/i);

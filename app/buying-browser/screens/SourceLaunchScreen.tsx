@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ExternalLink, Globe2, Link2, Share2, ShieldCheck } from "lucide-react";
+import { ExternalLink, Globe2, Link2, Share2, ShieldCheck, TabletSmartphone } from "lucide-react";
 
 export default function SourceLaunchScreen() {
   return (
@@ -20,6 +20,11 @@ export default function SourceLaunchScreen() {
           <li>Choose Save to NK Cars when available</li>
         </ol>
         <div className="bb-source-safety"><Share2 size={16} /><p>On supported installed NK apps, sharing opens NK and creates the Vehicle Case automatically. iPhone requires the NK iOS Share Extension; the web preview cannot install that extension.</p></div>
+      </section>
+      <section className="bb-paste-tool bb-browser-entry">
+        <div className="bb-section-heading"><div><p className="bb-kicker">Web app experiment</p><h2>Try the NK Web Browser</h2></div><span><TabletSmartphone size={20} /></span></div>
+        <p>Open the real Facebook Marketplace, then return with the selected vehicle link to use the NK action bar and create a Vehicle Case.</p>
+        <Link className="bb-button primary" href="/buy/browser">Open NK Web Browser</Link>
       </section>
       <section className="bb-paste-tool">
         <div className="bb-section-heading"><div><p className="bb-kicker">Other NK paths</p><h2>Continue inside NK</h2></div><span><ShieldCheck size={20} /></span></div>

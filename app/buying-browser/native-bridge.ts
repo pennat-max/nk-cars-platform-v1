@@ -1,6 +1,6 @@
 import type { SourceCapture } from "./types";
 
-export const NATIVE_BROWSER_SOURCES = ["ios_wkwebview", "android_webview", "windows_webview2"] as const;
+export const NATIVE_BROWSER_SOURCES = ["ios_wkwebview", "android_webview", "windows_webview2", "web_browser_companion"] as const;
 
 export type NativeBrowserSource = typeof NATIVE_BROWSER_SOURCES[number];
 

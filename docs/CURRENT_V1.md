@@ -4,6 +4,8 @@ Status: Active working context for Codex
 Purpose: Keep routine development fast and token-efficient.
 Implementation status: The Owner-approved cross-platform Buying Browser direction supersedes the earlier external-share-only conclusion. Native WKWebView, Android WebView, and Windows WebView2 proof-of-concept adapters are in progress; external Share and Copy Link remain required fallbacks. Production activation is not approved.
 
+Web companion status: `/buy/browser` provides a browser-style NK shell on iPhone, Android, and Windows web browsers. It opens the real Facebook Marketplace in Facebook's own tab/app, accepts the selected listing link, and forwards explicit NK actions into the existing Vehicle Case flow. It does not embed, proxy, inspect, or control Facebook and must not be described as a native in-app Facebook browser.
+
 Use this file with `AGENTS.md` as the default context. Consult larger product specs only when necessary.
 
 ## 1. Current product
