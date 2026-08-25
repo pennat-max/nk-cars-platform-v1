@@ -32,18 +32,31 @@ function validStoredState(value: unknown): value is BuyingBrowserState {
   return candidate.version === 1 && Array.isArray(candidate.savedListingIds) && Array.isArray(candidate.cases) && Array.isArray(candidate.importedListings) && Array.isArray(candidate.generalMessages);
 }
 
+function withSeedCases(current: BuyingBrowserState, seedCases: VehicleCase[]) {
+  const existingListings = new Set(current.cases.map((item) => item.listingId));
+  const missingSeeds = seedCases.filter((item) => !existingListings.has(item.listingId));
+  if (!missingSeeds.length) return current;
+  return {
+    ...current,
+    savedListingIds: [...new Set([...missingSeeds.map((item) => item.listingId), ...current.savedListingIds])],
+    cases: [...missingSeeds, ...current.cases],
+  };
+}
+
 export function BuyingBrowserProvider({
   customer,
   sourceStatus,
   initialListings,
+  seedCases = [],
   children,
 }: {
   customer: CustomerIdentity;
   sourceStatus: SourceAdapterStatus;
   initialListings: CustomerListing[];
+  seedCases?: VehicleCase[];
   children: ReactNode;
 }) {
-  const [state, setState] = useState<BuyingBrowserState>(() => initialBuyingBrowserState());
+  const [state, setState] = useState<BuyingBrowserState>(() => withSeedCases(initialBuyingBrowserState(), seedCases));
   const [hydrated, setHydrated] = useState(false);
   const storageKey = useMemo(() => `nk-cars-buying-browser-v1:${customer.id}`, [customer.id]);
 
@@ -55,11 +68,11 @@ export function BuyingBrowserProvider({
         const raw = window.localStorage.getItem(storageKey);
         if (raw) {
           const parsed: unknown = JSON.parse(raw);
-          if (validStoredState(parsed)) nextState = await hydratePreviewMedia(storageKey, {
+          if (validStoredState(parsed)) nextState = withSeedCases(await hydratePreviewMedia(storageKey, {
             ...parsed,
             sourceCaptures: Array.isArray(parsed.sourceCaptures) ? parsed.sourceCaptures : [],
             cases: parsed.cases.map((record) => ({ ...record, sourceCaptureId: record.sourceCaptureId || null })),
-          });
+          }), seedCases);
         }
       } catch {
         // A blocked or corrupt local preview store falls back to a fresh state.
@@ -72,7 +85,7 @@ export function BuyingBrowserProvider({
     }
     void hydrate();
     return () => { cancelled = true; };
-  }, [storageKey]);
+  }, [seedCases, storageKey]);
 
   useEffect(() => {
     if (!hydrated) return;

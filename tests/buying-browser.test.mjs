@@ -133,13 +133,14 @@ test("renders additive Buying Browser routes without customer source leakage", a
   const { default: worker } = await import(workerUrl.href);
   const env = { ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) } };
   const ctx = { waitUntil() {}, passThroughOnException() {} };
-  const routes = ["/buy", "/buy/browser", "/buy/browse", "/buy/saved", "/buy/paste", "/buy/share", "/buy/ask", "/buy/cases", "/buy/inspections", "/buy/messages", "/buy/account", "/buy/vehicle/th-demo-001"];
+  const routes = ["/buy", "/buy/browser", "/buy/browse", "/buy/saved", "/buy/paste", "/buy/share", "/buy/ask", "/buy/cases", "/buy/cases/NK-CASE-2026-000001", "/buy/inspections", "/buy/messages", "/buy/account", "/buy/vehicle/th-demo-001", "/buy/vehicle/nk-poc-2026-0001"];
   for (const route of routes) {
     const response = await worker.fetch(new Request(`http://localhost${route}`, { headers: { accept: "text/html" } }), env, ctx);
     assert.equal(response.status, 200, route);
     const html = await response.text();
     assert.match(html, /data-buying-browser-v1/i, route);
     assert.doesNotMatch(html, /Siam Pickup Demo|\+66 81 000 0101|example\.invalid\/internal|Demo partner feed|Bang Kapi/i, route);
+    assert.doesNotMatch(html, /facebook\.com\/marketplace\/item\/1716607786274590|1IXEZTH2EYcIeM6HQKJ2Qfk4LZYsVWu4ipNolXoTnxhw|1oR6RF0CZpokbnEcWQ7iMtWiplnskWEB1/i, route);
     if (route === "/buy") {
       assert.match(html, /data-real-source-launch/i);
       assert.match(html, /Browse real Facebook Marketplace/i);
@@ -148,6 +149,8 @@ test("renders additive Buying Browser routes without customer source leakage", a
     if (route === "/buy/browse") {
       assert.match(html, /data-browse-marketplace-v2/i);
       assert.match(html, /data-vehicle-card-v2/i);
+      assert.match(html, /2025 Toyota Hilux Revo 2\.8 4WD GR Sport Wide/i);
+      assert.match(html, /1 captured/i);
       assert.doesNotMatch(html, /Explore customer-safe vehicle results|Demo market results|Primary Buying Browser actions/i);
     }
     if (route === "/buy/browser") {
@@ -161,14 +164,18 @@ test("renders additive Buying Browser routes without customer source leakage", a
       assert.match(html, /Open Facebook Marketplace/i);
       assert.match(html, /Facebook opens outside NK/i);
     }
-    if (route === "/buy/vehicle/th-demo-001") {
+    if (route === "/buy/vehicle/th-demo-001" || route === "/buy/vehicle/nk-poc-2026-0001") {
       assert.match(html, /data-vehicle-detail-v2/i);
       assert.match(html, /data-vehicle-actions-v2/i);
-      const actionLabels = ["Save Vehicle", "Ask NK AI", "Check Availability", "Request Inspection", "Buy Through NK"];
+      const actionLabels = [route.includes("nk-poc") ? "Saved" : "Save Vehicle", "Ask NK AI", "Check Availability", "Request Inspection", "Buy Through NK"];
       const actionPositions = actionLabels.map((label) => html.indexOf(label));
       assert.ok(actionPositions.every((position) => position >= 0), "all vehicle actions render");
       assert.deepEqual(actionPositions, [...actionPositions].sort((a, b) => a - b), "vehicle actions render in the approved order");
       assert.doesNotMatch(html, /Live Market Result/i);
+    }
+    if (route === "/buy/cases" || route === "/buy/cases/NK-CASE-2026-000001") {
+      assert.match(html, /NK-CASE-2026-000001/i);
+      assert.match(html, /2025 Toyota Hilux Revo 2\.8 4WD GR Sport Wide/i);
     }
   }
 });
@@ -192,7 +199,7 @@ test("Buying Browser exposes an installable operating-system share target", asyn
   assert.equal(manifest.share_target.params.url, "url");
 });
 
-test("renders owner demo source view separately from customer routes", async () => {
+test("renders captured and demo source records only in the owner view", async () => {
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
   workerUrl.searchParams.set("test", `buying-owner-${process.pid}-${Date.now()}`);
   const { default: worker } = await import(workerUrl.href);
@@ -201,5 +208,8 @@ test("renders owner demo source view separately from customer routes", async () 
   const html = await response.text();
   assert.match(html, /data-buying-browser-owner-preview/i);
   assert.match(html, /Siam Pickup Demo/);
-  assert.match(html, /Preview · not an auth boundary/i);
+  assert.match(html, /NK-POC-2026-0001/);
+  assert.match(html, /Google Sheet/);
+  assert.match(html, /Eighteen original listing images/);
+  assert.match(html, /Preview \/ not an auth boundary/i);
 });

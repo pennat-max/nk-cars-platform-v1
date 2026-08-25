@@ -1,6 +1,6 @@
 # NK Cars Gap Analysis
 
-Status: Owner-approved native cross-platform Buying Browser POC is implemented; Windows real-listing navigation is proven, mobile runtime validation remains
+Status: Buying Browser now includes one Owner-selected real listing snapshot and customer-safe Vehicle Case; live sync, durable identity/persistence, and mobile native runtime validation remain
 Date: 2026-08-25
 Branch: `codex/buying-browser-rebuild`
 
@@ -55,13 +55,22 @@ Buying Browser V1 preview completed on 2026-08-24:
 
 - Additive customer routes and account shell under `/buy`; the existing root remains unchanged.
 - Browse, Saved, detail, search, sort, Thai location, year, price, mileage, transmission, drive, and body filtering.
-- Customer-safe normalized English facts, eight labeled realistic demo source results, and source/customer DTO separation.
+- Customer-safe normalized English facts, one Owner-selected real listing snapshot plus eight labeled realistic demo source results, and source/customer DTO separation.
 - Paste Link through the existing import boundary plus open-source, up-to-30-photo, listing-text, and manual-review fallback.
 - Deduplicated Vehicle Cases, availability requests, case timeline, My Cases, messages/history, grounded NK AI preview responses, deterministic pricing, and deterministic inspection/travel requests.
 - Separate Owner/internal demo view and customer redaction tests.
 - Manual browser verification at 390 x 844 and 1280 x 900 with no horizontal overflow or console errors.
 - Corrected customer Browse UX to a compact marketplace-first mobile layout with vehicle results in the first viewport; Paste Link and Ask NK AI are secondary tools instead of a dominant feature panel.
 - Corrected customer vehicle detail to be photo-first, followed by normalized specifications/description and the five approved NK actions, without changing domain logic or internal visibility boundaries.
+
+One-car data-pipeline snapshot completed on 2026-08-25:
+
+- Added `NK-POC-2026-0001` as a non-demo `Captured` browse result and seeded customer-safe Vehicle Case `NK-CASE-2026-000001`.
+- Added nine reviewed app images, including a plate-masked cover; retained all 18 originals and browser evidence in the private Owner Drive folder.
+- Normalized English listing evidence without inventing missing values. Odometer photo evidence (24,623 km) conflicts with listing text (24,000 km) and remains explicitly marked `Need Review`; AT and 4WD have evidence references.
+- Kept source URL, seller/source notes, private Sheet/Drive links, and original media count outside customer routes; automated rendered-HTML leakage checks cover these identifiers.
+- Adapter mode is `snapshot`, not `live`. The Google Sheet is an auditable handoff artifact, not yet a durable source-of-truth integration.
+- Verified Browse, detail, all nine customer-safe media items, seeded case, and availability-request transition at 390 x 844 with no horizontal page overflow, broken images, or clean-session console errors.
 
 Real Facebook source proof of concept completed on 2026-08-24:
 
@@ -95,6 +104,7 @@ The approved Buying Browser V1 preview acceptance criteria are complete. The fol
 
 ### Live Sources And AI
 
+- Replace the one-car static Google Sheet snapshot with an authenticated, auditable server-side ingestion/synchronization job; do not expose Drive or Sheet credentials/links to customer clients.
 - Persist external Share/Copy Link captures and Vehicle Cases in authenticated tenant-scoped server storage; browser-local state is proof-of-concept only.
 - Add a supported mobile share target only after browser/PWA/native compatibility testing; manual Share/Copy Link remains the proven baseline.
 - Complete customer-specific source-profile isolation only if the remote-browser contingency is activated for real multi-user access.
@@ -158,6 +168,7 @@ The approved Buying Browser V1 preview acceptance criteria are complete. The fol
 - `BB-V1B - Assisted Buying Workflow`: Complete.
 - `BB-V1C - Internal View And Preview Hardening`: Complete.
 - `BB-V1-POC - Real Facebook External Handoff`: Complete with a real Marketplace listing; external Share/Copy Link is the selected baseline.
+- `BB-V1-POC2 - One-Car Sheet Snapshot In App`: Complete with one captured listing, reviewed customer media, explicit evidence conflict, and seeded Vehicle Case.
 
 The smallest next V1 production milestone is **BB-V1D - Production Identity And Durable Cases**:
 

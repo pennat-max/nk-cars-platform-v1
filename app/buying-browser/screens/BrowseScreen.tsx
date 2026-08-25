@@ -18,6 +18,8 @@ export default function BrowseScreen({ savedOnly = false }: { savedOnly?: boolea
   const sourceListings = savedOnly ? listings.filter((item) => state.savedListingIds.includes(item.id)) : listings;
   const visibleListings = useMemo(() => filterListings(sourceListings, filters), [filters, sourceListings]);
   const activeFilterCount = [filters.location !== "All Thailand", filters.yearFrom, filters.yearTo, filters.priceMin, filters.priceMax, filters.mileageMax, filters.transmission !== "Any", filters.drive !== "Any", filters.body !== "Any"].filter(Boolean).length;
+  const capturedCount = listings.filter((item) => !item.demo).length;
+  const sourceLabel = sourceStatus.live ? "Live" : capturedCount ? `${capturedCount} captured` : "Demo";
 
   function setFilter<Key extends keyof BrowseFilters>(key: Key, value: BrowseFilters[Key]) {
     setFilters((current) => ({ ...current, [key]: value }));
@@ -44,7 +46,7 @@ export default function BrowseScreen({ savedOnly = false }: { savedOnly?: boolea
         </div>
 
         {!savedOnly && <div className="bb-marketplace-meta">
-          <div><b>{visibleListings.length}</b> vehicles <span className={sourceStatus.live ? "live" : "demo"} role="status">{sourceStatus.live ? "Live" : "Demo"}</span></div>
+          <div><b>{visibleListings.length}</b> vehicles <span className={sourceStatus.live || capturedCount ? "live" : "demo"} role="status">{sourceLabel}</span></div>
           <nav aria-label="More vehicle search tools"><Link href="/buy/paste" title="Paste Vehicle Link"><Link2 size={14} />Paste link</Link><Link href="/buy/ask" title="Ask NK AI"><Bot size={14} />Ask NK AI</Link></nav>
         </div>}
       </section>

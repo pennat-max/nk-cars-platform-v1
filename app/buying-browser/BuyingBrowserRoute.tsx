@@ -2,6 +2,7 @@ import { getChatGPTUser } from "../chatgpt-auth";
 import BuyingBrowserApp from "./BuyingBrowserApp";
 import { DEFAULT_FILTERS } from "./domain.mjs";
 import { demoThaiMarketAdapter } from "./source-adapters/demo-adapter";
+import { createCapturedPocCase } from "./source-adapters/sheet-poc-data";
 import type { BuyingBrowserView, CustomerIdentity } from "./types";
 
 function customerIdFromEmail(email: string | null) {
@@ -18,5 +19,5 @@ export default async function BuyingBrowserRoute({ view, sourceId, caseId }: { v
     demoThaiMarketAdapter.getStatus(),
     demoThaiMarketAdapter.search({ customerId: customer.id, searchArea: "Thailand", filters: { ...DEFAULT_FILTERS }, limit: 50 }),
   ]);
-  return <BuyingBrowserApp view={view} sourceId={sourceId} caseId={caseId} customer={customer} sourceStatus={sourceStatus} listings={result.results} />;
+  return <BuyingBrowserApp view={view} sourceId={sourceId} caseId={caseId} customer={customer} sourceStatus={sourceStatus} listings={result.results} seedCases={[createCapturedPocCase(customer.id)]} />;
 }

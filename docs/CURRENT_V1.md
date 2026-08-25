@@ -196,13 +196,19 @@ All 18 Buying Browser V1 preview targets are implemented additively under `/buy`
 - customer shell, Browse, Saved, Vehicle detail, My Cases, Inspections, Messages, Account, and separate Owner demo routes;
 - text search plus year, price, mileage, location, transmission, drive, body, and sort controls;
 - Paste Link through the real import boundary when supported, with an honest photo/text/manual fallback when blocked and a reload-safe multi-photo preview gallery;
-- customer-safe normalized English vehicle facts, labeled demo data, deterministic grounded NK AI preview replies, and no invented facts;
+- customer-safe normalized English vehicle facts, one Owner-selected captured snapshot plus labeled demo data, deterministic grounded NK AI preview replies, and no invented facts;
 - deduplicated Vehicle Cases, availability requests, inspection requests, case timelines, and conversation history;
 - deterministic 10% preview commission on vehicle price only, explicit inspection/travel zones, and Pending pass-through costs;
 - separate customer and internal source DTOs with customer redaction tests;
 - responsive verification at 390 x 844 and 1280 x 900 with no horizontal overflow or browser console errors.
 
-Preview state is intentionally browser-local and demo/source-adapter backed. Production Auth, tenant isolation, RLS, durable storage, encrypted source sessions, real AI, real provider assignment, and real messaging remain blocked integrations rather than simulated successes.
+Preview state is intentionally browser-local and snapshot/demo source-adapter backed. Production Auth, tenant isolation, RLS, durable storage, encrypted source sessions, real AI, real provider assignment, and real messaging remain blocked integrations rather than simulated successes.
+
+### One-car captured snapshot
+
+`NK-POC-2026-0001` is the first Owner-selected real listing snapshot shown in the Buying Browser. It has a seeded customer-safe Vehicle Case, reviewed English facts, nine customer-safe images, deterministic preview pricing, and the existing case actions. The 18 original images, source URL, seller/source notes, and Google Sheet/Drive evidence stay behind the internal preview boundary.
+
+This is not a live Marketplace or Google Sheet integration. The UI labels it `Captured`, the adapter reports `snapshot`, and availability remains unverified. The odometer image shows 24,623 km while listing text states 24,000 km, so mileage remains an explicit evidence conflict requiring review.
 
 ### Real-source proof of concept
 

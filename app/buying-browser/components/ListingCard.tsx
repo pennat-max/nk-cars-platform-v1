@@ -14,7 +14,7 @@ export default function ListingCard({ listing }: { listing: CustomerListing }) {
     <article className="bb-listing-card" data-listing-id={listing.id} data-vehicle-card-v2>
       <Link className="bb-listing-image" href={`/buy/vehicle/${encodeURIComponent(listing.id)}`}>
         <VehiclePhoto listing={listing} />
-        {listing.demo && <span className="bb-demo-flag">Demo</span>}
+        <span className={listing.demo ? "bb-demo-flag" : "bb-demo-flag captured"}>{listing.demo ? "Demo" : "Captured"}</span>
       </Link>
       <button className={saved ? "bb-save-icon saved" : "bb-save-icon"} onClick={() => toggleSaved(listing.id)} aria-label={saved ? `Remove ${listing.title} from saved vehicles` : `Save ${listing.title}`} title={saved ? "Remove saved vehicle" : "Save vehicle"}><Heart size={19} fill={saved ? "currentColor" : "none"} /></button>
       <Link className="bb-listing-copy" href={`/buy/vehicle/${encodeURIComponent(listing.id)}`}>

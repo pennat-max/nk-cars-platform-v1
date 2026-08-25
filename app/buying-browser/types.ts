@@ -171,7 +171,7 @@ export type CustomerIdentity = {
 export type SourceAdapterStatus = {
   adapterId: string;
   label: string;
-  mode: "demo" | "live" | "fallback";
+  mode: "demo" | "live" | "fallback" | "snapshot";
   live: boolean;
   state: "ready" | "login_required" | "not_connected" | "error";
   message: string;

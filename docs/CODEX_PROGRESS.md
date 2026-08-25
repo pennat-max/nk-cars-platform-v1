@@ -1,5 +1,36 @@
 # Codex Progress
 
+## 2026-08-25 - One-Car Google Sheet Snapshot In Buying Browser
+
+Branch: `codex/buying-browser-rebuild`
+
+### Completed
+
+- Added the Owner-selected real Marketplace vehicle as the first non-demo `Captured` result in `/buy/browse` without changing the approved marketplace-first layout.
+- Added customer-safe normalized English facts, a pre-created Vehicle Case (`NK-CASE-2026-000001`), 10% preview service-fee calculation, Bangkok inspection quote, Ask NK AI, availability, inspection, and Buy Through NK actions.
+- Added nine customer-safe evidence images to the app. The cover registration is masked; the 18 original images and browser evidence remain in the private Owner Drive folder.
+- Recorded the 24,623 km odometer evidence conflict against the 24,000 km listing text as `Need Review`; confirmed AT from photo 15 and 4WD from available listing/photo evidence without inventing unavailable facts.
+- Kept Facebook source URL, Google Sheet, Drive evidence folder, seller/source notes, and original media count out of all customer routes. They appear only in the internal preview boundary.
+- Changed the preview source adapter mode to `snapshot` so the UI does not claim a live source feed.
+- Updated the private Google Sheet Customer View, Internal, and Audit Log records with the confirmed transmission evidence.
+
+### Verification
+
+- Full build and Node test suite: passed, 28/28.
+- Typecheck: passed.
+- Lint: passed with 0 errors and 13 existing legacy `<img>` warnings outside Buying Browser.
+- Customer route leakage checks: passed for Facebook listing URL, Google Sheet ID, Drive folder ID, seller data, and demo internal data.
+- iPhone viewport 390 x 844: Browse, captured vehicle detail, and Vehicle Case verified with no horizontal page overflow, no broken images, and no console warnings/errors in a clean session.
+- Nine-image gallery: thumbnail selection verified through the odometer image; the gallery remains horizontally scrollable inside its own bounds without widening the page.
+- Vehicle Case action: Check Availability verified and moved the case to `Availability Check Requested` without sending a real seller message.
+- `git diff --check`: passed with line-ending notices only.
+
+### Current Limitation / Next
+
+- This milestone is a deliberate one-car snapshot, not automatic Google Sheet synchronization and not a live Marketplace feed. Adding more vehicles still requires an explicit authorized capture/import step.
+- Durable authenticated Vehicle Cases, tenant-scoped database/media storage, and server-side Google Sheet/Drive synchronization remain Owner/integration blockers for production.
+- Mobile verification is complete. Next: update only the separate Owner review Site. Do not overwrite the existing NK Cars Site or deploy production.
+
 ## 2026-08-25 - Windows WebView2 Manual Marketplace POC
 
 Branch: `codex/buying-browser-rebuild`

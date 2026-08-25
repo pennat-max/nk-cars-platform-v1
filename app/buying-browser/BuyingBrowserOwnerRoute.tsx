@@ -1,6 +1,7 @@
 import { getChatGPTUser } from "../chatgpt-auth";
 import BuyingBrowserOwnerPreview from "./BuyingBrowserOwnerPreview";
 import { demoInternalSourceRecords } from "./source-adapters/demo-internal-data";
+import { capturedPocInternalSourceRecord } from "./source-adapters/sheet-poc-data";
 
 function storageCustomerId(email: string | null) {
   if (!email) return "preview-james-mwangi";
@@ -9,5 +10,5 @@ function storageCustomerId(email: string | null) {
 
 export default async function BuyingBrowserOwnerRoute() {
   const user = await getChatGPTUser();
-  return <BuyingBrowserOwnerPreview records={demoInternalSourceRecords} storageCustomerId={storageCustomerId(user?.email ?? null)} />;
+  return <BuyingBrowserOwnerPreview records={[capturedPocInternalSourceRecord, ...demoInternalSourceRecords]} storageCustomerId={storageCustomerId(user?.email ?? null)} />;
 }

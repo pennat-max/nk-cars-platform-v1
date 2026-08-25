@@ -1,6 +1,26 @@
-export type DemoInternalSourceRecord = {
-  id: string; adapterId: string; sourceReference: string; sourcePlatform: string; sourceUrl: string; sellerName: string; sellerPhone: string; exactLocation: string; internalNotes: string;
-  title: string; summary: string; brand: string; model: string; year: number; grade: string; engine: string; transmission: "AT" | "MT"; drive: "2WD" | "4WD"; body: string; mileageKm: number; color: string; observedPriceThb: number; observedAt: string; generalLocation: string; imageUrls: string[]; availability: "Availability Not Yet Confirmed"; translationState: "Normalized" | "Need Review"; evidenceLabels: string[]; demo: true;
+import type { CustomerListing } from "../types";
+
+export type InternalSourceRecord = CustomerListing & {
+  sourcePlatform: string;
+  sourceUrl: string;
+  sellerName: string;
+  sellerPhone: string;
+  exactLocation: string;
+  internalNotes: string;
+  spreadsheetUrl?: string;
+  evidenceFolderUrl?: string;
+  originalMediaCount?: number;
+};
+
+export type DemoInternalSourceRecord = InternalSourceRecord & {
+  year: number;
+  transmission: "AT" | "MT";
+  drive: "2WD" | "4WD";
+  mileageKm: number;
+  observedPriceThb: number;
+  availability: "Availability Not Yet Confirmed";
+  translationState: "Normalized" | "Need Review";
+  demo: true;
 };
 const images = {
   revoWhite: "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&w=1200&q=82", rangerBlack: "https://images.unsplash.com/photo-1494976388531-d1058494cdd8?auto=format&fit=crop&w=1200&q=82", dmaxGrey: "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1200&q=82", revoBlack: "https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?auto=format&fit=crop&w=1200&q=82", pickupSilver: "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=1200&q=82", pickupBlue: "https://images.unsplash.com/photo-1551830820-330a71b99659?auto=format&fit=crop&w=1200&q=82", pickupRed: "https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?auto=format&fit=crop&w=1200&q=82", pickupWhite: "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=1200&q=82",

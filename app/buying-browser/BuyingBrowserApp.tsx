@@ -9,7 +9,7 @@ import PasteScreen from "./screens/PasteScreen";
 import SourceLaunchScreen from "./screens/SourceLaunchScreen";
 import VehicleScreen from "./screens/VehicleScreen";
 import WebBrowserScreen from "./screens/WebBrowserScreen";
-import type { BuyingBrowserView, CustomerIdentity, CustomerListing, SourceAdapterStatus } from "./types";
+import type { BuyingBrowserView, CustomerIdentity, CustomerListing, SourceAdapterStatus, VehicleCase } from "./types";
 
 export default function BuyingBrowserApp({
   view,
@@ -18,6 +18,7 @@ export default function BuyingBrowserApp({
   customer,
   sourceStatus,
   listings,
+  seedCases,
 }: {
   view: BuyingBrowserView;
   sourceId?: string;
@@ -25,9 +26,10 @@ export default function BuyingBrowserApp({
   customer: CustomerIdentity;
   sourceStatus: SourceAdapterStatus;
   listings: CustomerListing[];
+  seedCases?: VehicleCase[];
 }) {
   return (
-    <BuyingBrowserProvider customer={customer} sourceStatus={sourceStatus} initialListings={listings}>
+    <BuyingBrowserProvider customer={customer} sourceStatus={sourceStatus} initialListings={listings} seedCases={seedCases}>
       <BuyingBrowserShell view={view}>
         {view === "source" && <SourceLaunchScreen />}
         {view === "web-browser" && <WebBrowserScreen />}
