@@ -180,3 +180,31 @@ The smallest next V1 production milestone is **BB-V1D - Production Identity And 
 - retain the current source adapter, customer DTO, pricing, and inspection contracts.
 
 BB-V1D is blocked on approved production project/configuration and must not deploy, replace the existing ChatGPT Site, enable real messages, or activate commercial pricing without the corresponding Owner approvals.
+
+## Ten-Vehicle Capture Gap Update - 2026-08-25
+
+### Implemented Evidence
+
+- Ten real Toyota Hilux Revo Marketplace listings from model year 2020 were captured through the Owner's authenticated desktop Chrome session.
+- Internal records now hold canonical source URL, seller/source facts, observed price and timestamp, normalized English specifications, confidence-by-review state, and 167 local gallery images.
+- The Owner preview exposes complete raw evidence while the existing customer-safe DTO boundary prevents these ten unreviewed records from entering customer Browse, Vehicle Cases, or customer HTML.
+
+### Remaining V1 Gaps
+
+- **Customer media approval:** plate masking, source-clue redaction, image rights/retention policy, cover selection, and per-file visibility classification are not yet implemented for the batch.
+- **Owner review state:** records need deterministic Approve, Edit, Reject, and publication-state persistence instead of static snapshot data.
+- **Durable ingestion:** files and records are repository-local; database, private object storage, RLS, audit, retries, and deduplication are still required.
+- **Automation:** the proof is human-initiated browser capture. Scheduled search, result freshness, duplicate detection, authorized session health, and failure recovery are not implemented.
+- **Live operations:** availability checks and seller communications remain blocked from automatic execution and have not been sent.
+
+### V1-V5 Classification Impact
+
+- **V1:** review/approval state, customer-safe media processing, publish-to-Browse, durable cases, compliant desktop capture worker, search criteria, freshness, and operational fallback.
+- **V2:** dealer/source network, seller trust, multi-source matching, and controlled seller automation.
+- **V3:** quotes, payment, purchase approval, deposits/refunds, and other deterministic commercial controls remain unchanged.
+- **V4:** procurement, inspection operations, repair, shipping, delivery, and after-sales remain unchanged.
+- **V5:** 360 views, task/KPI engine, audit expansion, risk intelligence, reporting, and Owner command center remain unchanged.
+
+### Smallest Next V1 Milestone
+
+`BB-V1-POC3 - Review-To-Publish Ten Vehicles`: add persisted review decisions for the ten captures, produce plate/source-redacted customer media for Owner-approved vehicles, generate customer-safe listing DTOs, and verify Browse/detail/case flows without publishing or contacting sellers.

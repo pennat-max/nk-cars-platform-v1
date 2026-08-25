@@ -463,3 +463,35 @@ Started Milestone 1: Next.js shell and visual parity.
 - Until that connection exists, the deployed fallback remains usable: keep the listing URL, import the public cover/title/description, then upload multiple screenshots/photos and analyze them as one vehicle.
 - Before a real customer launch, imported remote images must be copied into first-party durable media storage. The current prototype retains HTTPS gallery URLs, which can expire and can reveal the upstream CDN hostname to a technically inspecting user even though no source is visible in the UI.
 - Superseded deployment instruction: completed and tested milestones may be committed and pushed to the development branch, but any production deployment or overwrite of the existing ChatGPT Site now requires explicit Owner approval.
+
+## 2026-08-25 - Ten-Vehicle Owner Capture Review
+
+### Completed
+
+- Used the Owner's existing Facebook session in Chrome to search the real Facebook Marketplace for Toyota Revo vehicles from model year 2020 onward. No Facebook password, cookie, MFA value, or CAPTCHA response was collected by NK Cars.
+- Captured ten real listing snapshots selected from the search results. Each record retains its canonical Marketplace item URL, seller/source facts, observed price, location, timestamp, and evidence-based English normalization in the internal Owner boundary.
+- Stored all 167 accessible gallery images (12-20 per listing, 15.18 MB total) under `public/vehicle-evidence/nk-capture-batch-2026-08-25` for this local review milestone.
+- Added explicit `Unknown` / `Need Review` handling. Notable conflicts include 35,000 versus 36,000 km on one source and model year 2020 versus registration year 2021 on another.
+- Added an expandable Owner evidence gallery for every captured vehicle. Raw images can contain registration plates and source clues and are intentionally excluded from the customer Browse adapter and customer Vehicle Case DTOs.
+- Kept `/buy/owner` behind ChatGPT user authentication. Local review used an ephemeral loopback-only development proxy that injects a test identity; no authentication bypass was added to production source.
+
+### Verification
+
+- Browser evidence count: 10 listing folders / 167 local images / zero capture-download failures.
+- `npm.cmd exec tsc -- --noEmit --incremental false`: passed.
+- `git diff --check`: passed.
+- Direct ESLint invocation: passed with zero errors and 13 pre-existing prototype `<img>` optimization warnings.
+- `npm.cmd test`: passed, including the production build and 29/29 Node tests. Coverage includes production Owner authentication, ten-listing/167-image evidence counts, and customer-route source/seller leakage checks.
+- Desktop and iPhone-size 390 x 844 browser checks passed. The page rendered all records and evidence controls with no horizontal overflow or browser console errors.
+
+### Current Work And Limits
+
+- This is an operator-assisted proof using the Owner's logged-in computer, not autonomous scheduled Marketplace collection.
+- Availability, seller claims, price freshness, ownership, accident/flood history, and condition remain unverified.
+- Raw captured media is not customer-safe until registration plates and other source-identifying details are reviewed/redacted and media-use policy is confirmed.
+- The proof currently uses repository-local static assets for local review. This capture directory must not be production deployed until evidence moves to authenticated private storage with visibility controls.
+- No production deploy, existing ChatGPT Site overwrite, real seller message, or automated Facebook search was performed.
+
+### Next Recommended Step
+
+- After Owner review of the ten internal records, run the smallest publication milestone: select customer-safe covers/gallery media, mask registration/source clues, create customer-safe DTOs for approved records, and add only those approved records to Browse and Vehicle Cases.

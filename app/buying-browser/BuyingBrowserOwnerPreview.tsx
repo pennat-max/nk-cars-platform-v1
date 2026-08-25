@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element -- Owner evidence grid uses local, lazy-loaded source snapshots. */
+
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -45,6 +47,7 @@ export default function BuyingBrowserOwnerPreview({ records, storageCustomerId }
   );
   const sourceCaptures = state?.sourceCaptures || [];
   const capturedRecordCount = records.filter((record) => !record.demo).length;
+  const browserCaptureCount = records.filter((record) => record.adapterId === "facebook-owner-browser-capture").length;
   const demoRecordCount = records.length - capturedRecordCount;
 
   return (
@@ -116,7 +119,7 @@ export default function BuyingBrowserOwnerPreview({ records, storageCustomerId }
         <section className="bb-owner-source-list">
           <div className="bb-section-heading">
             <div><p className="bb-kicker">Internal records</p><h2>Source results</h2></div>
-            <span>{capturedRecordCount} captured / {demoRecordCount} demo</span>
+            <span>{browserCaptureCount} browser captures / {capturedRecordCount - browserCaptureCount} POC / {demoRecordCount} demo</span>
           </div>
           {records.map((record) => {
             const vehicleCase = caseByListing.get(record.id);
@@ -145,6 +148,19 @@ export default function BuyingBrowserOwnerPreview({ records, storageCustomerId }
                   {record.evidenceFolderUrl && <a className="bb-button secondary" href={record.evidenceFolderUrl} target="_blank" rel="noreferrer">Evidence folder<ExternalLink size={15} /></a>}
                   {vehicleCase && <Link className="bb-button primary" href={`/buy/cases/${encodeURIComponent(vehicleCase.id)}`}>Open customer case</Link>}
                 </div>
+                {!record.demo && record.imageUrls.length > 1 && (
+                  <details className="bb-owner-media-review">
+                    <summary>Review all {record.imageUrls.length} captured images</summary>
+                    <div>
+                      {record.imageUrls.map((imageUrl, index) => (
+                        <a href={imageUrl} target="_blank" rel="noreferrer" key={imageUrl}>
+                          <img src={imageUrl} alt={`${record.title} evidence ${index + 1}`} loading="lazy" />
+                          <span>{index + 1}</span>
+                        </a>
+                      ))}
+                    </div>
+                  </details>
+                )}
               </article>
             );
           })}

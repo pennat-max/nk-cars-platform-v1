@@ -141,6 +141,7 @@ test("renders additive Buying Browser routes without customer source leakage", a
     assert.match(html, /data-buying-browser-v1/i, route);
     assert.doesNotMatch(html, /Siam Pickup Demo|\+66 81 000 0101|example\.invalid\/internal|Demo partner feed|Bang Kapi/i, route);
     assert.doesNotMatch(html, /facebook\.com\/marketplace\/item\/1716607786274590|1IXEZTH2EYcIeM6HQKJ2Qfk4LZYsVWu4ipNolXoTnxhw|1oR6RF0CZpokbnEcWQ7iMtWiplnskWEB1/i, route);
+    assert.doesNotMatch(html, /4406225212934069|1078557808193843|Pranee Pra Jaideaw|080 632 3247/i, route);
     if (route === "/buy") {
       assert.match(html, /data-real-source-launch/i);
       assert.match(html, /Browse real Facebook Marketplace/i);
@@ -203,13 +204,34 @@ test("renders captured and demo source records only in the owner view", async ()
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
   workerUrl.searchParams.set("test", `buying-owner-${process.pid}-${Date.now()}`);
   const { default: worker } = await import(workerUrl.href);
-  const response = await worker.fetch(new Request("http://localhost/buy/owner", { headers: { accept: "text/html" } }), { ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) } }, { waitUntil() {}, passThroughOnException() {} });
+  const env = { ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) } };
+  const ctx = { waitUntil() {}, passThroughOnException() {} };
+  const anonymousResponse = await worker.fetch(new Request("http://localhost/buy/owner", { headers: { accept: "text/html" } }), env, ctx);
+  assert.ok([302, 303, 307, 308].includes(anonymousResponse.status));
+  assert.doesNotMatch(await anonymousResponse.text(), /NK-POC-2026-0001|facebook\.com\/marketplace\/item|Google Sheet|Evidence folder/i);
+  const response = await worker.fetch(new Request("http://localhost/buy/owner", { headers: { accept: "text/html", "oai-authenticated-user-email": "owner@example.com" } }), env, ctx);
   assert.equal(response.status, 200);
   const html = await response.text();
+  const textHtml = html.replaceAll("<!-- -->", "");
   assert.match(html, /data-buying-browser-owner-preview/i);
   assert.match(html, /Siam Pickup Demo/);
   assert.match(html, /NK-POC-2026-0001/);
   assert.match(html, /Google Sheet/);
   assert.match(html, /Eighteen original listing images/);
+  assert.match(textHtml, /10 browser captures \/ 1 POC \/ 8 demo/i);
+  assert.match(html, /NK-FB-2026-0825-01/);
+  assert.match(html, /NK-FB-2026-0825-10/);
+  assert.match(textHtml, /Review all 19 captured images/i);
+  assert.match(html, /Mileage conflict: 35,000 vs 36,000 km/i);
   assert.match(html, /Preview \/ not an auth boundary/i);
+});
+
+test("browser capture evidence contains ten real listings and 167 local images", async () => {
+  const { readdir } = await import("node:fs/promises");
+  const root = new URL("../public/vehicle-evidence/nk-capture-batch-2026-08-25/", import.meta.url);
+  const listingFolders = (await readdir(root, { withFileTypes: true })).filter((entry) => entry.isDirectory());
+  const images = await Promise.all(listingFolders.map((entry) => readdir(new URL(`${entry.name}/`, root))));
+  assert.equal(listingFolders.length, 10);
+  assert.equal(images.flat().length, 167);
+  assert.ok(images.every((files) => files.length >= 12));
 });
