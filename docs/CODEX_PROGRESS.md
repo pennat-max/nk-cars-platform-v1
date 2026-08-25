@@ -1,5 +1,44 @@
 # Codex Progress
 
+## 2026-08-25 - Cross-Platform Buying Browser POC
+
+Branch: `codex/buying-browser-rebuild` (implemented in the isolated preview worktree before promotion)
+
+### Completed
+
+- Preserved rollback branch `rollback/pre-cross-platform-buying-browser` before native work.
+- Added one versioned browser-adapter contract and capture provenance for `ios_wkwebview`, `android_webview`, and `windows_webview2` without changing Vehicle Case, pricing, inspection, Owner source, or customer-safe DTO logic.
+- Added a Windows WPF/WebView2 shell with per-user persistent profile, real Marketplace navigation, native NK toolbar, explicit listing URL capture, external-open fallback, and no injected Facebook bridge or NK credential form.
+- Built Windows Release with zero warnings/errors and ran a real Owner-supplied Marketplace item smoke test: navigation succeeded, the item URL remained current, listing detection passed, and the URL was capturable. Facebook login itself was not tested.
+- Added an Android WebView shell with per-install profile isolation, cookies/session persistence, native toolbar, explicit capture, external-open fallback, and ACTION_SEND share fallback.
+- Added an iOS WKWebView/XcodeGen project with persistent app-sandbox website data, native toolbar, explicit capture, and external-open fallback.
+- Updated `CURRENT_V1.md` and added `CROSS_PLATFORM_BUYING_BROWSER.md`; the Owner-approved native direction now explicitly supersedes the earlier external-share-only conclusion.
+
+### Verification
+
+- Shared native contract tests: 3/3 passed.
+- Windows WebView2 Release build: passed, 0 warnings and 0 errors.
+- Real Windows WebView2 Facebook listing smoke: passed for public navigation, listing recognition, persistent profile creation, and current URL capture.
+- Full web build/tests: build passed; all 27 tests passed, including 3 native contract tests.
+- Android pure-Java listing policy compile/test: passed on JDK 17; only HTTPS Facebook Marketplace item URLs are accepted.
+- Typecheck: passed.
+- Lint: passed with 0 errors and 13 pre-existing `<img>` performance warnings.
+- `git diff --check`: passed with line-ending notices only.
+- Android APK/runtime: not yet run because the Android SDK license/toolchain is not accepted/installed on this machine.
+- iOS build/runtime: not possible on this Windows host; requires macOS/Xcode/signing/device.
+
+### Owner Blockers
+
+- Android SDK license acceptance and Android SDK 35 installation, plus an emulator or physical Android device.
+- macOS/Xcode, Apple signing team, and a physical/simulator iPhone test environment.
+- Human-operated Facebook login is required for authenticated search, filters, restart persistence, and checkpoint behavior on every target. NK will not collect or automate credentials, MFA, CAPTCHA, or checkpoints.
+- Durable authenticated Vehicle Cases and native distribution/signing remain prerequisites before customer release.
+
+### Current Work / Next
+
+- Run final lint, typecheck, web tests, Windows build/smoke, and diff checks; then promote the stable milestone to `codex/buying-browser-rebuild` and push.
+- Next milestone: `BB-NATIVE-2 - Device Validation And Signed Fallbacks`. No production deployment or live Site overwrite is authorized.
+
 ## 2026-08-24 - Authenticated Facebook Buying Browser Feasibility Spike
 
 Branch: `codex/buying-browser-rebuild`

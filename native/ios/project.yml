@@ -1,0 +1,30 @@
+name: NKCarsBuyingBrowser
+options:
+  bundleIdPrefix: com.nkcars
+  deploymentTarget:
+    iOS: "16.0"
+targets:
+  NKCarsBuyingBrowser:
+    type: application
+    platform: iOS
+    sources:
+      - NKCarsBuyingBrowser
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.nkcars.buyingbrowser
+        SWIFT_VERSION: "5.9"
+        CODE_SIGN_STYLE: Automatic
+    info:
+      path: NKCarsBuyingBrowser/Info.plist
+      properties:
+        CFBundleDisplayName: NK Cars
+        UILaunchScreen: {}
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+  NKCarsBuyingBrowserTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - NKCarsBuyingBrowserTests
+    dependencies:
+      - target: NKCarsBuyingBrowser

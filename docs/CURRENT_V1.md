@@ -2,7 +2,7 @@
 
 Status: Active working context for Codex
 Purpose: Keep routine development fast and token-efficient.
-Implementation status: Authenticated-browser feasibility spike selected Success Option B. One-action PWA share capture is implemented for supported Chromium installs; iPhone requires a native Share Extension and remains blocked. Production activation is not approved.
+Implementation status: The Owner-approved cross-platform Buying Browser direction supersedes the earlier external-share-only conclusion. Native WKWebView, Android WebView, and Windows WebView2 proof-of-concept adapters are in progress; external Share and Copy Link remain required fallbacks. Production activation is not approved.
 
 Use this file with `AGENTS.md` as the default context. Consult larger product specs only when necessary.
 
@@ -12,7 +12,7 @@ NK Cars is being rebuilt as an **AI Vehicle Buying Browser / Buying Platform for
 
 Primary real-source customer journey:
 
-**Open real Facebook Marketplace outside NK with the customer's own session**
+**Open real Facebook Marketplace inside the NK native browser where technically permitted, using the customer's own session**
 -> customer browses/selects a real listing
 -> Share -> Save to NK Cars where the installed platform supports it
 -> create Vehicle Case
@@ -29,13 +29,14 @@ The NK demo vehicle grid and old stock-first implementation remain fallback/down
 Mobile-first, especially iPhone.
 
 Primary source experience:
-- open Facebook Marketplace outside NK so Facebook retains the customer's authenticated session
-- browse/select in Facebook
-- return the selected listing through the operating-system `Save to NK Cars` share target
+- open Facebook Marketplace inside the platform browser adapter: iOS WKWebView, Android WebView, or Windows WebView2
+- the customer signs in directly to Facebook; NK never collects or stores Facebook credentials
+- browse/select a real listing, then explicitly use the native NK action bar to save its URL as a Vehicle Case
+- where embedded browsing/login is blocked, use the operating-system `Save to NK Cars` share target
 - capture permitted listing URL/data internally and create a customer-safe Vehicle Case
 - retain screenshots/photos/listing-text fallback when Facebook evidence is inaccessible
 
-Copy Link -> return -> paste is last resort only. Safari/iPhone does not support Web Share Target; the intended iPhone delivery requires a signed NK Cars iOS Share Extension. See `docs/BUYING_BROWSER_FEASIBILITY_SPIKE.md`.
+Copy Link -> return -> paste is last resort. A signed iOS Share Extension remains the fallback when Facebook blocks embedded WKWebView behavior. See `docs/BUYING_BROWSER_FEASIBILITY_SPIKE.md` for the superseded feasibility baseline and `docs/CROSS_PLATFORM_BUYING_BROWSER.md` for the current direction.
 
 The existing NK vehicle grid, search, filters, and saved vehicles remain secondary fallback/downstream tools.
 
@@ -203,9 +204,9 @@ Preview state is intentionally browser-local and demo/source-adapter backed. Pro
 
 ### Real-source proof of concept
 
-Approach 1, embedding Facebook Marketplace inside NK, is blocked by Facebook's `X-Frame-Options: DENY` response and must not be bypassed.
+The earlier iframe result remains valid for web pages but does not decide native browser behavior. The Owner-approved direction now tests native WKWebView, Android WebView, and WebView2 directly. No adapter may bypass Facebook security controls.
 
-Approach 2 is selected and proven with an actual Facebook Marketplace share URL. Supported installed Chromium PWAs now receive that URL through `/buy/share` and create the Vehicle Case automatically. iPhone needs the native extension described in `docs/BUYING_BROWSER_FEASIBILITY_SPIKE.md`.
+External share capture remains a proven fallback. Supported installed Chromium PWAs receive an actual Marketplace URL through `/buy/share`; signed native share targets are required for platform-complete fallback delivery.
 
 Approach 3, a remote isolated browser session, remains a contingency and was not selected because approach 2 works without NK taking custody of the customer's Facebook session.
 
