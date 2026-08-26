@@ -1,6 +1,7 @@
 import { isOwnerUser, type ChatGPTUser } from "../chatgpt-auth";
 import { assessQuotationReadiness } from "./domain.mjs";
 import { applyOwnerCaseVerification } from "./owner-case-verification.mjs";
+import { currentProformaInvoiceStatus, issueProformaInvoice } from "./pi-domain.mjs";
 import { acceptQuotation, currentQuotationStatus, issueQuotation, quotationMaterialKey } from "./quotation-domain.mjs";
 import type { BuyingBrowserState, OwnerCaseAuditEvent, OwnerCaseQueueItem, OwnerCaseVerificationInput, QuotationReadiness } from "./types";
 import { enforceServerControlledWorkspaceState, validateAndOwnBuyingBrowserState, workspaceSummary } from "./workspace-state.mjs";
@@ -28,7 +29,7 @@ type CaseAuditRow = {
   workspace_user_id: string;
   case_id: string;
   actor_user_id: string;
-  action: "owner_case_verification_updated" | "quotation_issued" | "quotation_accepted";
+  action: "owner_case_verification_updated" | "quotation_issued" | "quotation_accepted" | "pi_issued";
   old_value_json: string;
   new_value_json: string;
   evidence_note: string;
@@ -243,6 +244,16 @@ async function nextQuotationNumber(d1: D1Database, now: string) {
   return `QT-${year}-${String(row.last_number).padStart(6, "0")}`;
 }
 
+async function nextPiNumber(d1: D1Database, now: string) {
+  const year = new Date(now).getUTCFullYear();
+  const sequenceKey = `PI-${year}`;
+  const row = await d1.prepare("INSERT INTO buying_browser_document_sequences (sequence_key, document_type, year, last_number, updated_at) VALUES (?, 'PI', ?, 1, ?) ON CONFLICT(sequence_key) DO UPDATE SET last_number = last_number + 1, updated_at = excluded.updated_at RETURNING last_number")
+    .bind(sequenceKey, year, now)
+    .first<{ last_number: number }>();
+  if (!row || !Number.isSafeInteger(row.last_number) || row.last_number < 1) throw new Error("pi_sequence_failed");
+  return `PI-${year}-${String(row.last_number).padStart(6, "0")}`;
+}
+
 export async function issueOwnerCaseQuotation(owner: ChatGPTUser, workspaceUserId: string, caseId: string, expectedRevision: number): Promise<OwnerCaseQueueItem> {
   if (!isOwnerUser(owner)) throw new Error("owner_authorization_required");
   if (!workspaceUserId || workspaceUserId.length > 200 || !caseId || caseId.length > 200) throw new Error("invalid_case_reference");
@@ -349,4 +360,79 @@ export async function acceptCustomerCaseQuotation(user: ChatGPTUser, caseId: str
     throw error;
   }
   return { state: nextState, revision: nextRevision, updatedAt: now };
+}
+
+export async function issueOwnerCaseProformaInvoice(owner: ChatGPTUser, workspaceUserId: string, caseId: string, expectedRevision: number): Promise<OwnerCaseQueueItem> {
+  if (!isOwnerUser(owner)) throw new Error("owner_authorization_required");
+  if (!workspaceUserId || workspaceUserId.length > 200 || !caseId || caseId.length > 200) throw new Error("invalid_case_reference");
+  if (!Number.isSafeInteger(expectedRevision) || expectedRevision < 1) throw new Error("invalid_revision");
+  const d1 = await database();
+  const row = await d1.prepare("SELECT user_id, email, display_name, state_json, revision, updated_at FROM buying_browser_workspaces WHERE user_id = ? LIMIT 1")
+    .bind(workspaceUserId)
+    .first<OwnerWorkspaceRow>();
+  if (!row) throw new Error("workspace_not_found");
+  const currentState = validateAndOwnBuyingBrowserState(JSON.parse(row.state_json), row.user_id) as BuyingBrowserState;
+  if (row.revision !== expectedRevision) throw workspaceConflict({ state: currentState, revision: row.revision, updatedAt: row.updated_at });
+  const currentCase = currentState.cases.find((item) => item.id === caseId);
+  if (!currentCase) throw new Error("case_not_found");
+  const now = new Date().toISOString();
+  if (currentProformaInvoiceStatus(currentCase.proformaInvoice, new Date(now)) === "Issued - Awaiting Payment") {
+    return {
+      workspaceUserId: row.user_id,
+      customerEmail: row.email,
+      customerDisplayName: row.display_name,
+      workspaceRevision: row.revision,
+      workspaceUpdatedAt: row.updated_at,
+      vehicleCase: currentCase,
+      quotationReadiness: assessQuotationReadiness(currentCase) as QuotationReadiness,
+      auditEvents: [],
+    };
+  }
+  const piNumber = await nextPiNumber(d1, now);
+  const issued = issueProformaInvoice(currentCase, piNumber, new Date(now));
+  if (!issued.created) throw new Error("pi_already_active");
+  const nextState = validateAndOwnBuyingBrowserState({
+    ...currentState,
+    cases: currentState.cases.map((item) => item.id === caseId ? issued.caseRecord : item),
+  }, row.user_id) as BuyingBrowserState;
+  const nextRevision = row.revision + 1;
+  const auditId = crypto.randomUUID();
+  const workspaceEventId = crypto.randomUUID();
+  const auditNewValue = {
+    number: issued.caseRecord.proformaInvoice.number,
+    status: issued.caseRecord.proformaInvoice.status,
+    quotationNumber: issued.caseRecord.proformaInvoice.quotationNumber,
+    totalUsd: issued.caseRecord.proformaInvoice.totalUsd,
+    fxRateThbPerUsd: issued.caseRecord.proformaInvoice.fxRateThbPerUsd,
+    validUntil: issued.caseRecord.proformaInvoice.validUntil,
+    paymentStatus: issued.caseRecord.proformaInvoice.paymentStatus,
+  };
+  try {
+    await d1.batch([
+      d1.prepare("UPDATE buying_browser_workspaces SET state_json = ?, revision = ?, updated_at = ? WHERE user_id = ? AND revision = ?")
+        .bind(JSON.stringify(nextState), nextRevision, now, row.user_id, row.revision),
+      d1.prepare("INSERT INTO buying_browser_workspace_events (id, user_id, revision, event_type, summary_json, created_at) VALUES (?, ?, ?, ?, ?, ?)")
+        .bind(workspaceEventId, row.user_id, nextRevision, "pi_issued", JSON.stringify({ ...workspaceSummary(nextState), caseId, piNumber }), now),
+      d1.prepare("INSERT INTO buying_browser_case_audit_events (id, workspace_user_id, case_id, actor_user_id, action, old_value_json, new_value_json, evidence_note, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")
+        .bind(auditId, row.user_id, caseId, owner.id, "pi_issued", JSON.stringify({ proformaInvoice: currentCase.proformaInvoice ?? null }), JSON.stringify(auditNewValue), "Owner issued a customer-visible PI from the accepted current quotation.", now),
+    ]);
+  } catch (error) {
+    const latest = await d1.prepare("SELECT state_json, revision, updated_at FROM buying_browser_workspaces WHERE user_id = ? LIMIT 1")
+      .bind(row.user_id)
+      .first<WorkspaceRow>();
+    if (latest && latest.revision !== row.revision) {
+      throw workspaceConflict({ state: validateAndOwnBuyingBrowserState(JSON.parse(latest.state_json), row.user_id) as BuyingBrowserState, revision: latest.revision, updatedAt: latest.updated_at });
+    }
+    throw error;
+  }
+  return {
+    workspaceUserId: row.user_id,
+    customerEmail: row.email,
+    customerDisplayName: row.display_name,
+    workspaceRevision: nextRevision,
+    workspaceUpdatedAt: now,
+    vehicleCase: issued.caseRecord,
+    quotationReadiness: assessQuotationReadiness(issued.caseRecord) as QuotationReadiness,
+    auditEvents: [{ id: auditId, workspaceUserId: row.user_id, caseId, actorUserId: owner.id, action: "pi_issued", oldValue: {}, newValue: auditNewValue, evidenceNote: "Owner issued a customer-visible PI from the accepted current quotation.", createdAt: now }],
+  };
 }

@@ -1,5 +1,5 @@
 import { getChatGPTUser, isOwnerUser } from "../../../../chatgpt-auth";
-import { issueOwnerCaseQuotation, listOwnerCases, writeOwnerCaseVerification, type WorkspaceRecord } from "../../../../buying-browser/workspace-store";
+import { issueOwnerCaseProformaInvoice, issueOwnerCaseQuotation, listOwnerCases, writeOwnerCaseVerification, type WorkspaceRecord } from "../../../../buying-browser/workspace-store";
 
 export const dynamic = "force-dynamic";
 
@@ -65,9 +65,11 @@ export async function POST(request: Request) {
   } catch {
     return json({ error: "invalid_json" }, 400);
   }
-  if (payload.action !== "issue_quotation") return json({ error: "invalid_owner_case_action" }, 400);
+  if (!new Set(["issue_quotation", "issue_pi"]).has(String(payload.action))) return json({ error: "invalid_owner_case_action" }, 400);
   try {
-    const updated = await issueOwnerCaseQuotation(identity.user, String(payload.workspaceUserId || ""), String(payload.caseId || ""), Number(payload.expectedRevision));
+    const updated = payload.action === "issue_pi"
+      ? await issueOwnerCaseProformaInvoice(identity.user, String(payload.workspaceUserId || ""), String(payload.caseId || ""), Number(payload.expectedRevision))
+      : await issueOwnerCaseQuotation(identity.user, String(payload.workspaceUserId || ""), String(payload.caseId || ""), Number(payload.expectedRevision));
     return json({ case: updated });
   } catch (error) {
     if (error instanceof Error && error.message === "workspace_revision_conflict") {
@@ -75,7 +77,7 @@ export async function POST(request: Request) {
       return json({ error: error.message, revision: current?.revision ?? null }, 409);
     }
     if (error instanceof Error && ["workspace_not_found", "case_not_found"].includes(error.message)) return json({ error: error.message }, 404);
-    if (error instanceof Error && /^(invalid_|quotation_not_ready|quotation_request_required|owner_verification_required)/.test(error.message)) return json({ error: error.message }, 400);
-    return json({ error: "quotation_issue_failed" }, 500);
+    if (error instanceof Error && /^(invalid_|quotation_not_ready|quotation_request_required|owner_verification_required|accepted_quotation_required|quotation_material_changed|pi_expired_recheck_required)/.test(error.message)) return json({ error: error.message }, 400);
+    return json({ error: payload.action === "issue_pi" ? "pi_issue_failed" : "quotation_issue_failed" }, 500);
   }
 }

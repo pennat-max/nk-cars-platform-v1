@@ -17,7 +17,7 @@ const mobileNavItems = [...primaryNavItems, { key: "account", labelKey: "account
 
 function activeKey(view: BuyingBrowserView) {
   if (view === "source" || view === "web-browser" || view === "vehicle" || view === "paste" || view === "share" || view === "ask") return "browse";
-  if (view === "case") return "cases";
+  if (view === "case" || view === "pi") return "cases";
   if (view === "inspections") return "cases";
   return view;
 }
@@ -27,7 +27,7 @@ export default function BuyingBrowserShell({ view, children }: { view: BuyingBro
   const { language, setLanguage, t } = useI18n();
   const selected = activeKey(view);
   return (
-    <div className="buying-browser" data-buying-browser-v1>
+    <div className={`buying-browser view-${view}`} data-buying-browser-v1>
       <header className="bb-header">
         <div className="bb-header-inner">
           <Link className="bb-brand" href="/buy" aria-label="NK Cars Buying Browser home">

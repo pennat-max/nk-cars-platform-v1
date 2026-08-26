@@ -902,3 +902,35 @@ Started Milestone 1: Next.js shell and visual parity.
 ### Next
 
 - `BB-V1D-05 - Gated Proforma Invoice`: allow Owner issuance of a customer-visible PI only from an accepted, current quotation, with its own `PI-YYYY-######` number, immutable snapshot, three-day validity, and no payment confirmation.
+
+## 2026-08-27 - Gated Proforma Invoice
+
+### Completed
+
+- Added Owner-only PI issue from an accepted current quotation. Unaccepted, changed, superseded, or expired commercial records fail closed.
+- Added atomic yearly `PI-YYYY-######` numbering using the existing D1 document sequence table.
+- PI snapshots the accepted quotation's line items, THB/USD exchange rate, THB total, USD total, and quotation reference; customer workspace writes cannot create or modify it.
+- Added independent three-day PI validity. An expired PI cannot be reissued directly; Owner recheck supersedes both PI and quotation and requires a new accepted quotation.
+- Added a customer-visible PI summary plus a dedicated mobile/print layout at `/buy/cases/:caseId/pi` in English, Simplified Chinese, and Thai.
+- The document always shows `Payment status: Not confirmed`; it contains no invented bank account, payment instruction, payment confirmation, seller transfer, or purchase approval.
+- Owner issue, Case/timeline update, workspace Revision, event, document number, and audit record are persisted through controlled server paths.
+
+### Verification
+
+- `npm.cmd test`: passed production build and 52/52 tests.
+- `npx.cmd tsc --noEmit`: passed.
+- `npm.cmd run lint`: passed with 0 errors and 13 pre-existing `<img>` warnings.
+- `git diff --check`: passed.
+- Microsoft Edge mobile viewport 390 x 844: PI rendered without horizontal overflow, bottom-navigation overlap, or console errors; print/save-PDF action and Case return action were visible.
+
+### Owner / External Blockers
+
+- Real legal issuer name/address/tax details and authorized payment instructions are not configured. They require Owner/Finance approval and must not be invented.
+- Actual-funds confirmation remains Finance-only future work and no real payment flow is enabled.
+- Live Google staging still requires the approved service-account secret and Drive Viewer access.
+- Real availability messages, inspection booking, provider assignment, and seller/customer communications require approved external channels/providers and send authorization.
+- Private operational media storage/retention and production backup/restore require approved QNAP/R2 infrastructure and policy.
+
+### Next Recommended Step
+
+- Owner/Finance supplies and approves legal issuer/document details and the payment-control policy. After that, implement authorized PI issuer configuration and Finance-only payment reporting/confirmation without enabling automatic transfers.

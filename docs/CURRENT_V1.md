@@ -264,6 +264,9 @@ Latest durable operations update:
 - Owner-approved quotations are now implemented with `QT-YYYY-######` numbering, immutable verified pricing/FX snapshots, three-day validity, signed-in customer acceptance, audit history, and material-change supersession.
 - Accepted quotations move the Case to `Ready for PI Review`; no PI, payment confirmation, seller transfer, or vehicle purchase is created automatically.
 - Current next milestone is `BB-V1D-05 - Gated Proforma Invoice`, followed by Finance-only payment confirmation controls.
+- Gated Proforma Invoice is now implemented: Owner-only issue from an accepted current quotation, `PI-YYYY-######` numbering, immutable pricing/FX snapshot, three-day validity/recheck, multilingual customer view, and print/save-PDF layout.
+- PI payment status remains `Not confirmed`; the application does not invent bank instructions, confirm money, pay sellers, or approve vehicle purchase.
+- Further commercial activation is blocked until Owner/Finance supplies approved legal issuer details, payment instructions, roles, and actual-funds confirmation policy.
 
 Completed source-layer items:
 1. stable header-mapped Google Sheet schema

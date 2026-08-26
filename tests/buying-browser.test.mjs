@@ -22,6 +22,7 @@ import { normalizeCustomerImageContentType, parseGoogleStagingValues, readBounde
 import { customerWorkspaceId, enforceServerControlledWorkspaceState, mergeBuyingBrowserStates, validateAndOwnBuyingBrowserState, workspaceSummary } from "../app/buying-browser/workspace-state.mjs";
 import { applyOwnerCaseVerification, normalizeOwnerCaseVerification } from "../app/buying-browser/owner-case-verification.mjs";
 import { acceptQuotation, currentQuotationStatus, issueQuotation, quotationMaterialKey } from "../app/buying-browser/quotation-domain.mjs";
+import { currentProformaInvoiceStatus, issueProformaInvoice } from "../app/buying-browser/pi-domain.mjs";
 
 const source = {
   id: "listing-1",
@@ -77,7 +78,8 @@ class MemoryWorkspaceD1 {
         if (sql.startsWith("INSERT INTO buying_browser_document_sequences")) {
           const [sequenceKey, year, updatedAt] = values;
           const next = (documentSequences.get(sequenceKey)?.last_number || 0) + 1;
-          documentSequences.set(sequenceKey, { sequence_key: sequenceKey, document_type: "QUOTATION", year, last_number: next, updated_at: updatedAt });
+          const documentType = sql.includes("'PI'") ? "PI" : "QUOTATION";
+          documentSequences.set(sequenceKey, { sequence_key: sequenceKey, document_type: documentType, year, last_number: next, updated_at: updatedAt });
           return { last_number: next };
         }
         throw new Error(`Unexpected first SQL: ${sql}`);
@@ -311,11 +313,57 @@ test("numbered quotation API requires Owner issue and signed-in customer accepta
     const duplicateAccept = await worker.fetch(new Request("http://localhost/api/buying-browser/quotation/accept", { method: "POST", headers: customerHeaders, body: JSON.stringify({ caseId: requested.id, quotationNumber: "QT-2026-000001" }) }), env, ctx);
     assert.equal(duplicateAccept.status, 200);
     assert.equal((await duplicateAccept.json()).revision, 4);
+
+    const piIssued = await worker.fetch(new Request("http://localhost/api/buying-browser/owner/cases", { method: "POST", headers: ownerHeaders, body: JSON.stringify({ action: "issue_pi", workspaceUserId: "quote-customer", caseId: requested.id, expectedRevision: 4 }) }), env, ctx);
+    assert.equal(piIssued.status, 200);
+    const piPayload = await piIssued.json();
+    assert.equal(piPayload.case.workspaceRevision, 5);
+    assert.equal(piPayload.case.vehicleCase.proformaInvoice.number, "PI-2026-000001");
+    assert.equal(piPayload.case.vehicleCase.proformaInvoice.paymentStatus, "Not Confirmed");
+    assert.equal(DB.documentSequences.get("PI-2026").last_number, 1);
+    assert.equal(DB.caseAudits.size, 4);
+
+    const duplicatePi = await worker.fetch(new Request("http://localhost/api/buying-browser/owner/cases", { method: "POST", headers: ownerHeaders, body: JSON.stringify({ action: "issue_pi", workspaceUserId: "quote-customer", caseId: requested.id, expectedRevision: 5 }) }), env, ctx);
+    assert.equal(duplicatePi.status, 200);
+    assert.equal((await duplicatePi.json()).case.workspaceRevision, 5);
+    assert.equal(DB.documentSequences.get("PI-2026").last_number, 1);
   } finally {
     if (previousOwnerIds === undefined) delete process.env.NK_OWNER_ACCOUNT_IDS;
     else process.env.NK_OWNER_ACCOUNT_IDS = previousOwnerIds;
     delete globalThis.__NK_WORKSPACE_TEST_DB__;
   }
+});
+
+test("PI snapshots an accepted quotation, expires after three days, and requires recheck after expiry", () => {
+  const listing = presentCustomerListing(source);
+  const requested = requestQuotation(createVehicleCase(listing, [], "customer-1", "2026-08-26T10:00:00.000Z").caseRecord, new Date("2026-08-26T10:01:00.000Z"));
+  const verified = applyOwnerCaseVerification(requested, {
+    availability: "Verified Available", actualVehiclePurchasePriceThb: 880000, inspectionTravelThb: 3500,
+    domesticTransportThb: 0, repairModificationThb: 0, exportShippingThb: 42000, otherAgreedThb: 0,
+    evidenceNote: "Current seller and cost evidence verified.",
+  }, new Date("2026-08-26T11:00:00.000Z")).caseRecord;
+  const quote = issueQuotation(verified, "QT-2026-000002", new Date("2026-08-26T12:00:00.000Z")).caseRecord;
+  const accepted = acceptQuotation(quote, "QT-2026-000002", new Date("2026-08-26T13:00:00.000Z")).caseRecord;
+  assert.throws(() => issueProformaInvoice(verified, "PI-2026-000001", new Date("2026-08-26T14:00:00.000Z")), /accepted_quotation_required/);
+  const issued = issueProformaInvoice(accepted, "PI-2026-000001", new Date("2026-08-26T14:00:00.000Z"));
+  assert.equal(issued.created, true);
+  assert.equal(issued.caseRecord.proformaInvoice.totalThb, accepted.quotation.totalThb);
+  assert.equal(issued.caseRecord.proformaInvoice.totalUsd, accepted.quotation.totalUsd);
+  assert.equal(issued.caseRecord.proformaInvoice.quotationNumber, accepted.quotation.number);
+  assert.equal(issued.caseRecord.proformaInvoice.visibility, "CUSTOMER_VISIBLE");
+  assert.equal(issued.caseRecord.proformaInvoice.paymentStatus, "Not Confirmed");
+  assert.equal(currentProformaInvoiceStatus(issued.caseRecord.proformaInvoice, new Date("2026-08-29T13:59:59.000Z")), "Issued - Awaiting Payment");
+  assert.equal(currentProformaInvoiceStatus(issued.caseRecord.proformaInvoice, new Date("2026-08-29T14:00:00.000Z")), "Expired");
+  assert.throws(() => issueProformaInvoice(issued.caseRecord, "PI-2026-000002", new Date("2026-08-29T14:00:00.000Z")), /pi_expired_recheck_required/);
+  assert.doesNotMatch(JSON.stringify(issued.caseRecord.proformaInvoice), /bank|paymentConfirmed|sellerPayment|purchaseApproved/i);
+  const rechecked = applyOwnerCaseVerification(issued.caseRecord, {
+    availability: "Verified Available", actualVehiclePurchasePriceThb: 880000, inspectionTravelThb: 3500,
+    domesticTransportThb: 0, repairModificationThb: 0, exportShippingThb: 42000, otherAgreedThb: 0,
+    evidenceNote: "Vehicle, price, and costs rechecked after PI expiry.",
+  }, new Date("2026-08-29T15:00:00.000Z")).caseRecord;
+  assert.equal(rechecked.proformaInvoice.status, "Superseded");
+  assert.equal(rechecked.quotation.status, "Superseded");
+  assert.match(rechecked.messages.at(-1).text, /previous PI and quotation are now superseded/i);
 });
 
 test("Owner Case API is allowlisted, auditable, conflict-safe, and updates the customer workspace", async () => {
@@ -546,6 +594,18 @@ test("commercial readiness UI explains quotation before PI in all customer langu
   assert.match(component, /Authorized Finance must confirm actual funds received/);
 });
 
+test("customer PI UI is multilingual, printable, and keeps Finance confirmation separate", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const panel = await readFile(new URL("../app/buying-browser/components/ProformaInvoicePanel.tsx", import.meta.url), "utf8");
+  const document = await readFile(new URL("../app/buying-browser/screens/ProformaInvoiceScreen.tsx", import.meta.url), "utf8");
+  assert.match(panel, /View \/ print PI/);
+  assert.match(panel, /查看 \/ 打印 PI/);
+  assert.match(panel, /ดู \/ พิมพ์ PI/);
+  assert.match(document, /window\.print/);
+  assert.match(document, /Authorized NK Finance must confirm actual funds received separately/);
+  assert.doesNotMatch(document, /bank account|swift|payment confirmed/i);
+});
+
 test("localization changes presentation without mutating authoritative listing data", () => {
   const listing = presentCustomerListing(source);
   const before = structuredClone(listing);
@@ -649,7 +709,7 @@ test("renders additive Buying Browser routes without customer source leakage", a
   const { default: worker } = await import(workerUrl.href);
   const env = { ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) } };
   const ctx = { waitUntil() {}, passThroughOnException() {} };
-  const routes = ["/buy", "/buy/browser", "/buy/browse", "/buy/saved", "/buy/paste", "/buy/share", "/buy/ask", "/buy/cases", "/buy/cases/NK-CASE-2026-000001", "/buy/inspections", "/buy/messages", "/buy/account", "/buy/vehicle/nk-market-2026-0825-01", "/buy/vehicle/nk-market-2026-0825-05"];
+  const routes = ["/buy", "/buy/browser", "/buy/browse", "/buy/saved", "/buy/paste", "/buy/share", "/buy/ask", "/buy/cases", "/buy/cases/NK-CASE-2026-000001", "/buy/cases/NK-CASE-2026-000001/pi", "/buy/inspections", "/buy/messages", "/buy/account", "/buy/vehicle/nk-market-2026-0825-01", "/buy/vehicle/nk-market-2026-0825-05"];
   for (const route of routes) {
     const response = await worker.fetch(new Request(`http://localhost${route}`, { headers: { accept: "text/html" } }), env, ctx);
     assert.equal(response.status, 200, route);

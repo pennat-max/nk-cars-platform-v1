@@ -138,6 +138,7 @@ export type VehicleCase = {
     verifiedAt: string;
   } | null;
   quotation?: VehicleQuotation | null;
+  proformaInvoice?: VehicleProformaInvoice | null;
   quotationRequest?: {
     status: "Requested - Awaiting NK Review";
     requestedAt: string;
@@ -190,6 +191,7 @@ export type BuyingBrowserView =
   | "share"
   | "cases"
   | "case"
+  | "pi"
   | "inspections"
   | "messages"
   | "account"
@@ -225,6 +227,21 @@ export type VehicleQuotation = {
   pricing: PricingBreakdown;
   materialKey: string;
   visibility: "CUSTOMER_VISIBLE";
+};
+
+export type VehicleProformaInvoice = {
+  number: string;
+  status: "Issued - Awaiting Payment" | "Expired" | "Superseded";
+  issuedAt: string;
+  validUntil: string;
+  quotationNumber: string;
+  fxRateThbPerUsd: number;
+  totalThb: number;
+  totalUsd: number;
+  pricing: PricingBreakdown;
+  materialKey: string;
+  visibility: "CUSTOMER_VISIBLE";
+  paymentStatus: "Not Confirmed";
 };
 
 export type QuotationReadinessItem = {
@@ -273,7 +290,7 @@ export type OwnerCaseAuditEvent = {
   workspaceUserId: string;
   caseId: string;
   actorUserId: string;
-  action: "owner_case_verification_updated" | "quotation_issued" | "quotation_accepted";
+  action: "owner_case_verification_updated" | "quotation_issued" | "quotation_accepted" | "pi_issued";
   oldValue: Record<string, unknown>;
   newValue: Record<string, unknown>;
   evidenceNote: string;

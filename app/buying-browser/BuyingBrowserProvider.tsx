@@ -142,6 +142,8 @@ export function BuyingBrowserProvider({
               platformTransactionRate: record.platformTransactionRate ?? 6,
               buyingServiceRate: record.buyingServiceRate ?? 4,
               quotationRequest: record.quotationRequest ?? null,
+              quotation: record.quotation ?? null,
+              proformaInvoice: record.proformaInvoice ?? null,
               translationHistory: Array.isArray(record.translationHistory) ? record.translationHistory : [],
             })),
           }), seedCases);

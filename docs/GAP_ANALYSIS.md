@@ -436,3 +436,35 @@ BB-V1D is blocked on approved production project/configuration and must not depl
 ### Smallest Next V1 Milestone
 
 `BB-V1D-05 - Gated Proforma Invoice`: issue a uniquely numbered customer-visible PI only from an accepted current quotation, preserve the exact commercial snapshot and FX, enforce three-day validity/recheck, and keep payment confirmation Finance-only and disabled.
+
+## Gated PI Update - 2026-08-27
+
+### Implemented
+
+- Owner-only `PI-YYYY-######` issuance from an accepted current quotation.
+- Immutable customer-visible pricing/FX snapshot, quotation reference, independent three-day validity, print/save-PDF presentation, and multilingual customer labels.
+- Expired PI reissue is blocked until Owner rechecks the Case and a new quotation is accepted.
+- Server authority, optimistic Revision protection, atomic workspace/event/audit updates, and customer-write protection.
+- Explicit `Not confirmed` payment state with no bank data, receipt, seller transfer, or purchase action.
+
+### Remaining V1 Gaps And Classification
+
+- **Owner Blocker - legal/commercial document setup:** approved legal issuer identity, address/tax details, and authorized payment instructions are required before the PI can be used as a real payment instruction.
+- **Owner/Finance Blocker - payment control:** authorized Finance roles, evidence requirements, and actual-funds confirmation policy are required. Payment remains future V3 scope unless Owner explicitly promotes a controlled subset into V1.
+- **External Integration Blocker - Google staging:** `GOOGLE_SERVICE_ACCOUNT_JSON` and Drive Viewer access are missing; repository snapshot fallback remains active.
+- **External Integration Blocker - availability:** no approved seller messaging channel, send authorization, or reply ingestion.
+- **External Integration Blocker - inspection:** no approved provider/rate/appointment integration; only deterministic estimates and requests exist.
+- **Infrastructure Blocker - private evidence/recovery:** no approved R2/QNAP production storage, retention, backup, and restore setup.
+- **Owner Review Blocker - staged inventory:** the second ten-vehicle batch remains internal until Owner evidence review/redaction/publication approval.
+
+### V1-V5 Status
+
+- **V1:** Browse, localization, customer-safe DTOs, Vehicle Cases, durable account workspace, requests/history, deterministic 6% + 4% pricing, Owner verification, quotation/acceptance, and gated PI are implemented. Remaining V1 work depends on the blockers above.
+- **V2:** dealer portal/network, reverse marketplace, trust scores, and controlled sourcing automation remain future scope.
+- **V3:** Finance confirmation, payment ledger, purchase approval, deposits/refunds, and Purchase Fund remain disabled future scope.
+- **V4:** secured vehicle, inspection execution, repair, export/shipping, delivery, and after-sales remain future scope.
+- **V5:** full 360 views, task/KPI engine, fraud/risk, expanded immutable audit, reporting, forecast, and command center remain future scope.
+
+### Next Smallest Safe Milestone
+
+`BB-V1D-06 - Authorized Issuer And Finance Setup` is blocked pending Owner-approved legal issuer details and Finance/payment policy. No further commercial activation should be coded with invented data.

@@ -9,6 +9,7 @@ import PasteScreen from "./screens/PasteScreen";
 import SourceLaunchScreen from "./screens/SourceLaunchScreen";
 import VehicleScreen from "./screens/VehicleScreen";
 import WebBrowserScreen from "./screens/WebBrowserScreen";
+import ProformaInvoiceScreen from "./screens/ProformaInvoiceScreen";
 import type { BuyingBrowserView, CustomerIdentity, CustomerListing, SourceAdapterStatus, VehicleCase } from "./types";
 
 export default function BuyingBrowserApp({
@@ -45,6 +46,7 @@ export default function BuyingBrowserApp({
         {view === "ask" && <AskScreen />}
         {view === "cases" && <CasesScreen />}
         {view === "case" && <CaseDetailScreen caseId={caseId} />}
+        {view === "pi" && <ProformaInvoiceScreen caseId={caseId} />}
         {view === "inspections" && <InspectionsScreen />}
         {view === "messages" && <MessagesScreen />}
         {view === "account" && <AccountScreen />}

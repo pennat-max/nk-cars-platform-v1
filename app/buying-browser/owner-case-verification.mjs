@@ -62,6 +62,9 @@ export function applyOwnerCaseVerification(caseRecord, value, now = new Date()) 
         totalThb: input.inspectionTravelThb,
         status: "Quote Ready",
       };
+  const verificationMessage = caseRecord.proformaInvoice
+    ? "NK rechecked the vehicle and commercial facts. The previous PI and quotation are now superseded; no payment or purchase has been confirmed."
+    : "NK reviewed the vehicle availability and commercial cost facts recorded for this case. Pending items remain clearly marked and no quotation, PI, payment, or purchase has been issued.";
   const nextCase = {
     ...caseRecord,
     availability: input.availability,
@@ -77,7 +80,7 @@ export function applyOwnerCaseVerification(caseRecord, value, now = new Date()) 
     messages: [...caseRecord.messages, {
       id: `${caseRecord.id}-owner-verification-message-${createdAt}`,
       sender: "NK Team",
-      text: "NK reviewed the vehicle availability and commercial cost facts recorded for this case. Pending items remain clearly marked and no quotation, PI, payment, or purchase has been issued.",
+      text: verificationMessage,
       createdAt,
       delivery: "Recorded",
     }],
@@ -88,7 +91,10 @@ export function applyOwnerCaseVerification(caseRecord, value, now = new Date()) 
       createdAt,
     }],
   };
-  if (nextCase.quotation && nextCase.quotation.materialKey !== quotationMaterialKey(nextCase)) {
+  if (nextCase.proformaInvoice) {
+    nextCase.proformaInvoice = { ...nextCase.proformaInvoice, status: "Superseded" };
+    if (nextCase.quotation) nextCase.quotation = { ...nextCase.quotation, status: "Superseded" };
+  } else if (nextCase.quotation && nextCase.quotation.materialKey !== quotationMaterialKey(nextCase)) {
     nextCase.quotation = { ...nextCase.quotation, status: "Superseded" };
   }
   return {

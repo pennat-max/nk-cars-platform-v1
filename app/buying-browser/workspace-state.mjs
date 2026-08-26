@@ -48,6 +48,7 @@ function customerControlledCase(caseRecord, currentCase) {
       otherAgreedThb: currentCase.otherAgreedThb,
       ownerVerification: currentCase.ownerVerification,
       quotation: currentCase.quotation ?? null,
+      proformaInvoice: currentCase.proformaInvoice ?? null,
       messages: mergeHistory(currentCase.messages, caseRecord.messages),
       timeline: mergeHistory(currentCase.timeline, caseRecord.timeline),
     };
@@ -67,6 +68,7 @@ function customerControlledCase(caseRecord, currentCase) {
     otherAgreedThb: null,
     ownerVerification: null,
     quotation: null,
+    proformaInvoice: null,
   };
 }
 

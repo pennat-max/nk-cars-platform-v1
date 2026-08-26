@@ -1,8 +1,10 @@
 "use client";
 
-import { CheckCircle2, CircleDashed, FileCheck2, FileText, History, Save, ShieldCheck, UserRound } from "lucide-react";
+import { CheckCircle2, CircleDashed, FileCheck2, FileText, History, ReceiptText, Save, ShieldCheck, UserRound } from "lucide-react";
 import { useMemo, useState } from "react";
 import { formatDateTime, formatThb } from "../format";
+import { currentProformaInvoiceStatus } from "../pi-domain.mjs";
+import { currentQuotationStatus } from "../quotation-domain.mjs";
 import type { AvailabilityState, OwnerCaseQueueItem, OwnerCaseVerificationInput } from "../types";
 import VehiclePhoto from "./VehiclePhoto";
 
@@ -133,6 +135,33 @@ export default function OwnerCaseVerificationQueue({ initialCases }: { initialCa
     }
   }
 
+  async function issuePi() {
+    if (!selected || saving) return;
+    setSaving(true);
+    setStatus("");
+    try {
+      const response = await fetch("/api/buying-browser/owner/cases", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action: "issue_pi", workspaceUserId: selected.workspaceUserId, caseId: selected.vehicleCase.id, expectedRevision: selected.workspaceRevision }),
+      });
+      const payload = await response.json().catch(() => null);
+      if (response.status === 409) {
+        await refreshQueue();
+        setStatus("Customer data changed while this Case was open. Review the latest accepted quotation before issuing the PI.");
+        return;
+      }
+      if (!response.ok) throw new Error(payload?.error || "pi_issue_failed");
+      const updated = payload.case as OwnerCaseQueueItem;
+      setItems((current) => current.map((item) => item.workspaceUserId === updated.workspaceUserId && item.vehicleCase.id === updated.vehicleCase.id ? { ...updated, auditEvents: [...updated.auditEvents, ...item.auditEvents.filter((event) => !updated.auditEvents.some((newEvent) => newEvent.id === event.id))] } : item.workspaceUserId === updated.workspaceUserId ? { ...item, workspaceRevision: updated.workspaceRevision, workspaceUpdatedAt: updated.workspaceUpdatedAt } : item));
+      setStatus(`PI ${updated.vehicleCase.proformaInvoice?.number} issued from the accepted quotation. Payment is not confirmed.`);
+    } catch {
+      setStatus("PI was not issued. It requires a current accepted quotation; an expired PI requires Owner recheck and a new accepted quotation.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <section className="bb-owner-case-queue" data-owner-case-verification-queue>
       <div className="bb-section-heading">
@@ -172,7 +201,7 @@ export default function OwnerCaseVerificationQueue({ initialCases }: { initialCa
             </div>
             <div className="bb-owner-case-readiness">
               <div><ShieldCheck size={18} /><span><b>{selected.quotationReadiness.pendingCount} pending readiness item{selected.quotationReadiness.pendingCount === 1 ? "" : "s"}</b><small>PI remains blocked until an approved final quotation is accepted.</small></span></div>
-              <div className="bb-owner-case-commands"><button className="bb-button secondary" disabled={saving || !selected.quotationReadiness.ready || !selected.vehicleCase.quotationRequest || selected.vehicleCase.quotation?.status === "Issued - Awaiting Acceptance" || selected.vehicleCase.quotation?.status === "Accepted"} onClick={issueQuotation}><FileCheck2 size={16} />Issue quotation</button><button className="bb-button primary" disabled={saving || form.evidenceNote.trim().length < 3} onClick={save}><Save size={16} />{saving ? "Saving..." : "Save verified facts"}</button></div>
+              <div className="bb-owner-case-commands"><button className="bb-button secondary" disabled={saving || !selected.quotationReadiness.ready || !selected.vehicleCase.quotationRequest || ["Issued - Awaiting Acceptance", "Accepted"].includes(currentQuotationStatus(selected.vehicleCase.quotation, new Date()) || "")} onClick={issueQuotation}><FileCheck2 size={16} />Issue quotation</button><button className="bb-button secondary" disabled={saving || selected.vehicleCase.quotation?.status !== "Accepted" || currentProformaInvoiceStatus(selected.vehicleCase.proformaInvoice, new Date()) === "Issued - Awaiting Payment" || currentProformaInvoiceStatus(selected.vehicleCase.proformaInvoice, new Date()) === "Expired"} onClick={issuePi}><ReceiptText size={16} />Issue PI</button><button className="bb-button primary" disabled={saving || form.evidenceNote.trim().length < 3} onClick={save}><Save size={16} />{saving ? "Saving..." : "Save verified facts"}</button></div>
             </div>
             {status && <p className="bb-owner-case-status" role="status">{status}</p>}
             <div className="bb-owner-case-audit">
