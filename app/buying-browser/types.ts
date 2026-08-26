@@ -137,6 +137,7 @@ export type VehicleCase = {
     status: "Owner Verified";
     verifiedAt: string;
   } | null;
+  quotation?: VehicleQuotation | null;
   quotationRequest?: {
     status: "Requested - Awaiting NK Review";
     requestedAt: string;
@@ -212,6 +213,20 @@ export type SourceAdapterStatus = {
   message: string;
 };
 
+export type VehicleQuotation = {
+  number: string;
+  status: "Issued - Awaiting Acceptance" | "Accepted" | "Expired" | "Superseded";
+  issuedAt: string;
+  validUntil: string;
+  acceptedAt: string | null;
+  fxRateThbPerUsd: number;
+  totalThb: number;
+  totalUsd: number;
+  pricing: PricingBreakdown;
+  materialKey: string;
+  visibility: "CUSTOMER_VISIBLE";
+};
+
 export type QuotationReadinessItem = {
   key: "availability" | "vehiclePrice" | "inspection" | "transport" | "repair" | "shipping" | "other";
   ready: boolean;
@@ -222,7 +237,7 @@ export type QuotationReadiness = {
   ready: boolean;
   items: QuotationReadinessItem[];
   pendingCount: number;
-  piStatus: "Blocked - Quotation Not Accepted";
+  piStatus: "Blocked - Quotation Not Accepted" | "Ready for PI Review";
 };
 
 export type WorkspaceSyncStatus = {
@@ -258,9 +273,9 @@ export type OwnerCaseAuditEvent = {
   workspaceUserId: string;
   caseId: string;
   actorUserId: string;
-  action: "owner_case_verification_updated";
-  oldValue: Omit<OwnerCaseVerificationInput, "evidenceNote">;
-  newValue: Omit<OwnerCaseVerificationInput, "evidenceNote">;
+  action: "owner_case_verification_updated" | "quotation_issued" | "quotation_accepted";
+  oldValue: Record<string, unknown>;
+  newValue: Record<string, unknown>;
   evidenceNote: string;
   createdAt: string;
 };

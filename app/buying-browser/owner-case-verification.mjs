@@ -1,4 +1,5 @@
 import { assessQuotationReadiness } from "./domain.mjs";
+import { quotationMaterialKey } from "./quotation-domain.mjs";
 
 const AVAILABILITY_STATES = new Set([
   "Availability Not Yet Confirmed",
@@ -87,6 +88,9 @@ export function applyOwnerCaseVerification(caseRecord, value, now = new Date()) 
       createdAt,
     }],
   };
+  if (nextCase.quotation && nextCase.quotation.materialKey !== quotationMaterialKey(nextCase)) {
+    nextCase.quotation = { ...nextCase.quotation, status: "Superseded" };
+  }
   return {
     caseRecord: nextCase,
     oldValue,

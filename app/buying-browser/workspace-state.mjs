@@ -47,6 +47,7 @@ function customerControlledCase(caseRecord, currentCase) {
       exportShippingThb: currentCase.exportShippingThb,
       otherAgreedThb: currentCase.otherAgreedThb,
       ownerVerification: currentCase.ownerVerification,
+      quotation: currentCase.quotation ?? null,
       messages: mergeHistory(currentCase.messages, caseRecord.messages),
       timeline: mergeHistory(currentCase.timeline, caseRecord.timeline),
     };
@@ -65,6 +66,7 @@ function customerControlledCase(caseRecord, currentCase) {
     exportShippingThb: null,
     otherAgreedThb: null,
     ownerVerification: null,
+    quotation: null,
   };
 }
 

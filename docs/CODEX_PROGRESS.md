@@ -874,3 +874,31 @@ Started Milestone 1: Next.js shell and visual parity.
 ### Next
 
 - Continue with `BB-V1D-04 - Owner-Approved Quotation Record` on top of the protected commercial data boundary.
+
+## 2026-08-26 - Owner-Approved Quotation Record
+
+### Completed
+
+- Added Owner-only quotation issue after the customer requests a quotation and every commercial readiness item is verified.
+- Added atomic yearly numbering in D1 using `QT-YYYY-######`, a customer-visible immutable pricing snapshot, recorded THB/USD FX, and a three-day validity window.
+- Added signed-in customer acceptance with exact quotation-number matching, idempotency, timeline/message history, workspace revision protection, and append-only audit events.
+- Material Owner changes to price, availability, fees, or pass-through costs automatically supersede the prior quotation.
+- Customer workspace writes cannot create, replace, or remove the server-authoritative quotation.
+- After acceptance, the Case changes to `Ready for PI Review`; PI, payment confirmation, seller payment, and vehicle purchase remain separate disabled controls.
+- Added mobile customer quotation presentation in English, Simplified Chinese, and Thai.
+
+### Verification
+
+- `npm.cmd test`: passed production build and 50/50 tests.
+- `npx.cmd tsc --noEmit`: passed.
+- `npm.cmd run lint`: passed with 0 errors and 13 pre-existing `<img>` optimization warnings.
+- `git diff --check`: passed.
+- Tests cover numbering, snapshot totals, recorded FX, exact three-day expiry, signed-in acceptance, idempotency, audit events, material-change supersession, customer write protection, and PI gating.
+
+### Assumption
+
+- V1 quotations use the same conservative three-day validity planned for PI. This is configurable in a later Owner policy milestone; stale quotations cannot be accepted.
+
+### Next
+
+- `BB-V1D-05 - Gated Proforma Invoice`: allow Owner issuance of a customer-visible PI only from an accepted, current quotation, with its own `PI-YYYY-######` number, immutable snapshot, three-day validity, and no payment confirmation.

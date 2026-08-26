@@ -21,6 +21,7 @@ import { detectSourceLanguage, localizeAvailability, localizeListingSummary, nor
 import { normalizeCustomerImageContentType, parseGoogleStagingValues, readBoundedResponseBytes } from "../app/buying-browser/source-adapters/google-staging-parser.mjs";
 import { customerWorkspaceId, enforceServerControlledWorkspaceState, mergeBuyingBrowserStates, validateAndOwnBuyingBrowserState, workspaceSummary } from "../app/buying-browser/workspace-state.mjs";
 import { applyOwnerCaseVerification, normalizeOwnerCaseVerification } from "../app/buying-browser/owner-case-verification.mjs";
+import { acceptQuotation, currentQuotationStatus, issueQuotation, quotationMaterialKey } from "../app/buying-browser/quotation-domain.mjs";
 
 const source = {
   id: "listing-1",
@@ -59,18 +60,26 @@ class MemoryWorkspaceD1 {
     this.workspaces = new Map();
     this.events = new Map();
     this.caseAudits = new Map();
+    this.documentSequences = new Map();
   }
 
   prepare(sql) {
     const workspaces = this.workspaces;
     const events = this.events;
     const caseAudits = this.caseAudits;
+    const documentSequences = this.documentSequences;
     let values = [];
     return {
       bind(...nextValues) { values = nextValues; return this; },
       async first() {
         if (sql.startsWith("SELECT state_json")) return workspaces.get(values[0]) ?? null;
         if (sql.startsWith("SELECT user_id, email, display_name, state_json")) return workspaces.get(values[0]) ?? null;
+        if (sql.startsWith("INSERT INTO buying_browser_document_sequences")) {
+          const [sequenceKey, year, updatedAt] = values;
+          const next = (documentSequences.get(sequenceKey)?.last_number || 0) + 1;
+          documentSequences.set(sequenceKey, { sequence_key: sequenceKey, document_type: "QUOTATION", year, last_number: next, updated_at: updatedAt });
+          return { last_number: next };
+        }
         throw new Error(`Unexpected first SQL: ${sql}`);
       },
       async all() {
@@ -225,6 +234,88 @@ test("Owner verification validates evidence and preserves deterministic commerci
   assert.equal(applied.caseRecord.quotationRequest, null);
   assert.match(applied.caseRecord.messages.at(-1).text, /no quotation, PI, payment, or purchase/i);
   assert.doesNotMatch(JSON.stringify(applied.caseRecord), /paymentConfirmed|piNumber|quotationNumber/i);
+});
+
+test("quotation snapshots verified pricing, expires deterministically, accepts once, and supersedes on material change", () => {
+  const listing = presentCustomerListing(source);
+  const requested = requestQuotation(createVehicleCase(listing, [], "customer-1", "2026-08-26T10:00:00.000Z").caseRecord, new Date("2026-08-26T10:01:00.000Z"));
+  const verified = applyOwnerCaseVerification(requested, {
+    availability: "Verified Available", actualVehiclePurchasePriceThb: 880000, inspectionTravelThb: 3500,
+    domesticTransportThb: 0, repairModificationThb: 0, exportShippingThb: 42000, otherAgreedThb: 0,
+    evidenceNote: "Current seller and cost evidence verified.",
+  }, new Date("2026-08-26T11:00:00.000Z")).caseRecord;
+  const issued = issueQuotation(verified, "QT-2026-000001", new Date("2026-08-26T12:00:00.000Z"));
+  assert.equal(issued.created, true);
+  assert.equal(issued.caseRecord.quotation.totalThb, 1013500);
+  assert.equal(issued.caseRecord.quotation.totalUsd, 28957);
+  assert.equal(issued.caseRecord.quotation.fxRateThbPerUsd, 35);
+  assert.equal(issued.caseRecord.quotation.visibility, "CUSTOMER_VISIBLE");
+  assert.equal(currentQuotationStatus(issued.caseRecord.quotation, new Date("2026-08-29T11:59:59.000Z")), "Issued - Awaiting Acceptance");
+  assert.equal(currentQuotationStatus(issued.caseRecord.quotation, new Date("2026-08-29T12:00:00.000Z")), "Expired");
+  assert.throws(() => acceptQuotation(issued.caseRecord, "QT-2026-000001", new Date("2026-08-29T12:00:00.000Z")), /quotation_expired/);
+  const accepted = acceptQuotation(issued.caseRecord, "QT-2026-000001", new Date("2026-08-27T12:00:00.000Z"));
+  assert.equal(accepted.accepted, true);
+  assert.equal(accepted.caseRecord.quotation.status, "Accepted");
+  assert.equal(assessQuotationReadiness(accepted.caseRecord).piStatus, "Ready for PI Review");
+  assert.match(accepted.caseRecord.messages.at(-1).text, /no PI, payment confirmation, seller payment, or vehicle purchase/i);
+  const changed = applyOwnerCaseVerification(accepted.caseRecord, {
+    availability: "Verified Available", actualVehiclePurchasePriceThb: 890000, inspectionTravelThb: 3500,
+    domesticTransportThb: 0, repairModificationThb: 0, exportShippingThb: 42000, otherAgreedThb: 0,
+    evidenceNote: "Seller changed the verified vehicle price.",
+  }, new Date("2026-08-27T13:00:00.000Z")).caseRecord;
+  assert.equal(changed.quotation.status, "Superseded");
+  assert.notEqual(changed.quotation.materialKey, quotationMaterialKey(changed));
+});
+
+test("numbered quotation API requires Owner issue and signed-in customer acceptance", async () => {
+  const workerUrl = new URL("../dist/server/index.js", import.meta.url);
+  workerUrl.searchParams.set("test", `quotation-api-${process.pid}-${Date.now()}`);
+  const { default: worker } = await import(workerUrl.href);
+  const DB = new MemoryWorkspaceD1();
+  globalThis.__NK_WORKSPACE_TEST_DB__ = DB;
+  const env = { DB, ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) } };
+  const ctx = { waitUntil() {}, passThroughOnException() {} };
+  const customerHeaders = { "content-type": "application/json", "oai-authenticated-user-id": "quote-customer", "oai-authenticated-user-email": "quote@example.com" };
+  const ownerHeaders = { "content-type": "application/json", "oai-authenticated-user-id": "quote-owner", "oai-authenticated-user-email": "owner@example.com" };
+  const listing = presentCustomerListing(source);
+  const requested = requestQuotation(createVehicleCase(listing, [], "spoofed", "2026-08-26T10:00:00.000Z").caseRecord, new Date("2026-08-26T10:01:00.000Z"));
+  const state = { version: 1, savedListingIds: [listing.id], cases: [requested], importedListings: [], sourceCaptures: [], generalMessages: [] };
+  const previousOwnerIds = process.env.NK_OWNER_ACCOUNT_IDS;
+  process.env.NK_OWNER_ACCOUNT_IDS = "quote-owner";
+  try {
+    const saved = await worker.fetch(new Request("http://localhost/api/buying-browser/workspace", { method: "PUT", headers: customerHeaders, body: JSON.stringify({ state, expectedRevision: 0 }) }), env, ctx);
+    assert.equal(saved.status, 200);
+    const verification = { availability: "Verified Available", actualVehiclePurchasePriceThb: 880000, inspectionTravelThb: 3500, domesticTransportThb: 0, repairModificationThb: 0, exportShippingThb: 42000, otherAgreedThb: 0, evidenceNote: "Current vehicle and costs verified by Owner." };
+    const verified = await worker.fetch(new Request("http://localhost/api/buying-browser/owner/cases", { method: "PATCH", headers: ownerHeaders, body: JSON.stringify({ workspaceUserId: "quote-customer", caseId: requested.id, expectedRevision: 1, verification }) }), env, ctx);
+    assert.equal(verified.status, 200);
+    const issued = await worker.fetch(new Request("http://localhost/api/buying-browser/owner/cases", { method: "POST", headers: ownerHeaders, body: JSON.stringify({ action: "issue_quotation", workspaceUserId: "quote-customer", caseId: requested.id, expectedRevision: 2 }) }), env, ctx);
+    assert.equal(issued.status, 200);
+    const issuedPayload = await issued.json();
+    assert.equal(issuedPayload.case.workspaceRevision, 3);
+    assert.equal(issuedPayload.case.vehicleCase.quotation.number, "QT-2026-000001");
+    assert.equal(DB.documentSequences.get("QUOTATION-2026").last_number, 1);
+
+    const duplicateIssue = await worker.fetch(new Request("http://localhost/api/buying-browser/owner/cases", { method: "POST", headers: ownerHeaders, body: JSON.stringify({ action: "issue_quotation", workspaceUserId: "quote-customer", caseId: requested.id, expectedRevision: 3 }) }), env, ctx);
+    assert.equal(duplicateIssue.status, 200);
+    assert.equal((await duplicateIssue.json()).case.workspaceRevision, 3);
+    assert.equal(DB.documentSequences.get("QUOTATION-2026").last_number, 1);
+
+    const anonymousAccept = await worker.fetch(new Request("http://localhost/api/buying-browser/quotation/accept", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ caseId: requested.id, quotationNumber: "QT-2026-000001" }) }), env, ctx);
+    assert.equal(anonymousAccept.status, 401);
+    const accepted = await worker.fetch(new Request("http://localhost/api/buying-browser/quotation/accept", { method: "POST", headers: customerHeaders, body: JSON.stringify({ caseId: requested.id, quotationNumber: "QT-2026-000001" }) }), env, ctx);
+    assert.equal(accepted.status, 200);
+    const acceptedPayload = await accepted.json();
+    assert.equal(acceptedPayload.revision, 4);
+    assert.equal(acceptedPayload.state.cases[0].quotation.status, "Accepted");
+    assert.equal(DB.caseAudits.size, 3);
+    const duplicateAccept = await worker.fetch(new Request("http://localhost/api/buying-browser/quotation/accept", { method: "POST", headers: customerHeaders, body: JSON.stringify({ caseId: requested.id, quotationNumber: "QT-2026-000001" }) }), env, ctx);
+    assert.equal(duplicateAccept.status, 200);
+    assert.equal((await duplicateAccept.json()).revision, 4);
+  } finally {
+    if (previousOwnerIds === undefined) delete process.env.NK_OWNER_ACCOUNT_IDS;
+    else process.env.NK_OWNER_ACCOUNT_IDS = previousOwnerIds;
+    delete globalThis.__NK_WORKSPACE_TEST_DB__;
+  }
 });
 
 test("Owner Case API is allowlisted, auditable, conflict-safe, and updates the customer workspace", async () => {

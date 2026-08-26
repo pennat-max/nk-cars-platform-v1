@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, CircleDashed, FileText, History, Save, ShieldCheck, UserRound } from "lucide-react";
+import { CheckCircle2, CircleDashed, FileCheck2, FileText, History, Save, ShieldCheck, UserRound } from "lucide-react";
 import { useMemo, useState } from "react";
 import { formatDateTime, formatThb } from "../format";
 import type { AvailabilityState, OwnerCaseQueueItem, OwnerCaseVerificationInput } from "../types";
@@ -94,13 +94,40 @@ export default function OwnerCaseVerificationQueue({ initialCases }: { initialCa
       const updated = payload.case as OwnerCaseQueueItem;
       setItems((current) => current.map((item) => {
         if (item.workspaceUserId !== updated.workspaceUserId) return item;
-        if (item.vehicleCase.id === updated.vehicleCase.id) return updated;
+        if (item.vehicleCase.id === updated.vehicleCase.id) return { ...updated, auditEvents: [...updated.auditEvents, ...item.auditEvents.filter((event) => !updated.auditEvents.some((newEvent) => newEvent.id === event.id))] };
         return { ...item, workspaceRevision: updated.workspaceRevision, workspaceUpdatedAt: updated.workspaceUpdatedAt };
       }));
       setForm(initialForm(updated));
       setStatus("Saved with an append-only Owner audit event. No quotation, PI, payment, purchase, or external message was issued.");
     } catch {
       setStatus("Could not save this verification. No Case data was changed.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function issueQuotation() {
+    if (!selected || saving) return;
+    setSaving(true);
+    setStatus("");
+    try {
+      const response = await fetch("/api/buying-browser/owner/cases", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action: "issue_quotation", workspaceUserId: selected.workspaceUserId, caseId: selected.vehicleCase.id, expectedRevision: selected.workspaceRevision }),
+      });
+      const payload = await response.json().catch(() => null);
+      if (response.status === 409) {
+        await refreshQueue();
+        setStatus("Customer data changed while this Case was open. Review the latest verified facts before issuing the quotation.");
+        return;
+      }
+      if (!response.ok) throw new Error(payload?.error || "quotation_issue_failed");
+      const updated = payload.case as OwnerCaseQueueItem;
+      setItems((current) => current.map((item) => item.workspaceUserId === updated.workspaceUserId && item.vehicleCase.id === updated.vehicleCase.id ? { ...updated, auditEvents: [...updated.auditEvents, ...item.auditEvents.filter((event) => !updated.auditEvents.some((newEvent) => newEvent.id === event.id))] } : item.workspaceUserId === updated.workspaceUserId ? { ...item, workspaceRevision: updated.workspaceRevision, workspaceUpdatedAt: updated.workspaceUpdatedAt } : item));
+      setStatus(`Quotation ${updated.vehicleCase.quotation?.number} issued from the verified pricing snapshot. PI and payment remain disabled.`);
+    } catch {
+      setStatus("Quotation was not issued. Confirm that the customer requested it and every readiness item is verified.");
     } finally {
       setSaving(false);
     }
@@ -145,12 +172,12 @@ export default function OwnerCaseVerificationQueue({ initialCases }: { initialCa
             </div>
             <div className="bb-owner-case-readiness">
               <div><ShieldCheck size={18} /><span><b>{selected.quotationReadiness.pendingCount} pending readiness item{selected.quotationReadiness.pendingCount === 1 ? "" : "s"}</b><small>PI remains blocked until an approved final quotation is accepted.</small></span></div>
-              <button className="bb-button primary" disabled={saving || form.evidenceNote.trim().length < 3} onClick={save}><Save size={16} />{saving ? "Saving..." : "Save verified facts"}</button>
+              <div className="bb-owner-case-commands"><button className="bb-button secondary" disabled={saving || !selected.quotationReadiness.ready || !selected.vehicleCase.quotationRequest || selected.vehicleCase.quotation?.status === "Issued - Awaiting Acceptance" || selected.vehicleCase.quotation?.status === "Accepted"} onClick={issueQuotation}><FileCheck2 size={16} />Issue quotation</button><button className="bb-button primary" disabled={saving || form.evidenceNote.trim().length < 3} onClick={save}><Save size={16} />{saving ? "Saving..." : "Save verified facts"}</button></div>
             </div>
             {status && <p className="bb-owner-case-status" role="status">{status}</p>}
             <div className="bb-owner-case-audit">
               <h4><History size={16} />Recent Owner audit</h4>
-              {selected.auditEvents.length ? selected.auditEvents.slice(0, 3).map((event) => <article key={event.id}><b>{event.evidenceNote}</b><span>{formatDateTime(event.createdAt)}</span><small>Vehicle price: {formatThb(event.oldValue.actualVehiclePurchasePriceThb)} → {formatThb(event.newValue.actualVehiclePurchasePriceThb)}</small></article>) : <p>No Owner verification event recorded yet.</p>}
+              {selected.auditEvents.length ? selected.auditEvents.slice(0, 3).map((event) => <article key={event.id}><b>{event.evidenceNote}</b><span>{formatDateTime(event.createdAt)}</span>{event.action === "owner_case_verification_updated" && <small>Vehicle price: {formatThb(event.oldValue.actualVehiclePurchasePriceThb as number | null)} → {formatThb(event.newValue.actualVehiclePurchasePriceThb as number | null)}</small>}</article>) : <p>No Owner verification event recorded yet.</p>}
             </div>
           </div>
         </div>

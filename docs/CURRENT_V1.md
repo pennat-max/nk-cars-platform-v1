@@ -261,6 +261,9 @@ Latest durable operations update:
 - Final quotation issue, PI, payment, purchase, and external communication remain disabled.
 - Customer workspace sync cannot self-verify or overwrite Owner-confirmed availability, purchase price, fee rates, material costs, or Owner audit history.
 - Next milestone is `BB-V1D-04 - Owner-Approved Quotation Record`, followed by gated PI preparation only after customer acceptance.
+- Owner-approved quotations are now implemented with `QT-YYYY-######` numbering, immutable verified pricing/FX snapshots, three-day validity, signed-in customer acceptance, audit history, and material-change supersession.
+- Accepted quotations move the Case to `Ready for PI Review`; no PI, payment confirmation, seller transfer, or vehicle purchase is created automatically.
+- Current next milestone is `BB-V1D-05 - Gated Proforma Invoice`, followed by Finance-only payment confirmation controls.
 
 Completed source-layer items:
 1. stable header-mapped Google Sheet schema

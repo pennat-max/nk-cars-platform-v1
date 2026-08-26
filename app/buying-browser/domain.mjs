@@ -147,7 +147,7 @@ export function assessQuotationReadiness(caseRecord) {
     ready: pendingCount === 0,
     items,
     pendingCount,
-    piStatus: "Blocked - Quotation Not Accepted",
+    piStatus: caseRecord.quotation?.status === "Accepted" ? "Ready for PI Review" : "Blocked - Quotation Not Accepted",
   };
 }
 

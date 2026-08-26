@@ -25,6 +25,7 @@ type BuyingBrowserContextValue = {
   requestCaseAvailability: (caseId: string) => void;
   requestCaseInspection: (caseId: string) => void;
   requestCaseQuotation: (caseId: string) => void;
+  acceptCaseQuotation: (caseId: string, quotationNumber: string) => Promise<void>;
   askCaseQuestion: (caseId: string, question: string) => void;
   addImportedListing: (listing: CustomerListing, sourceCapture?: SourceCapture) => void;
   askFindOne: (question: string) => void;
@@ -283,6 +284,31 @@ export function BuyingBrowserProvider({
     updateCase(caseId, (record) => requestQuotation(record, new Date(), language));
   }
 
+  async function acceptCaseQuotation(caseId: string, quotationNumber: string) {
+    if (!durableAccount) throw new Error("authentication_required");
+    const response = await fetch("/api/buying-browser/quotation/accept", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ caseId, quotationNumber }),
+    });
+    const payload = await response.json().catch(() => null);
+    if (!response.ok || !validStoredState(payload?.state)) {
+      if (response.status === 409) {
+        const latestResponse = await fetch("/api/buying-browser/workspace", { cache: "no-store" });
+        const latest = await latestResponse.json().catch(() => null);
+        if (latestResponse.ok && validStoredState(latest?.state)) {
+          revisionRef.current = Number(latest.revision) || revisionRef.current;
+          setState(latest.state);
+        }
+      }
+      throw new Error(payload?.error || "quotation_acceptance_failed");
+    }
+    revisionRef.current = Number(payload.revision) || revisionRef.current + 1;
+    pendingServerStateRef.current = null;
+    setState(payload.state);
+    setWorkspaceSync({ mode: "synced", message: "Quotation acceptance saved to secure account workspace", updatedAt: payload.updatedAt || new Date().toISOString() });
+  }
+
   function setLanguage(nextLanguage: CustomerLanguage) {
     const normalized = normalizeLanguage(nextLanguage) as CustomerLanguage;
     setLanguageState(normalized);
@@ -306,6 +332,7 @@ export function BuyingBrowserProvider({
     requestCaseAvailability,
     requestCaseInspection,
     requestCaseQuotation,
+    acceptCaseQuotation,
     askCaseQuestion,
     addImportedListing,
     askFindOne,

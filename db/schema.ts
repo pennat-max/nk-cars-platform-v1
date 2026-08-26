@@ -37,3 +37,13 @@ export const buyingBrowserCaseAuditEvents = sqliteTable("buying_browser_case_aud
   index("idx_buying_browser_case_audit_case_created").on(table.workspaceUserId, table.caseId, table.createdAt),
   index("idx_buying_browser_case_audit_actor_created").on(table.actorUserId, table.createdAt),
 ]);
+
+export const buyingBrowserDocumentSequences = sqliteTable("buying_browser_document_sequences", {
+  sequenceKey: text("sequence_key").primaryKey(),
+  documentType: text("document_type").notNull(),
+  year: integer("year").notNull(),
+  lastNumber: integer("last_number").notNull().default(0),
+  updatedAt: text("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [
+  uniqueIndex("uq_buying_browser_document_sequence_type_year").on(table.documentType, table.year),
+]);

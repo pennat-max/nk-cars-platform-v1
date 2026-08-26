@@ -405,3 +405,34 @@ BB-V1D is blocked on approved production project/configuration and must not depl
 - Verified Owner history is preserved across later customer/device syncs.
 - This closes the commercial-integrity prerequisite for quotation records; no V2-V5 scope changed.
 - Remaining next gap is the approved quotation snapshot/number/validity/acceptance workflow itself.
+
+## Owner-Approved Quotation Update - 2026-08-26
+
+### Implemented
+
+- Owner-only issue from a customer-requested, fully verified Vehicle Case.
+- Atomic `QT-YYYY-######` document numbering and customer-visible snapshots of all deterministic pricing lines and the recorded FX rate.
+- Three-day validity, signed-in customer acceptance, idempotent updates, append-only audit history, and optimistic Revision protection.
+- Automatic quotation supersession when Owner-verified material facts change.
+- Server authority prevents customer workspace payloads from creating or changing quotation records.
+
+### Remaining V1 Gaps
+
+- **PI:** no Owner-issued `PI-YYYY-######` record/document, independent three-day validity, expiry/recheck workflow, or downloadable customer document yet.
+- **Payment:** no Finance-only actual-funds confirmation, payment evidence, ledger, or balance tracking. These remain disabled.
+- **Availability operations:** no approved seller channel, reply ingestion, verification freshness expiry, or evidence attachment storage.
+- **Inspection operations:** no provider assignment, appointment, checklist/evidence, or real booking integration.
+- **Source staging:** live Google credential activation and review/publication of the second ten-vehicle batch remain incomplete.
+- **Storage/recovery:** private object storage, retention, production backup, and restore policy remain incomplete.
+
+### V1-V5 Impact
+
+- **V1:** quotation issue and acceptance are complete. PI, Finance confirmation boundary, operational availability/inspection, staging activation, and private evidence storage remain.
+- **V2:** dealer network, trust scoring, and intelligent sourcing remain unchanged.
+- **V3:** payment, purchase approval, deposits/refunds, procurement finance, and Purchase Fund remain disabled future scope.
+- **V4:** secured vehicle through after-sales remains future scope.
+- **V5:** expanded audit, 360 views, risk, reporting, and command center remain future scope.
+
+### Smallest Next V1 Milestone
+
+`BB-V1D-05 - Gated Proforma Invoice`: issue a uniquely numbered customer-visible PI only from an accepted current quotation, preserve the exact commercial snapshot and FX, enforce three-day validity/recheck, and keep payment confirmation Finance-only and disabled.

@@ -17,6 +17,7 @@ const copy = {
     requested: "Quotation requested",
     pi: "Proforma Invoice (PI)",
     piBlocked: "Issued only after an approved final quotation is accepted.",
+    piReady: "Quotation accepted. The Case is ready for controlled PI review; no payment has been confirmed.",
     finance: "A PI, invoice, receipt, or payment slip does not confirm payment. Authorized Finance must confirm actual funds received.",
     labels: { availability: "Vehicle availability verified", vehiclePrice: "Actual vehicle purchase price verified", inspection: "Inspection and travel confirmed", transport: "Domestic transport confirmed", repair: "Repair / modification confirmed", shipping: "Export / shipping confirmed", other: "Other agreed charges confirmed" },
   },
@@ -31,6 +32,7 @@ const copy = {
     requested: "已申请报价",
     pi: "形式发票（PI）",
     piBlocked: "仅在批准的最终报价被接受后签发。",
+    piReady: "报价已接受，案件可进入受控 PI 审核；付款尚未确认。",
     finance: "PI、发票、收据或付款凭证均不代表款项已到账，必须由授权财务人员确认实际收款。",
     labels: { availability: "已确认车辆可售", vehiclePrice: "已确认实际购车价格", inspection: "已确认验车及出行费用", transport: "已确认泰国内陆运输", repair: "已确认维修 / 改装", shipping: "已确认出口 / 海运费用", other: "已确认其他约定费用" },
   },
@@ -45,6 +47,7 @@ const copy = {
     requested: "ขอใบเสนอราคาแล้ว",
     pi: "Proforma Invoice (PI)",
     piBlocked: "ออกหลังจากลูกค้ายอมรับใบเสนอราคาสุดท้ายที่ได้รับอนุมัติแล้วเท่านั้น",
+    piReady: "ลูกค้ายอมรับใบเสนอราคาแล้ว เคสพร้อมสำหรับการตรวจ PI แบบควบคุม โดยยังไม่ยืนยันการรับเงิน",
     finance: "PI ใบกำกับ ใบเสร็จ หรือสลิป ไม่ได้ยืนยันว่าได้รับเงินแล้ว ฝ่ายการเงินที่ได้รับสิทธิ์ต้องยืนยันเงินจริงที่ได้รับ",
     labels: { availability: "ยืนยันว่ารถยังอยู่", vehiclePrice: "ยืนยันราคาซื้อรถจริง", inspection: "ยืนยันค่าตรวจรถและเดินทาง", transport: "ยืนยันค่าขนส่งในประเทศไทย", repair: "ยืนยันค่าซ่อม / ดัดแปลง", shipping: "ยืนยันค่าขนส่งออก / ค่าระวาง", other: "ยืนยันค่าใช้จ่ายอื่นที่ตกลงกัน" },
   },
@@ -59,6 +62,7 @@ const copy = {
   requested: string;
   pi: string;
   piBlocked: string;
+  piReady: string;
   finance: string;
   labels: Record<QuotationReadinessItem["key"], string>;
 }>;
@@ -79,7 +83,7 @@ export default function CommercialReadiness({ vehicleCase }: { vehicleCase: Vehi
       <p>{summary}</p>
       <ul>{readiness.items.map((item) => <li key={item.key} className={item.ready ? "ready" : "pending"}>{item.ready ? <CheckCircle2 size={16} /> : <CircleDashed size={16} />}<span>{text.labels[item.key]}</span></li>)}</ul>
       <div className="bb-commercial-next">
-        <div><FileText size={20} /><span><b>{text.pi}</b><small>{text.piBlocked}</small></span></div>
+        <div><FileText size={20} /><span><b>{text.pi}</b><small>{readiness.piStatus === "Ready for PI Review" ? text.piReady : text.piBlocked}</small></span></div>
         <button className="bb-button primary" disabled={requested} onClick={() => requestCaseQuotation(vehicleCase.id)}>{requested ? <CheckCircle2 size={17} /> : <FileText size={17} />}{requested ? text.requested : text.request}</button>
       </div>
       <p className="bb-finance-boundary"><LockKeyhole size={15} />{text.finance}</p>
