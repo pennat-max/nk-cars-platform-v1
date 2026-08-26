@@ -50,7 +50,7 @@ const source = {
   demo: true,
 };
 
-test("Google staging uses named columns and exposes only approved customer-safe records and media", () => {
+test("Google staging uses named columns, keeps review rows internal, and exposes only approved customer-safe records and media", () => {
   const vehicleRows = [
     ["title_en", "vehicle_id", "publication_status", "visibility", "source_reference", "summary_en", "brand", "model", "observed_at", "source_url", "seller_name", "drive_folder_id", "year", "transmission", "drive", "availability_status", "translation_state", "evidence_labels_json", "observed_price_thb", "general_location"],
     ["2020 Toyota Hilux Revo", "vehicle-approved", "Approved for Browse", "CUSTOMER_VISIBLE", "NK-STAGE-001", "Evidence-backed customer summary.", "Toyota", "Hilux Revo", "2026-08-26T01:00:00.000Z", "https://www.facebook.com/marketplace/item/private-source/", "Private Seller", "private-folder-id", 2020, "AT", "4WD", "Availability Not Yet Confirmed", "Normalized", "[\"Listing facts\"]", 500000, "Bangkok"],
@@ -65,12 +65,15 @@ test("Google staging uses named columns and exposes only approved customer-safe 
 
   const snapshot = parseGoogleStagingValues(vehicleRows, mediaRows, "2026-08-26T03:00:00.000Z", "sheet-private-id");
   assert.equal(snapshot.listings.length, 1);
-  assert.equal(snapshot.internalRecords.length, 1);
+  assert.equal(snapshot.internalRecords.length, 2);
   assert.deepEqual(snapshot.listings[0].imageUrls, ["/api/buying-browser/media/vehicle-approved/photo-01"]);
   const customerJson = JSON.stringify(snapshot.listings);
   assert.doesNotMatch(customerJson, /facebook\.com|Private Seller|drive-approved-secret|private-folder-id|sheet-private-id/i);
   assert.match(snapshot.internalRecords[0].sourceUrl, /facebook\.com/);
   assert.match(snapshot.internalRecords[0].spreadsheetUrl, /sheet-private-id/);
+  assert.equal(snapshot.internalRecords[1].publicationStatus, "Needs Review");
+  assert.equal(snapshot.internalRecords[1].visibility, "INTERNAL_ONLY");
+  assert.deepEqual(snapshot.internalRecords[1].imageUrls, [], "unreviewed media is not routed through the customer media proxy");
   assert.equal(snapshot.media.length, 3, "private media stays available only to the server-side authorization boundary");
 });
 

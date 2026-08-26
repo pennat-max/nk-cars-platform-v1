@@ -137,11 +137,9 @@ export function parseGoogleStagingValues(vehicleRows, mediaRows, fetchedAt = new
   const listings = [];
   const internalRecords = [];
   for (const row of vehicles) {
-    if (cleanString(row.publication_status) !== "Approved for Browse" || cleanString(row.visibility) !== "CUSTOMER_VISIBLE") continue;
     const id = requiredString(row, "vehicle_id", 160);
     const sourceReference = requiredString(row, "source_reference", 160);
     const images = approvedMedia.get(id) || [];
-    if (!images.length) continue;
     const observedAt = requiredString(row, "observed_at", 100);
     const listing = {
       id,
@@ -168,10 +166,11 @@ export function parseGoogleStagingValues(vehicleRows, mediaRows, fetchedAt = new
       evidenceLabels: parseJsonStringArray(row.evidence_labels_json),
       demo: false,
     };
-    listings.push(listing);
     const driveFolderId = cleanString(row.drive_folder_id, 200);
     internalRecords.push({
       ...listing,
+      publicationStatus: cleanString(row.publication_status, 100) || "Needs Review",
+      visibility: cleanString(row.visibility) === "CUSTOMER_VISIBLE" ? "CUSTOMER_VISIBLE" : "INTERNAL_ONLY",
       sourcePlatform: cleanString(row.source_platform, 200) || "Unknown",
       sourceUrl: requiredString(row, "source_url", 3_000),
       sellerName: cleanString(row.seller_name, 500) || "Unknown",
@@ -182,6 +181,11 @@ export function parseGoogleStagingValues(vehicleRows, mediaRows, fetchedAt = new
       evidenceFolderUrl: driveFolderId ? `https://drive.google.com/drive/folders/${encodeURIComponent(driveFolderId)}` : undefined,
       originalMediaCount: optionalNumber(row.original_media_count) ?? undefined,
     });
+    if (
+      cleanString(row.publication_status) === "Approved for Browse"
+      && cleanString(row.visibility) === "CUSTOMER_VISIBLE"
+      && images.length
+    ) listings.push(listing);
   }
 
   const observedAt = listings.map((item) => item.observedAt).sort().at(-1) || fetchedAt;

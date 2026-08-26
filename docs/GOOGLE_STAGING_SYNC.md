@@ -19,8 +19,8 @@ The repository snapshot remains a tested fallback. It is not the primary editing
 - Spreadsheet ID: `1IXEZTH2EYcIeM6HQKJ2Qfk4LZYsVWu4ipNolXoTnxhw`
 - Staging root folder: `NK Cars Vehicle Staging`
 - Staging root folder ID: `1TVQxbCQP7KePJTLoEwHhXQY6FjsLcvc5`
-- Current staged inventory: 10 vehicles
-- Current customer-safe media: 60 Drive images, six per vehicle
+- Current staged inventory: 20 vehicles: 10 approved for Browse and 10 in Needs Review
+- Current Drive media: 197 images: 60 approved customer-safe images and 137 private Needs Review evidence images
 
 The Registry and staging root remain private. Do not publish the Registry because it contains internal source URL, seller, phone, location, notes, and Drive identifiers.
 
@@ -63,9 +63,16 @@ NK Cars Vehicle Staging/
   NK-MKT-2026-0825-10/
     photos/
     evidence/
+  NK-MKT-2026-0826-11/
+    photos/
+    evidence/  # private Needs Review source evidence
+  ...
+  NK-MKT-2026-0826-20/
+    photos/
+    evidence/
 ```
 
-The current `photos/` folders contain reviewed customer-safe media. `evidence/` is reserved for private source evidence. Raw repository evidence has not been deleted and still requires a separate private-storage migration before production launch.
+The first ten `photos/` folders contain reviewed customer-safe media. The 137 images captured for vehicles 11-20 are stored only in private `evidence/` folders and remain `INTERNAL_ONLY + Needs Review`. Raw repository evidence has not been deleted and still requires a separate private-storage migration before production launch.
 
 ## Runtime Configuration
 

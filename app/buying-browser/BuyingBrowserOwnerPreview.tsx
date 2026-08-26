@@ -172,7 +172,7 @@ export default function BuyingBrowserOwnerPreview({ records, sourceStatus, stora
                 <div className="bb-owner-source-main">
                   <header>
                     <div><small>{record.sourceReference} / {record.sourcePlatform}</small><h3>{record.title}</h3></div>
-                    <span className={vehicleCase ? "bb-status-chip requested" : "bb-status-chip pending"}>{vehicleCase ? vehicleCase.status : record.demo ? "No customer case" : "Captured POC"}</span>
+                    <span className={vehicleCase ? "bb-status-chip requested" : "bb-status-chip pending"}>{vehicleCase ? vehicleCase.status : record.demo ? "No customer case" : record.publicationStatus || "Captured POC"}</span>
                   </header>
                   <dl>
                     <div><dt>Seller</dt><dd>{record.sellerName}</dd></div>

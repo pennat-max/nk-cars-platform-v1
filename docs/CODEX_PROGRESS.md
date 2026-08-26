@@ -688,3 +688,30 @@ Started Milestone 1: Next.js shell and visual parity.
 ### Current Blocker And Next Step
 
 - Runtime live sync still requires the approved read-only Google service account and `GOOGLE_SERVICE_ACCOUNT_JSON` in a non-production secret manager. Until then, the app continues using the verified repository fallback.
+
+## 2026-08-26 - Authorized Ten-Vehicle Marketplace Sourcing Test
+
+### Completed
+
+- Searched real Facebook Marketplace through the Owner-controlled authenticated Chrome session for Toyota Hilux Revo pickups, model year 2020+, in Bangkok and the metropolitan area.
+- Selected ten plausible listings after deduplicating against the existing ten listing IDs and excluding an implausible-price result.
+- Captured normalized listing facts, original seller claims, source URL, seller identity, price, mileage, location, and all 137 accessible listing photos without sending seller messages or collecting Facebook credentials.
+- Created `NK-MKT-2026-0826-11` through `NK-MKT-2026-0826-20`, each with private `photos/` and `evidence/` folders. All 137 captured files are private in `evidence/`.
+- Added ten Registry rows as `Needs Review + INTERNAL_ONLY`, 137 Media rows as `Needs Review + INTERNAL_ONLY`, and one Audit Log entry. The original ten approved vehicles and sixty approved customer media rows were unchanged.
+- Preserved conflicts for human review: vehicle 14 has AT/6MT and black/blue conflicts; vehicle 20 has listing-year 2020 versus model-year 2019/registered-2020 conflict.
+- Updated the Google staging parser and Owner UI so the internal review queue can include unpublished rows while customer Browse still receives only approved vehicles with approved customer-visible media.
+
+### Verification
+
+- Google Sheet read-back: 10/10 new Vehicles rows, all `Needs Review + INTERNAL_ONLY`; 137/137 new Media rows, all `Needs Review + INTERNAL_ONLY`, with Drive IDs present.
+- Google Drive read-back: ten evidence folders contain 17, 7, 20, 18, 12, 10, 15, 10, 19, and 9 files respectively; all 137 files report private/not shared.
+- `npm.cmd test`: passed, including the production build and 39/39 Node tests.
+- TypeScript `--noEmit`: passed.
+- ESLint: passed with zero errors and 13 existing `<img>` optimization warnings.
+- No production deployment, Site overwrite, public sharing, seller/customer message, or financial action occurred.
+
+### Current Limits And Next Step
+
+- The ten new records are intentionally not customer-visible. Owner review must select/redact customer-safe photos and explicitly approve rows/media before publication.
+- Runtime live sync still requires the approved read-only service account and `GOOGLE_SERVICE_ACCOUNT_JSON`; the current Site remains on repository fallback.
+- Next: activate private Google sync in a separate approved preview when the credential is available, then review/redact and explicitly approve selected vehicles/media for Browse.

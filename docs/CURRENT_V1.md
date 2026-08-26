@@ -237,8 +237,8 @@ Latest confirmed checkpoint from Codex:
 - Buying Browser web app, search/filters, ten reviewed vehicle snapshots, swipeable six-photo galleries, USD display, Save to NK, Vehicle Cases, availability/inspection/AI/message flows, Owner source boundary, split pricing, and EN/Chinese/Thai localization are complete locally and pushed.
 - Previous checkpoint tests passed. Current Google staging milestone verification is recorded in `docs/CODEX_PROGRESS.md`.
 - Google staging is now implemented as the primary server adapter with a five-minute request-time cache and repository fallback.
-- The private `NK Cars Vehicle Staging Registry` contains stable `Vehicles` and `Media` schemas for 10 approved vehicles and 60 approved customer-safe media records.
-- Google Drive now has deterministic per-vehicle `photos/` and `evidence/` folders for all 10 vehicles; the 60 reviewed customer images are stored in Drive.
+- The private `NK Cars Vehicle Staging Registry` contains 20 vehicle rows: 10 approved vehicles plus a second deduplicated batch of 10 vehicles in `Needs Review`.
+- Google Drive now has deterministic per-vehicle `photos/` and `evidence/` folders for all 20 vehicles. Drive contains 60 approved customer images plus 137 private Needs Review evidence images for the second batch.
 - The customer DTO uses first-party NK media-proxy URLs and never receives source URL, seller data, Drive file IDs, or Drive URLs.
 - Runtime activation still requires `GOOGLE_SERVICE_ACCOUNT_JSON` in the approved hosting secret store and Viewer access to the staging root. Without it, the tested repository snapshot remains active.
 - Current preview Vehicle Cases are browser-local, not durable production records.
@@ -261,7 +261,7 @@ Completed source-layer items:
 
 Next priority:
 1. Owner configures the runtime service-account secret and shares the private staging root with that account
-2. verify live 10-vehicle/60-media sync in a non-production preview
+2. verify live sync in a non-production preview: customer Browse remains 10 approved vehicles/60 approved media, while Owner review sees all 20 vehicles and the 10-item review queue
 3. migrate 167 raw evidence images from public repository assets to private evidence storage without deleting the source copies until verified
 4. persist Vehicle Cases independently so Sheet changes cannot rewrite historical customer case facts
 5. automate authorized capture -> normalize -> review rows/media without bypassing source controls

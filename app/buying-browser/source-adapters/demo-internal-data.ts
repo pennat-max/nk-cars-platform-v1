@@ -1,6 +1,8 @@
 import type { CustomerListing } from "../types";
 
 export type InternalSourceRecord = CustomerListing & {
+  publicationStatus?: string;
+  visibility?: "CUSTOMER_VISIBLE" | "INTERNAL_ONLY";
   sourcePlatform: string;
   sourceUrl: string;
   sellerName: string;

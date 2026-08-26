@@ -1,6 +1,6 @@
 # NK Cars Gap Analysis
 
-Status: Buying Browser includes a private Google Sheets + Drive staging contract for ten Owner-reviewed vehicles and sixty approved media items, a server-side sync adapter with customer-safe media proxy, repository fallback, swipe galleries, deterministic split NK fees, and English/Simplified Chinese/Thai presentation; runtime Google credentials, durable identity/cases, production translation, and mobile native runtime validation remain
+Status: Buying Browser includes a private Google Sheets + Drive staging contract with twenty vehicles: ten Owner-reviewed vehicles and sixty approved media items plus ten Needs Review vehicles and 137 private evidence items. The server adapter, customer-safe media proxy, repository fallback, swipe galleries, deterministic split NK fees, and English/Simplified Chinese/Thai presentation are implemented; runtime Google credentials, durable identity/cases, production translation, and mobile native runtime validation remain.
 Date: 2026-08-26
 Branch: `codex/buying-browser-rebuild`
 
@@ -274,3 +274,25 @@ BB-V1D is blocked on approved production project/configuration and must not depl
 ### Smallest Next V1 Milestone
 
 `BB-V1-SYNC-02 - Activate And Verify Private Google Sync`: configure the read-only runtime credential in a non-production preview, verify all ten vehicles and sixty media records through the real server adapter, test fallback/error states, and retain the existing Site unchanged. After that, continue to durable tenant-scoped Vehicle Cases.
+
+## Authorized Ten-Vehicle Sourcing Test - 2026-08-26
+
+### Implemented
+
+- Used the authenticated Owner-controlled browser session to search real Facebook Marketplace listings at low volume for Toyota Hilux Revo pickups, model year 2020+, in Bangkok and the metropolitan area.
+- Deduplicated the selected results against the existing ten source listing IDs and rejected an implausible-price candidate.
+- Added ten new vehicle rows as `Needs Review + INTERNAL_ONLY`; no customer publication state changed.
+- Stored all 137 accessible listing photos in private per-vehicle Drive `evidence/` folders and added 137 matching `Media` rows as `Needs Review + INTERNAL_ONLY`.
+- Preserved explicit conflicts instead of normalizing them away, including transmission/color conflict on vehicle 14 and model-year/registration conflict on vehicle 20.
+- Updated the Google parser so authenticated Owner review receives staged internal rows even when they are not customer-published. The public listing DTO still requires an approved vehicle and approved customer-visible media.
+
+### Remaining V1 Gaps
+
+- The ten new records require Owner evidence review, customer-safe photo selection/redaction, and explicit publication approval before they can enter Browse.
+- The runtime service-account credential is still not configured, so the deployed app continues to serve the verified repository fallback.
+- Search/capture remains an authorized operator-assisted workflow; unattended scheduling, session health, retries, and source-policy controls are not implemented.
+
+### V1-V5 Impact
+
+- **V1:** private capture-to-review staging is proven for a second batch; review decisions, live runtime activation, durable cases, and compliant scheduled sourcing remain.
+- **V2-V5:** no scope or business-rule change.
