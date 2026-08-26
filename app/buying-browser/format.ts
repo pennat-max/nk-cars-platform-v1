@@ -1,5 +1,21 @@
+import { CUSTOMER_FX_THB_PER_USD, customerUsdToThb, formatCustomerUsd } from "./domain.mjs";
+
 export function formatThb(value: number | null | undefined) {
   return value === null || value === undefined ? "Pending" : `THB ${value.toLocaleString("en-US")}`;
+}
+
+export { CUSTOMER_FX_THB_PER_USD };
+
+export function formatUsdFromThb(value: number | null | undefined) {
+  return formatCustomerUsd(value);
+}
+
+export function customerUsdInputToThb(value: string) {
+  return customerUsdToThb(value);
+}
+
+export function customerFxDisclosure() {
+  return `Preview FX: THB ${CUSTOMER_FX_THB_PER_USD.toFixed(2)} = USD 1. Final USD price is set when NK issues an approved quote.`;
 }
 
 export function formatMileage(value: number | null | undefined) {

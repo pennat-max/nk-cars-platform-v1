@@ -5,6 +5,7 @@ import { ArrowUpDown, Bot, Link2, MapPin, RotateCcw, Search, SlidersHorizontal, 
 import { useMemo, useState } from "react";
 import { useBuyingBrowser } from "../BuyingBrowserProvider";
 import { DEFAULT_FILTERS, filterListings } from "../domain.mjs";
+import { customerFxDisclosure, customerUsdInputToThb } from "../format";
 import type { BrowseFilters } from "../types";
 import ListingCard from "../components/ListingCard";
 
@@ -16,7 +17,8 @@ export default function BrowseScreen({ savedOnly = false }: { savedOnly?: boolea
   const [filters, setFilters] = useState<BrowseFilters>({ ...DEFAULT_FILTERS });
   const [filterOpen, setFilterOpen] = useState(false);
   const sourceListings = savedOnly ? listings.filter((item) => state.savedListingIds.includes(item.id)) : listings;
-  const visibleListings = useMemo(() => filterListings(sourceListings, filters), [filters, sourceListings]);
+  const domainFilters = useMemo(() => ({ ...filters, priceMin: customerUsdInputToThb(filters.priceMin), priceMax: customerUsdInputToThb(filters.priceMax) }), [filters]);
+  const visibleListings = useMemo(() => filterListings(sourceListings, domainFilters), [domainFilters, sourceListings]);
   const activeFilterCount = [filters.location !== "All Thailand", filters.yearFrom, filters.yearTo, filters.priceMin, filters.priceMax, filters.mileageMax, filters.transmission !== "Any", filters.drive !== "Any", filters.body !== "Any"].filter(Boolean).length;
   const capturedCount = listings.filter((item) => !item.demo).length;
   const sourceLabel = sourceStatus.live ? "Live" : capturedCount ? `${capturedCount} selected` : "Demo";
@@ -59,7 +61,8 @@ export default function BrowseScreen({ savedOnly = false }: { savedOnly?: boolea
           <div className="bb-filter-form">
             <label><span>Thai search location</span><select value={filters.location} onChange={(event) => setFilter("location", event.target.value)}>{locations.map((location) => <option key={location}>{location}</option>)}</select></label>
             <div className="bb-field-pair"><label><span>Year from</span><select value={filters.yearFrom} onChange={(event) => setFilter("yearFrom", event.target.value)}>{yearOptions.map((year) => <option key={year || "from-any"} value={year}>{year || "Any"}</option>)}</select></label><label><span>Year to</span><select value={filters.yearTo} onChange={(event) => setFilter("yearTo", event.target.value)}>{yearOptions.map((year) => <option key={year || "to-any"} value={year}>{year || "Any"}</option>)}</select></label></div>
-            <div className="bb-field-pair"><label><span>Minimum price (THB)</span><input inputMode="numeric" value={filters.priceMin} onChange={(event) => setFilter("priceMin", event.target.value.replace(/\D/g, ""))} placeholder="Any" /></label><label><span>Maximum price (THB)</span><input inputMode="numeric" value={filters.priceMax} onChange={(event) => setFilter("priceMax", event.target.value.replace(/\D/g, ""))} placeholder="Any" /></label></div>
+            <div className="bb-field-pair"><label><span>Minimum price (USD)</span><input inputMode="numeric" value={filters.priceMin} onChange={(event) => setFilter("priceMin", event.target.value.replace(/\D/g, ""))} placeholder="Any" /></label><label><span>Maximum price (USD)</span><input inputMode="numeric" value={filters.priceMax} onChange={(event) => setFilter("priceMax", event.target.value.replace(/\D/g, ""))} placeholder="Any" /></label></div>
+            <p className="bb-filter-fx">{customerFxDisclosure()}</p>
             <label><span>Maximum mileage (km)</span><input inputMode="numeric" value={filters.mileageMax} onChange={(event) => setFilter("mileageMax", event.target.value.replace(/\D/g, ""))} placeholder="Any" /></label>
             <div className="bb-field-pair"><label><span>Transmission</span><select value={filters.transmission} onChange={(event) => setFilter("transmission", event.target.value)}><option>Any</option><option>AT</option><option>MT</option></select></label><label><span>Drive</span><select value={filters.drive} onChange={(event) => setFilter("drive", event.target.value)}><option>Any</option><option>2WD</option><option>4WD</option></select></label></div>
             <label><span>Body / cab</span><select value={filters.body} onChange={(event) => setFilter("body", event.target.value)}><option>Any</option><option>Double Cab</option><option>Smart Cab</option></select></label>

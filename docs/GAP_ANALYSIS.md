@@ -1,7 +1,7 @@
 # NK Cars Gap Analysis
 
-Status: Buying Browser now includes one Owner-selected real listing snapshot and customer-safe Vehicle Case; live sync, durable identity/persistence, and mobile native runtime validation remain
-Date: 2026-08-25
+Status: Buying Browser now includes ten Owner-reviewed real listing snapshots with customer-safe USD pricing and swipe galleries; live sync, durable identity/persistence, and mobile native runtime validation remain
+Date: 2026-08-26
 Branch: `codex/buying-browser-rebuild`
 
 ## Source Of Truth
@@ -55,13 +55,14 @@ Buying Browser V1 preview completed on 2026-08-24:
 
 - Additive customer routes and account shell under `/buy`; the existing root remains unchanged.
 - Browse, Saved, detail, search, sort, Thai location, year, price, mileage, transmission, drive, and body filtering.
-- Customer-safe normalized English facts, one Owner-selected real listing snapshot plus eight labeled realistic demo source results, and source/customer DTO separation.
+- Customer-safe normalized English facts, ten Owner-reviewed real listing snapshots as the default Browse data, and source/customer DTO separation. Legacy one-car and demo data remain rollback/reference only.
 - Paste Link through the existing import boundary plus open-source, up-to-30-photo, listing-text, and manual-review fallback.
 - Deduplicated Vehicle Cases, availability requests, case timeline, My Cases, messages/history, grounded NK AI preview responses, deterministic pricing, and deterministic inspection/travel requests.
 - Separate Owner/internal demo view and customer redaction tests.
 - Manual browser verification at 390 x 844 and 1280 x 900 with no horizontal overflow or console errors.
 - Corrected customer Browse UX to a compact marketplace-first mobile layout with vehicle results in the first viewport; Paste Link and Ask NK AI are secondary tools instead of a dominant feature panel.
-- Corrected customer vehicle detail to be photo-first, followed by normalized specifications/description and the five approved NK actions, without changing domain logic or internal visibility boundaries.
+- Corrected customer vehicle detail to be photo-first with six reviewed images per vehicle and touch-swipe/scroll-snap navigation, followed by normalized specifications/description and the five approved NK actions, without changing internal visibility boundaries.
+- Changed customer Browse, filters, Vehicle Cases, inspection pricing, and grounded price replies to USD using one deterministic preview FX rate of THB 35.00 per USD. Internal source records and deterministic calculations remain in THB; an approved quote must set the final stored USD/FX values.
 
 One-car data-pipeline snapshot completed on 2026-08-25:
 

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { ArrowLeft, Bot, CheckCircle2, ClipboardCheck, Clock3, ExternalLink, FolderKanban, Gauge, Heart, Info, LockKeyhole, MessageSquare, RotateCcw, Send, ShieldCheck, UserRound, WifiOff } from "lucide-react";
 import { FormEvent, useMemo, useState } from "react";
 import { useBuyingBrowser } from "../BuyingBrowserProvider";
-import { formatDateTime, formatThb } from "../format";
+import { formatDateTime, formatUsdFromThb } from "../format";
 import PricingBreakdown from "../components/PricingBreakdown";
 import VehiclePhoto from "../components/VehiclePhoto";
 
@@ -17,7 +17,7 @@ export function CasesScreen() {
       <section className="bb-case-list">
         {state.cases.map((item) => <Link key={item.id} href={`/buy/cases/${encodeURIComponent(item.id)}`} className="bb-case-card">
           <VehiclePhoto listing={item.vehicle} />
-          <div><small>{item.id}</small><h2>{item.vehicle.title}</h2><p>{item.vehicle.generalLocation}, Thailand · {formatThb(item.vehicle.observedPriceThb)}</p><span className={item.availability === "Availability Check Requested" ? "bb-status-chip requested" : "bb-status-chip pending"}><Clock3 size={13} />{item.availability}</span></div>
+          <div><small>{item.id}</small><h2>{item.vehicle.title}</h2><p>{item.vehicle.generalLocation}, Thailand - {formatUsdFromThb(item.vehicle.observedPriceThb)}</p><span className={item.availability === "Availability Check Requested" ? "bb-status-chip requested" : "bb-status-chip pending"}><Clock3 size={13} />{item.availability}</span></div>
           <strong>{item.inspectionQuote?.status ?? "Inspection location pending"}</strong>
         </Link>)}
       </section>
@@ -50,7 +50,7 @@ export function CaseDetailScreen({ caseId }: { caseId?: string }) {
 
       <section className="bb-case-action-row" aria-label="Vehicle Case actions">
         <button disabled={vehicleCase.availability === "Availability Check Requested"} onClick={() => requestCaseAvailability(vehicleCase.id)}><Gauge size={20} /><span><b>{vehicleCase.availability === "Availability Check Requested" ? "Check Requested" : "Check Availability"}</b><small>Prepare current seller verification</small></span></button>
-        <button disabled={!vehicleCase.inspectionQuote || vehicleCase.inspectionQuote.status === "Requested - Awaiting Provider"} onClick={() => requestCaseInspection(vehicleCase.id)}><ClipboardCheck size={20} /><span><b>{vehicleCase.inspectionQuote?.status === "Requested - Awaiting Provider" ? "Inspection Requested" : "Request Inspection"}</b><small>{vehicleCase.inspectionQuote ? formatThb(vehicleCase.inspectionQuote.totalThb) : "Location needs confirmation"}</small></span></button>
+        <button disabled={!vehicleCase.inspectionQuote || vehicleCase.inspectionQuote.status === "Requested - Awaiting Provider"} onClick={() => requestCaseInspection(vehicleCase.id)}><ClipboardCheck size={20} /><span><b>{vehicleCase.inspectionQuote?.status === "Requested - Awaiting Provider" ? "Inspection Requested" : "Request Inspection"}</b><small>{vehicleCase.inspectionQuote ? formatUsdFromThb(vehicleCase.inspectionQuote.totalThb) : "Location needs confirmation"}</small></span></button>
         <a href="#nk-ai-case-chat"><Bot size={20} /><span><b>Ask NK AI</b><small>Answers grounded in this case</small></span></a>
       </section>
 
@@ -59,7 +59,7 @@ export function CaseDetailScreen({ caseId }: { caseId?: string }) {
       <section className="bb-case-split">
         <div className="bb-case-facts">
           <div className="bb-section-heading"><div><p className="bb-kicker">Current facts</p><h2>Case summary</h2></div></div>
-          <dl><div><dt>Observed vehicle price</dt><dd>{formatThb(vehicleCase.vehicle.observedPriceThb)}</dd></div><div><dt>Price observed</dt><dd>{formatDateTime(vehicleCase.vehicle.observedAt)}</dd></div><div><dt>Availability</dt><dd>{vehicleCase.availability}</dd></div><div><dt>Inspection quote</dt><dd>{vehicleCase.inspectionQuote ? `${formatThb(vehicleCase.inspectionQuote.totalThb)} · ${vehicleCase.inspectionQuote.region}` : "Pending location confirmation"}</dd></div><div><dt>Translation</dt><dd>{vehicleCase.vehicle.translationState}</dd></div><div><dt>Last case update</dt><dd>{formatDateTime(vehicleCase.updatedAt)}</dd></div></dl>
+          <dl><div><dt>Observed vehicle price</dt><dd>{formatUsdFromThb(vehicleCase.vehicle.observedPriceThb)}</dd></div><div><dt>Price observed</dt><dd>{formatDateTime(vehicleCase.vehicle.observedAt)}</dd></div><div><dt>Availability</dt><dd>{vehicleCase.availability}</dd></div><div><dt>Inspection quote</dt><dd>{vehicleCase.inspectionQuote ? `${formatUsdFromThb(vehicleCase.inspectionQuote.totalThb)} - ${vehicleCase.inspectionQuote.region}` : "Pending location confirmation"}</dd></div><div><dt>Translation</dt><dd>{vehicleCase.vehicle.translationState}</dd></div><div><dt>Last case update</dt><dd>{formatDateTime(vehicleCase.updatedAt)}</dd></div></dl>
           <p className="bb-honesty-note"><ShieldCheck size={16} />No seller contact, source URL, internal notes, source identity, or internal margin is exposed in this customer case.</p>
         </div>
         <div className="bb-case-timeline">
@@ -85,7 +85,7 @@ export function InspectionsScreen() {
   return (
     <>
       <section className="bb-page-heading"><div><p className="bb-kicker">Inspection network</p><h1>Inspections</h1><p>Configured quote state is separate from provider acceptance, inspection work, and the final report.</p></div></section>
-      {!casesWithQuotes.length ? <section className="bb-empty-state"><ClipboardCheck size={31} /><h2>No inspection quotes yet</h2><p>Create a Vehicle Case with a recognized Thai location to calculate deterministic inspection and travel pricing.</p><Link className="bb-button primary" href="/buy">Browse Vehicles</Link></section> : <section className="bb-inspection-list">{casesWithQuotes.map((item) => <article key={item.id}><VehiclePhoto listing={item.vehicle} /><div><small>{item.id}</small><h2>{item.vehicle.title}</h2><p>{item.inspectionQuote!.region}</p><dl><div><dt>Base inspection</dt><dd>{formatThb(item.inspectionQuote!.baseFeeThb)}</dd></div><div><dt>Travel zone</dt><dd>{formatThb(item.inspectionQuote!.travelFeeThb)}</dd></div><div><dt>Customer price</dt><dd>{formatThb(item.inspectionQuote!.totalThb)}</dd></div></dl><span className={item.inspectionQuote!.status.startsWith("Requested") ? "bb-status-chip requested" : "bb-status-chip market"}>{item.inspectionQuote!.status}</span></div><div className="bb-inspection-actions"><Link className="bb-button secondary" href={`/buy/cases/${encodeURIComponent(item.id)}`}>Open Case</Link><button className="bb-button primary" disabled={item.inspectionQuote!.status === "Requested - Awaiting Provider"} onClick={() => requestCaseInspection(item.id)}>{item.inspectionQuote!.status === "Requested - Awaiting Provider" ? "Awaiting Provider" : "Request Inspection"}</button></div></article>)}</section>}
+      {!casesWithQuotes.length ? <section className="bb-empty-state"><ClipboardCheck size={31} /><h2>No inspection quotes yet</h2><p>Create a Vehicle Case with a recognized Thai location to calculate deterministic inspection and travel pricing.</p><Link className="bb-button primary" href="/buy">Browse Vehicles</Link></section> : <section className="bb-inspection-list">{casesWithQuotes.map((item) => <article key={item.id}><VehiclePhoto listing={item.vehicle} /><div><small>{item.id}</small><h2>{item.vehicle.title}</h2><p>{item.inspectionQuote!.region}</p><dl><div><dt>Base inspection</dt><dd>{formatUsdFromThb(item.inspectionQuote!.baseFeeThb)}</dd></div><div><dt>Travel zone</dt><dd>{formatUsdFromThb(item.inspectionQuote!.travelFeeThb)}</dd></div><div><dt>Customer price</dt><dd>{formatUsdFromThb(item.inspectionQuote!.totalThb)}</dd></div></dl><span className={item.inspectionQuote!.status.startsWith("Requested") ? "bb-status-chip requested" : "bb-status-chip market"}>{item.inspectionQuote!.status}</span></div><div className="bb-inspection-actions"><Link className="bb-button secondary" href={`/buy/cases/${encodeURIComponent(item.id)}`}>Open Case</Link><button className="bb-button primary" disabled={item.inspectionQuote!.status === "Requested - Awaiting Provider"} onClick={() => requestCaseInspection(item.id)}>{item.inspectionQuote!.status === "Requested - Awaiting Provider" ? "Awaiting Provider" : "Request Inspection"}</button></div></article>)}</section>}
     </>
   );
 }

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Gauge, Heart, MapPin } from "lucide-react";
 import { useBuyingBrowser } from "../BuyingBrowserProvider";
-import { formatMileage, formatThb } from "../format";
+import { formatMileage, formatUsdFromThb } from "../format";
 import type { CustomerListing } from "../types";
 import VehiclePhoto from "./VehiclePhoto";
 
@@ -18,7 +18,7 @@ export default function ListingCard({ listing }: { listing: CustomerListing }) {
       </Link>
       <button className={saved ? "bb-save-icon saved" : "bb-save-icon"} onClick={() => toggleSaved(listing.id)} aria-label={saved ? `Remove ${listing.title} from saved vehicles` : `Save ${listing.title}`} title={saved ? "Remove saved vehicle" : "Save vehicle"}><Heart size={19} fill={saved ? "currentColor" : "none"} /></button>
       <Link className="bb-listing-copy" href={`/buy/vehicle/${encodeURIComponent(listing.id)}`}>
-        <strong>{formatThb(listing.observedPriceThb)}</strong>
+        <strong>{formatUsdFromThb(listing.observedPriceThb)}</strong>
         <h2>{listing.year ?? "Year pending"} {listing.brand} {listing.model}</h2>
         <p>{listing.grade} - {listing.body}</p>
         <footer><span><Gauge size={13} />{formatMileage(listing.mileageKm)}</span><span><MapPin size={13} />{listing.generalLocation}</span></footer>
