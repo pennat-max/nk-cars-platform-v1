@@ -132,7 +132,11 @@ export function parseGoogleStagingValues(vehicleRows, mediaRows, fetchedAt = new
     entries.push(item);
     approvedMedia.set(item.vehicleId, entries);
   }
-  for (const entries of approvedMedia.values()) entries.sort((a, b) => a.sortOrder - b.sortOrder);
+  for (const entries of approvedMedia.values()) {
+    entries.sort((a, b) => a.sortOrder - b.sortOrder);
+    assertUnique(entries.map((item) => item.sortOrder), "sort_order");
+    if (entries[0]?.sortOrder !== 1) throw new Error("google_staging_customer_cover_missing");
+  }
 
   const listings = [];
   const internalRecords = [];

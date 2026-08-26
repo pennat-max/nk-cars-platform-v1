@@ -296,3 +296,24 @@ BB-V1D is blocked on approved production project/configuration and must not depl
 
 - **V1:** private capture-to-review staging is proven for a second batch; review decisions, live runtime activation, durable cases, and compliant scheduled sourcing remain.
 - **V2-V5:** no scope or business-rule change.
+
+## Customer Cover Ordering Update - 2026-08-26
+
+### Implemented
+
+- Defined `Media.sort_order = 1` as the reviewed customer cover used by Browse and Vehicle Detail.
+- Added customer-safe derivatives of the real source covers for approved vehicles 02, 04, 07, and 09, where the previous first approved image showed an interior or pickup bed.
+- Redacted registration/source-identifying regions deterministically while preserving the original source images as internal evidence.
+- Synchronized the four covers to private Drive, shifted each existing approved gallery to positions 2-7, and updated the Registry to 64 approved customer media plus 137 private Needs Review media.
+- Added parser enforcement so approved media without a unique position-1 cover fails closed to the verified repository fallback.
+
+### Remaining V1 Gaps
+
+- The second ten-vehicle batch still requires Owner evidence review, cover/gallery selection, redaction, and explicit vehicle/media approval before customer publication.
+- Automated redaction-region detection is not implemented; current approved cover derivatives use reviewed per-image regions.
+- Runtime activation, durable Vehicle Cases, compliant scheduled capture, source freshness, and seller communication controls remain unchanged blockers.
+
+### V1-V5 Impact
+
+- **V1:** cover selection and ordering are now deterministic for the first approved batch; review-to-publish automation for later batches remains.
+- **V2-V5:** no scope or business-rule change.

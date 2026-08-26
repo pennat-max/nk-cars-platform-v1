@@ -715,3 +715,36 @@ Started Milestone 1: Next.js shell and visual parity.
 - The ten new records are intentionally not customer-visible. Owner review must select/redact customer-safe photos and explicitly approve rows/media before publication.
 - Runtime live sync still requires the approved read-only service account and `GOOGLE_SERVICE_ACCOUNT_JSON`; the current Site remains on repository fallback.
 - Next: activate private Google sync in a separate approved preview when the credential is available, then review/redact and explicitly approve selected vehicles/media for Browse.
+
+## 2026-08-26 - Customer Cover Image Contract
+
+### Completed
+
+- Defined the first approved media item (`sort_order = 1`) as the customer cover used by both Browse cards and the first Vehicle Detail gallery slide.
+- Visually audited the first approved image for all ten published vehicles. Vehicles 02, 04, 07, and 09 previously started with an interior, pickup bed, or detail image.
+- Created deterministic customer-safe derivatives from those four real source covers. Registration/source-identifying regions are redacted; the original source files remain unchanged internal evidence.
+- Added the four derivatives to the repository fallback and private Google Drive `photos/` folders, then synchronized the Registry to positions 1-7 for the affected galleries.
+- Updated Registry guidance and parser validation so approved customer media must have a unique position-1 cover. The second ten-vehicle batch remains `Needs Review + INTERNAL_ONLY`.
+
+### Data Status
+
+- Registry: 20 vehicle rows: 10 approved and 10 Needs Review.
+- Media: 201 rows: 64 approved customer-safe media and 137 private Needs Review evidence media.
+- Customer publication status did not change; no new vehicle was approved by this milestone.
+
+### Verification
+
+- Google read-back confirms each affected vehicle has exactly one approved `sort_order = 1` cover and six existing images at positions 2-7.
+- Google Drive upload/read-back confirms all four derivatives are in their existing private per-vehicle `photos/` folders.
+- Full verified build and test suite passed: 39/39 tests.
+- TypeScript `--noEmit` passed.
+- ESLint passed with 0 errors and 13 pre-existing `<img>` optimization warnings.
+- `git diff --check` passed.
+- Mobile verification at 390x844 confirmed the reviewed cover is used on Browse and as slide 1 of the Vehicle Detail gallery without horizontal overflow or browser console errors.
+- iPhone viewport 390 x 844 passed: Browse uses the exterior cover for affected in-area vehicles; Vehicle 02 detail starts with the redacted real cover, shows 1 of 7, loads all seven images, has no horizontal overflow, and produced no browser warnings/errors.
+
+### Current Limits And Next Step
+
+- Runtime live sync still requires the approved read-only service account and `GOOGLE_SERVICE_ACCOUNT_JSON`; until then the app uses the updated repository fallback.
+- The ten new records remain private pending explicit Owner review and customer-safe media approval.
+- Next remains `BB-V1-SYNC-02 - Activate And Verify Private Google Sync`, followed by review/redaction of the second batch and durable tenant-scoped Vehicle Cases.

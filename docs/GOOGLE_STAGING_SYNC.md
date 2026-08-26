@@ -52,6 +52,8 @@ One row per media item. Customer media requires all of:
 
 The browser receives only an NK first-party media URL. It does not receive the Google Drive file ID or Drive URL.
 
+`sort_order = 1` is the customer cover image used by Browse cards and the first image on Vehicle Detail. It must be a reviewed exterior photo. Registration plates, seller/dealer branding, phone numbers, and other source-identifying clues must be redacted in a customer-safe derivative before approval; the original remains internal evidence.
+
 ## Drive Structure
 
 ```text
@@ -110,7 +112,7 @@ The current environment does not contain this credential. Until configured, the 
 
 1. Add/update a vehicle in `Vehicles` with `Needs Review` while editing.
 2. Add media rows in `Media` as `Needs Review` or `INTERNAL_ONLY`.
-3. Review normalized facts, conflicts, source evidence, and every customer photo.
+3. Review normalized facts, conflicts, source evidence, and every customer photo. Select a customer-safe exterior cover and assign it `sort_order = 1`.
 4. Set approved customer photos to `CUSTOMER_VISIBLE + Approved`.
 5. Set the vehicle to `CUSTOMER_VISIBLE + Approved for Browse` only after Owner review.
 6. Wait for cache expiry or use a new runtime instance/request to observe the update.

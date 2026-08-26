@@ -75,6 +75,14 @@ test("Google staging uses named columns, keeps review rows internal, and exposes
   assert.equal(snapshot.internalRecords[1].visibility, "INTERNAL_ONLY");
   assert.deepEqual(snapshot.internalRecords[1].imageUrls, [], "unreviewed media is not routed through the customer media proxy");
   assert.equal(snapshot.media.length, 3, "private media stays available only to the server-side authorization boundary");
+
+  const missingCoverRows = structuredClone(mediaRows);
+  missingCoverRows[1][4] = 2;
+  assert.throws(
+    () => parseGoogleStagingValues(vehicleRows, missingCoverRows),
+    /google_staging_customer_cover_missing/,
+    "approved customer media must reserve sort_order 1 for the reviewed cover",
+  );
 });
 
 test("Google media proxy accepts bounded raster images and rejects active image content", async () => {
@@ -410,8 +418,9 @@ test("customer marketplace exposes ten reviewed listings with only reviewed medi
   const images = await Promise.all(listingFolders.map((entry) => readdir(new URL(`${entry.name}/`, root))));
 
   assert.equal(listingFolders.length, 10);
-  assert.equal(images.flat().length, 60);
-  assert.ok(images.every((files) => files.length === 6));
+  assert.equal(images.flat().length, 64);
+  assert.equal(images.filter((files) => files.length === 7).length, 4);
+  assert.equal(images.filter((files) => files.length === 6).length, 6);
   for (const secret of ["facebook.com", "sellerName", "sellerPhone", "sourceUrl", "nk-capture-batch-2026-08-25", "Pranee Pra Jaideaw", "080 632 3247"]) {
     assert.doesNotMatch(moduleText, new RegExp(secret.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"));
   }

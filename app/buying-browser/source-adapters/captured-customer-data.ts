@@ -23,8 +23,8 @@ export const capturedCustomerListings: CustomerListing[] = [
     title: "2020 Toyota Hilux Revo Rocco 2.4 AT", summary: "A white 2020 Hilux Revo Rocco double cab. Available evidence states a 2.4L diesel engine, automatic transmission, 2WD, and 168,000 km. Availability and condition remain unverified.",
     brand: "Toyota", model: "Hilux Revo", year: 2020, grade: "Rocco", engine: "2.4L diesel", transmission: "AT", drive: "2WD", body: "Double Cab", mileageKm: 168000, color: "White",
     observedPriceThb: 598000, observedAt: "2026-08-25T15:50:39.454Z", generalLocation: "Chon Buri",
-    imageUrls: images("nk-mkt-02", ["5dd5a18dc02b2f68.jpg", "48474efea42c4bff.jpg", "846664b55a7cab48.jpg", "986d811cb4b303c8.jpg", "030a7a2d086e22d0.jpg", "d5d8ce855a3a81d0.jpg"]),
-    availability: "Availability Not Yet Confirmed", translationState: "Normalized", evidenceLabels: ["Listing facts", "English translation", "6 source photos"], demo: false,
+    imageUrls: images("nk-mkt-02", ["cover-redacted.webp", "5dd5a18dc02b2f68.jpg", "48474efea42c4bff.jpg", "846664b55a7cab48.jpg", "986d811cb4b303c8.jpg", "030a7a2d086e22d0.jpg", "d5d8ce855a3a81d0.jpg"]),
+    availability: "Availability Not Yet Confirmed", translationState: "Normalized", evidenceLabels: ["Listing facts", "English translation", "7 source photos"], demo: false,
   },
   {
     id: "nk-market-2026-0825-03", adapterId: "owner-reviewed-marketplace", sourceReference: "NK-MKT-2026-0825-03",
@@ -39,8 +39,8 @@ export const capturedCustomerListings: CustomerListing[] = [
     title: "2020 Toyota Hilux Revo Prerunner Entry 2.4 AT", summary: "A grey 2020 Hilux Revo Double Cab Entry Prerunner with automatic transmission and a claimed 41,600 km. Availability, history, and condition remain unverified.",
     brand: "Toyota", model: "Hilux Revo", year: 2020, grade: "Entry Prerunner", engine: "2.4L diesel", transmission: "AT", drive: "2WD", body: "Double Cab", mileageKm: 41600, color: "Grey",
     observedPriceThb: 558000, observedAt: "2026-08-25T15:50:55.501Z", generalLocation: "Chon Buri",
-    imageUrls: images("nk-mkt-04", ["7c8b40c991b9a2a6.jpg", "ae60c3e197250361.jpg", "aa912be2b1caabab.jpg", "30baf21006297fb3.jpg", "109d715417c6da45.jpg", "857bacec9999ab4b.jpg"]),
-    availability: "Availability Not Yet Confirmed", translationState: "Normalized", evidenceLabels: ["Listing facts", "Odometer photo", "6 source photos"], demo: false,
+    imageUrls: images("nk-mkt-04", ["cover-redacted.webp", "7c8b40c991b9a2a6.jpg", "ae60c3e197250361.jpg", "aa912be2b1caabab.jpg", "30baf21006297fb3.jpg", "109d715417c6da45.jpg", "857bacec9999ab4b.jpg"]),
+    availability: "Availability Not Yet Confirmed", translationState: "Normalized", evidenceLabels: ["Listing facts", "Odometer photo", "7 source photos"], demo: false,
   },
   {
     id: "nk-market-2026-0825-05", adapterId: "owner-reviewed-marketplace", sourceReference: "NK-MKT-2026-0825-05",
@@ -63,8 +63,8 @@ export const capturedCustomerListings: CustomerListing[] = [
     title: "2020 Toyota Hilux Revo Mid MT Double Cab", summary: "A black 2020 Hilux Revo Mid four-door pickup with manual transmission. Evidence contains conflicting mileage claims of 35,000 and 36,000 km, so mileage remains Need Review.",
     brand: "Toyota", model: "Hilux Revo", year: 2020, grade: "Mid", engine: "Need Review", transmission: "MT", drive: "Unknown", body: "Double Cab", mileageKm: 36000, color: "Black",
     observedPriceThb: 499000, observedAt: "2026-08-25T15:51:20.109Z", generalLocation: "Samut Prakan",
-    imageUrls: images("nk-mkt-07", ["d34882fdcb341b92.jpg", "a9903203eff89fb4.jpg", "987eb0ce58cfd8da.jpg", "2ef7676655961173.jpg", "ded854998dc3f904.jpg", "2ecd2350a2282956.jpg"]),
-    availability: "Availability Not Yet Confirmed", translationState: "Need Review", evidenceLabels: ["Listing facts", "Mileage conflict: 35,000 vs 36,000 km", "6 source photos"], demo: false,
+    imageUrls: images("nk-mkt-07", ["cover-redacted.webp", "d34882fdcb341b92.jpg", "a9903203eff89fb4.jpg", "987eb0ce58cfd8da.jpg", "2ef7676655961173.jpg", "ded854998dc3f904.jpg", "2ecd2350a2282956.jpg"]),
+    availability: "Availability Not Yet Confirmed", translationState: "Need Review", evidenceLabels: ["Listing facts", "Mileage conflict: 35,000 vs 36,000 km", "7 source photos"], demo: false,
   },
   {
     id: "nk-market-2026-0825-08", adapterId: "owner-reviewed-marketplace", sourceReference: "NK-MKT-2026-0825-08",
@@ -79,8 +79,8 @@ export const capturedCustomerListings: CustomerListing[] = [
     title: "2020 Toyota Hilux Revo Rocco 2.4 AT Double Cab", summary: "A black 2020 Hilux Revo Rocco double cab with a claimed 2.4L diesel engine, automatic transmission, and 62,861 km. Availability, history, and condition remain unverified.",
     brand: "Toyota", model: "Hilux Revo", year: 2020, grade: "Rocco", engine: "2.4L diesel", transmission: "AT", drive: "Unknown", body: "Double Cab", mileageKm: 62861, color: "Black",
     observedPriceThb: 659000, observedAt: "2026-08-25T15:51:35.597Z", generalLocation: "Bangkok",
-    imageUrls: images("nk-mkt-09", ["acb906cef05f7a75.jpg", "74faa72d747b7095.jpg", "2a93374b55db5a90.jpg", "e492cc719d33950b.jpg", "dc25a71b5b3ba09c.jpg", "9d0de7e59e2e37be.jpg"]),
-    availability: "Availability Not Yet Confirmed", translationState: "Normalized", evidenceLabels: ["Listing facts", "Odometer photo", "6 source photos"], demo: false,
+    imageUrls: images("nk-mkt-09", ["cover-redacted.webp", "acb906cef05f7a75.jpg", "74faa72d747b7095.jpg", "2a93374b55db5a90.jpg", "e492cc719d33950b.jpg", "dc25a71b5b3ba09c.jpg", "9d0de7e59e2e37be.jpg"]),
+    availability: "Availability Not Yet Confirmed", translationState: "Normalized", evidenceLabels: ["Listing facts", "Odometer photo", "7 source photos"], demo: false,
   },
   {
     id: "nk-market-2026-0825-10", adapterId: "owner-reviewed-marketplace", sourceReference: "NK-MKT-2026-0825-10",
