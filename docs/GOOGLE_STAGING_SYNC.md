@@ -26,6 +26,8 @@ The Registry and staging root remain private. Do not publish the Registry becaus
 
 ## Registry Schema
 
+The first tab is `README`. It identifies the two runtime tabs, publication rules, safe edit order, identity rules, privacy boundary, cache behavior, and the status of preserved legacy tabs. The application does not parse `README`.
+
 ### `Vehicles`
 
 One row per staged vehicle. The server maps fields by header name, not fixed column position.
@@ -106,6 +108,15 @@ The current environment does not contain this credential. Until configured, the 
 5. Set the vehicle to `CUSTOMER_VISIBLE + Approved for Browse` only after Owner review.
 6. Wait for cache expiry or use a new runtime instance/request to observe the update.
 7. When a customer acts, create a Vehicle Case snapshot; later Sheet edits must not silently rewrite historical case facts.
+
+## Maintenance Policy
+
+- The Owner authorizes routine, reversible improvements to the Google Sheet schema and Drive folder organization when they reduce errors or support the approved V1 flow.
+- Preserve stable `vehicle_id`, `source_reference`, and per-vehicle/media references after downstream records use them.
+- Do not duplicate authoritative business data for presentation convenience; add derived views only when they have a clear operating purpose.
+- Do not delete or rename legacy tabs, evidence, folders, or business records without a verified migration and the approval required for destructive data changes.
+- Keep app-facing schema changes backward compatible or update the parser, tests, documentation, and rollback path in the same milestone.
+- Keep the Registry and staging root private. A structural cleanup must never broaden sharing permissions.
 
 ## Security Boundary
 

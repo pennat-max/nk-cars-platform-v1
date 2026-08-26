@@ -142,3 +142,13 @@ Decision:
 - The verified repository snapshot remains the deterministic availability fallback when Google credentials, schema, or network access fail.
 - A Vehicle Case must snapshot the facts used at creation; later Sheet edits must not silently rewrite the historical case.
 - Production activation requires Owner approval plus approved secret configuration. No Google credential may be committed to GitHub.
+
+## 2026-08-26 - Google staging maintenance autonomy
+
+Status: APPROVED
+
+Decision:
+- Codex may make routine, reversible improvements to the Google Sheet schema and Drive folder organization when they reduce operating errors or support the approved V1 flow.
+- Stable vehicle/media identities, original evidence, audit history, privacy classification, and private sharing state must be preserved.
+- Destructive deletion, irreversible migration, public sharing, or breaking schema changes remain subject to the existing Owner-approval rules.
+- A `README` tab is the first Registry tab and documents the runtime tabs, publication rules, safe edit flow, privacy boundary, cache, identity rules, and preserved legacy tabs.

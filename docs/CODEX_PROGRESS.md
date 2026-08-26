@@ -669,3 +669,22 @@ Started Milestone 1: Next.js shell and visual parity.
 ### Next Recommended Milestone
 
 - `BB-V1-SYNC-02 - Activate And Verify Private Google Sync`: configure the credential in a separate non-production preview, verify all ten vehicles/sixty media through the live adapter, test fallback/error behavior, then continue to durable tenant-scoped Vehicle Cases.
+
+## 2026-08-26 - Google Staging Operator Guardrails
+
+### Completed
+
+- Audited the private Registry metadata, active `Vehicles`/`Media` validation, and the ten-folder Drive root after the Owner authorized routine structural improvements.
+- Confirmed the existing publication, visibility, review-status, availability, and translation validations are already present; no duplicate columns or replacement tabs were added.
+- Added a compact `README` as the first Registry tab with the runtime tabs, exact vehicle/media publication rules, safe edit order, privacy warning, stable identity rules, Drive structure, five-minute cache, Vehicle Case snapshot rule, and legacy-tab status.
+- Preserved every existing tab, row, Drive folder, file, ID, and private sharing state. No production deployment or public sharing was performed.
+
+### Verification
+
+- Google Sheets metadata read-back confirms `README` at index 0 with frozen title row; `Vehicles` and `Media` retain their original sheet IDs and names.
+- `README!A1:B15` value and formatting read-back passed.
+- Drive root read-back still contains the Registry and all ten vehicle folders and remains not shared publicly.
+
+### Current Blocker And Next Step
+
+- Runtime live sync still requires the approved read-only Google service account and `GOOGLE_SERVICE_ACCOUNT_JSON` in a non-production secret manager. Until then, the app continues using the verified repository fallback.
