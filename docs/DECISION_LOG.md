@@ -1,0 +1,120 @@
+# NK Cars — Decision Log
+
+Purpose: Durable project memory for approved product, architecture, pricing, workflow, infrastructure, and operating decisions.
+
+Policy:
+- GitHub is the source of truth for approved project decisions and implementation state.
+- New approved decisions should be appended here and reflected in `docs/CURRENT_V1.md` when they materially change current behavior.
+- Do not store secrets, credentials, customer private data, browser sessions, or production data in this file/repository.
+- If a later decision supersedes an earlier one, append a new entry rather than silently rewriting history.
+
+## 2026-08-26 — Google Sheets + Google Drive staging approved
+
+Status: APPROVED
+
+Decision:
+Use Google Sheets + Google Drive as the V1 staging/control layer for captured vehicle inventory.
+
+Target flow:
+**Marketplace / authorized capture -> AI normalize -> Google Sheets vehicle staging + Google Drive media/evidence staging -> NK App Browse/NK Selection -> customer interest -> Vehicle Case.**
+
+Rules:
+- Sheet/Drive staging must sit behind adapters and must not be hard-coded into NK business logic.
+- One authoritative staged vehicle record per captured vehicle.
+- Google Drive should evolve toward deterministic per-vehicle folders/media references rather than one flat POC folder.
+- Customer app reads only approved customer-safe projections.
+- Existing Vehicle Case, pricing, inspection, localization, and Owner/internal source boundaries are reused.
+- Vehicle Case becomes the operational customer/deal record after qualified customer interest/action.
+- Historical Vehicle Case snapshots/audit must not be silently rewritten by later source/staging changes.
+- Repository snapshot vehicles remain fallback/test fixtures while staging automation is implemented.
+- Long-term storage/database may migrate to QNAP PostgreSQL + QNAP/private object/file storage without rewriting downstream business workflows.
+
+## 2026-08-26 — GitHub as project memory / single source of truth
+
+Status: APPROVED
+
+Decision:
+GitHub is the authoritative project memory for source code, architecture, approved product decisions, pricing rules, workflow rules, recovery documentation, and implementation checkpoints.
+
+Rules:
+- Codex should update `docs/CURRENT_V1.md` when a completed milestone materially changes current state.
+- Material approved decisions should be appended to this log.
+- Stable implementation + corresponding docs should be committed/pushed together when practical.
+- GitHub is not the runtime database for inventory/customer data and must not contain secrets or production session data.
+
+## 2026-08-26 — NK fee split presentation
+
+Status: APPROVED FOR V1 / NOT PRODUCTION-ACTIVATED
+
+Decision:
+Internal target fee structure is:
+- NK Platform & Transaction component: 6% of actual vehicle purchase price
+- NK Buying Service component: 4% of actual vehicle purchase price
+- Total NK fee target: 10%
+
+Customer presentation:
+- Show monetary amounts and service inclusions by default.
+- Do not show the 6% / 4% percentages by default.
+- Do not apply these percentages to inspection, travel, transport, repairs, shipping, taxes, or other pass-through costs unless a future approved rule explicitly changes this.
+- Rates remain configurable and require final approval before production activation.
+
+## 2026-08-26 — Language support
+
+Status: APPROVED
+
+Decision:
+Customer-facing V1 supports:
+- English (default)
+- Simplified Chinese
+- Thai
+
+Rules:
+- Use one authoritative structured business record.
+- Language switching must not change underlying vehicle/pricing data.
+- Preserve original source text separately from normalized/translated customer text.
+
+## 2026-08-26 — Cross-platform Buying Browser direction remains valid
+
+Status: APPROVED
+
+Decision:
+Keep the cross-platform browser/source-capture architecture as an input path rather than a runtime requirement for every customer browse.
+
+Adapters under evaluation/use:
+- iOS WKWebView
+- Android WebView
+- Windows WebView2
+- external Share to NK
+- Copy/Paste link fallback
+
+The customer/source user authenticates directly to the source. NK must not collect source passwords or bypass MFA/CAPTCHA/security controls.
+
+## 2026-08-26 — QNAP + Hermes infrastructure direction
+
+Status: APPROVED DIRECTION / NOT YET PRODUCTION CUTOVER
+
+Decision:
+QNAP may become the future NK runtime host for:
+- web/API services
+- PostgreSQL database
+- private media/file storage
+- background workers
+- Hermes sourcing/operations agent
+
+Hermes may perform authorized sourcing, normalization, coordination, and data-entry/operations tasks.
+
+Google Sheets + Drive remain the V1 staging/control layer while QNAP runtime is being proven.
+
+Production migration to QNAP must not occur until backup/recovery, security, networking, secrets, monitoring, and restore procedures are tested.
+
+## 2026-08-26 — Disaster recovery policy
+
+Status: APPROVED DIRECTION
+
+Decision:
+Source code and project decisions live in GitHub. Secrets, production database, media, and source/browser sessions require separate protected storage/backups.
+
+Target recovery objective:
+**New machine/QNAP -> clone GitHub -> restore secrets -> restore database/storage -> install/build -> re-authenticate source sessions -> resume service.**
+
+Facebook/source passwords and session cookies must not be committed to GitHub.
