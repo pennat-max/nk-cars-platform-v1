@@ -1,0 +1,267 @@
+# QNAP Handoff - NK Cars Buying Browser Preview
+
+อัปเดตล่าสุด: 2026-08-27 06:45 Asia/Bangkok
+
+เอกสารนี้บันทึกเฉพาะงาน QNAP infrastructure สำหรับ `NK-Cars-Buying-Browser-V1-Preview` บน branch `codex/qnap-infrastructure` ห้ามใช้เป็นเอกสารยืนยันว่า production business logic หรือ production data ถูกย้ายแล้ว
+
+## 1. ขอบเขต
+
+- ทำงานเฉพาะ infrastructure บน QNAP
+- ไม่แก้ NK Cars production site
+- ไม่แก้ application business logic
+- ไม่ย้าย database จริง
+- ไม่แตะ Hermes, n8n หรือ PostgreSQL เดิม
+- ไม่เปิด port router
+- ไม่ commit password, token, private key หรือ production secret
+
+## 2. Source และ Commit
+
+- Local project: `C:\Users\TONY\Documents\Codex\NK-Cars-Buying-Browser-V1-Preview`
+- Branch สำหรับงานนี้: `codex/qnap-infrastructure`
+- App source base commit ที่ deploy อยู่บน QNAP: `f018cd5`
+- Deployed image tag: `tony-nk-cars-buying-browser:f018cd5`
+- Git remote `origin`: `C:\Codex\NK-Cars`
+- Git remote `sites-preview`: `https://git.chatgpt-team.site/.../appgprj_6a8b559387c48191be9a47db2fdb6468.git`
+
+หมายเหตุ: เอกสารนี้จะถูก commit ใน branch infrastructure และ SHA ล่าสุดให้ดูจากรายงานส่งมอบหลัง push
+
+## 3. QNAP Host
+
+- Hostname: `NAS12EB48`
+- LAN IP หลักที่ใช้ deploy: `192.168.0.132`
+- OS: QNAP Linux `5.10.60-qnap`
+- CPU architecture: `x86_64`
+- Docker path: `/share/CACHEDEV6_DATA/.qpkg/container-station/bin/docker`
+- Docker Compose: ผ่าน Container Station Docker plugin
+
+## 4. Container Architecture
+
+```text
+Internet user
+  -> Cloudflare Quick Tunnel temporary URL
+  -> tony-nk-cars-quick-tunnel-v2
+  -> network namespace ของ tony-nk-cars-buying-browser
+  -> http://127.0.0.1:3000
+
+LAN user
+  -> http://192.168.0.132:4330
+  -> tony-nk-cars-buying-browser:3000
+```
+
+Container ที่เกี่ยวข้อง:
+
+| Container | Image | Status ล่าสุด | Purpose |
+|---|---|---:|---|
+| `tony-nk-cars-buying-browser` | `tony-nk-cars-buying-browser:f018cd5` | `healthy` | Web preview |
+| `tony-nk-cars-quick-tunnel-v2` | `cloudflare/cloudflared:2026.8.2-amd64` | `running` | Temporary public tunnel |
+
+Container เดิมที่ต้องไม่แตะ:
+
+| Container | Status ล่าสุด | หมายเหตุ |
+|---|---:|---|
+| `hermes` | `running` | ไม่ถูก restart |
+| `tony-n8n` | `healthy` | ไม่ถูก restart |
+| `tony-n8n-postgres` | `healthy` | ไม่ถูก restart |
+| `tony-web-starter` | `healthy` | ไม่ถูก restart |
+
+## 5. Ports และ URLs
+
+| Service | URL / Port | Scope |
+|---|---|---|
+| NK Cars Buying Browser | `http://192.168.0.132:4330/buy` | LAN-only host bind |
+| NK Cars Buying Browser root | `http://192.168.0.132:4330/` | LAN-only host bind |
+| Cloudflare Quick Tunnel | `https://bits-attributes-brussels-order.trycloudflare.com/buy` | Temporary public URL, no Access |
+| n8n เดิม | `http://192.168.0.132:5678/` | Existing LAN service |
+| web-starter เดิม | `http://192.168.0.132:4321/` | Existing LAN service |
+
+ไม่มีการเปิด port router หรือ port forwarding ที่ router
+
+## 6. Volumes และ Persistent Data
+
+Web preview container ปัจจุบันไม่มี Docker mount/volume เฉพาะสำหรับ app data
+
+Storage structure บน QNAP:
+
+```text
+/share/CACHEDEV6_DATA/nk-cars-buying-browser-preview/
+  releases/
+    f018cd5-20260826-233323/
+      deploy/qnap/Dockerfile
+      deploy/qnap/docker-compose.yml
+      deploy/qnap/README-DEPLOY-TH.md
+      app source snapshot
+```
+
+ข้อมูลในหน้า preview ส่วนใหญ่ยังเป็น demo/local browser state:
+
+- demo vehicle seed อยู่ใน source code
+- saved vehicles / cases ใน preview เก็บที่ browser `localStorage` ของผู้ใช้
+- uploaded preview media อยู่ใน browser storage ของผู้ใช้
+- ยังไม่มี server-side persistent database สำหรับ Vehicle Cases
+
+## 7. PostgreSQL Connection Requirements
+
+ยังไม่เชื่อม PostgreSQL สำหรับ NK Cars Buying Browser
+
+หากจะเชื่อม production data ในอนาคต ต้องมี approval แยก และต้องกำหนดอย่างน้อย:
+
+- Database host ภายใน LAN หรือ Docker network
+- Database name แยกจาก production ที่มีอยู่
+- Read-only user สำหรับช่วงแรก
+- TLS requirement หากข้าม host/network
+- Migration/RLS/audit plan
+- Backup และ restore test ก่อนเปิดใช้งานจริง
+- ห้ามใช้ database ของ `tony-n8n-postgres` ร่วมกับเว็บนี้โดยไม่อนุมัติ
+
+หมายเหตุ: source code ปัจจุบันมี database helper สำหรับ Cloudflare D1 binding ชื่อ `DB` ไม่ใช่ PostgreSQL โดยตรง
+
+## 8. Environment Variables
+
+Container ที่รันบน QNAP มีเฉพาะ key พื้นฐาน:
+
+- `NODE_ENV`
+- `PORT`
+- `TZ`
+- `WRANGLER_LOG_PATH`
+- Node image defaults เช่น `NODE_VERSION`, `YARN_VERSION`, `PATH`
+
+ยังไม่มี production secrets หรือ data-source credentials:
+
+- `OPENAI_API_KEY`: ไม่มีใน container
+- `BROWSERLESS_TOKEN`: ไม่มีใน container
+- `BROWSERLESS_PROFILE`: ไม่มีใน container
+- `MARKETPLACE_CONNECTOR_URL`: ไม่มีใน container
+- `MARKETPLACE_CONNECTOR_TOKEN`: ไม่มีใน container
+- `DATABASE_URL`: ไม่มีใน container
+- `SUPABASE_*`: ไม่มีใน container
+- `GOOGLE_*`: ไม่มีใน container
+
+## 9. API และ Tunnel Status
+
+API ที่ตรวจแล้ว:
+
+- `GET /buy`: 200 OK
+- `GET /`: 200 OK
+- `GET /api/marketplace-cloud/status`: ทำงาน แต่รายงานว่า provider ยังไม่ configured
+- `POST /api/vehicle-extract`: ต้องใช้ `OPENAI_API_KEY`; เมื่อไม่มี key จะตอบ 503 ตามที่ออกแบบไว้
+
+Tunnel:
+
+- ประเภท: Cloudflare Quick Tunnel แบบ account-less
+- Container: `tony-nk-cars-quick-tunnel-v2`
+- Public URL: `https://bits-attributes-brussels-order.trycloudflare.com/buy`
+- Access login: ไม่มี
+- Production guarantee: ไม่มี
+- ใครมี URL สามารถเปิดได้ จึงไม่ควรใส่ข้อมูลลับใน preview นี้
+
+## 10. Tests ล่าสุด
+
+คำสั่งตรวจจากเครื่อง Codex:
+
+```powershell
+Invoke-WebRequest -UseBasicParsing -Uri 'https://bits-attributes-brussels-order.trycloudflare.com/buy' -TimeoutSec 45
+```
+
+ผล:
+
+- `200 OK`
+- พบข้อความ/HTML ของ NK Cars Buying Browser
+
+คำสั่งตรวจจาก QNAP:
+
+```bash
+/share/CACHEDEV6_DATA/.qpkg/container-station/bin/docker ps --format '{{.Names}}|{{.Image}}|{{.Status}}|{{.Ports}}'
+/share/CACHEDEV6_DATA/.qpkg/container-station/bin/docker stats --no-stream
+curl -I -m 10 -s http://192.168.0.132:4330/buy
+curl -I -m 10 -s http://192.168.0.132:4321/
+curl -I -m 10 -s http://192.168.0.132:5678/
+```
+
+ผลล่าสุด:
+
+- `tony-nk-cars-buying-browser`: healthy
+- `tony-nk-cars-quick-tunnel-v2`: running
+- `hermes`: running
+- `tony-n8n`: healthy
+- `tony-n8n-postgres`: healthy
+- `tony-web-starter`: healthy
+- `http://192.168.0.132:4330/buy`: 200 OK
+- `http://192.168.0.132:4321/`: 200 OK
+- `http://192.168.0.132:5678/`: 200 OK
+
+Resource usage snapshot:
+
+| Container | CPU | Memory |
+|---|---:|---:|
+| `tony-nk-cars-quick-tunnel-v2` | ~0.06% | ~15 MiB |
+| `tony-nk-cars-buying-browser` | ~0.00% | ~151 MiB |
+| `tony-web-starter` | ~0.00% | ~5 MiB |
+| `tony-n8n` | ~0.47% | ~455 MiB |
+| `hermes` | ~0.15% | ~413 MiB |
+| `tony-n8n-postgres` | ~0.00% | ~164 MiB |
+
+## 11. Backup / Restore Status
+
+ปัจจุบันยังไม่มี server-side user data ของ NK Cars Buying Browser ให้ backup แยก เพราะยังเป็น preview/demo และ browser-local state
+
+สิ่งที่มี:
+
+- Source release snapshot บน QNAP ที่ `/share/CACHEDEV6_DATA/nk-cars-buying-browser-preview/releases/f018cd5-20260826-233323`
+- Dockerfile และ Compose สำหรับสร้าง container ใหม่
+
+สิ่งที่ยังต้องทำก่อน production:
+
+- กำหนด persistent storage สำหรับ uploads/media/logs
+- กำหนด database จริง
+- ทำ backup script
+- ทำ restore test ลง temporary database/storage
+- กำหนด retention policy
+
+## 12. Rollback
+
+หยุดเฉพาะ public temporary tunnel:
+
+```bash
+/share/CACHEDEV6_DATA/.qpkg/container-station/bin/docker stop tony-nk-cars-quick-tunnel-v2
+```
+
+หยุดเฉพาะ web preview service:
+
+```bash
+cd /share/CACHEDEV6_DATA/nk-cars-buying-browser-preview/releases/f018cd5-20260826-233323/deploy/qnap
+/share/CACHEDEV6_DATA/.qpkg/container-station/bin/docker compose down
+```
+
+ห้ามใช้ rollback command ใด ๆ ที่แตะ:
+
+- `hermes`
+- `tony-n8n`
+- `tony-n8n-postgres`
+- QNAP host reboot/shutdown
+- RAID / Storage Pool / Volume / Firewall / Router
+
+## 13. Blockers
+
+- เว็บยังใช้ demo/local browser data ไม่ใช่ข้อมูลจริง
+- ยังไม่เชื่อม Record 2026
+- ยังไม่เชื่อม Supabase/PostgreSQL สำหรับ app data
+- ยังไม่มี Auth/RLS/audit สำหรับ production users
+- Quick Tunnel ไม่มี Access login และไม่มี uptime guarantee
+- ไม่มี persistent server-side upload/media storage
+- `OPENAI_API_KEY` ยังไม่ได้ตั้งใน web container จึงใช้ AI extraction จริงไม่ได้
+- Marketplace connector ยังไม่ได้ configured
+
+## 14. Approval Required ก่อนทำต่อ
+
+ต้องขออนุมัติแยกก่อนทำรายการต่อไปนี้:
+
+- เปลี่ยนจาก Quick Tunnel เป็น Cloudflare Named Tunnel + Access
+- ใส่ production secrets หรือ API keys
+- เชื่อม Google Sheet Record 2026
+- เชื่อม Supabase/PostgreSQL
+- สร้าง persistent volumes
+- deploy production service ใหม่
+- restart container เดิมที่ไม่ใช่ web preview/tunnel
+- เปิดให้ลูกค้าจริงใช้งาน
+- เขียน/แก้ไข database หรือ Google Sheets
+- ลบข้อมูลหรือ restore ทับ production
