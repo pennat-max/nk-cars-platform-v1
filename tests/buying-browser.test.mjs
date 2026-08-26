@@ -4,6 +4,7 @@ import {
   CUSTOMER_FX_THB_PER_USD,
   DEFAULT_FILTERS,
   addCaseQuestion,
+  assessQuotationReadiness,
   calculatePricing,
   customerUsdToThb,
   createExternalSourceCapture,
@@ -14,6 +15,7 @@ import {
   presentCustomerListing,
   requestAvailability,
   requestInspection,
+  requestQuotation,
 } from "../app/buying-browser/domain.mjs";
 import { detectSourceLanguage, localizeAvailability, localizeListingSummary, normalizeLanguage, translate } from "../app/buying-browser/i18n.mjs";
 import { normalizeCustomerImageContentType, parseGoogleStagingValues, readBoundedResponseBytes } from "../app/buying-browser/source-adapters/google-staging-parser.mjs";
@@ -249,6 +251,55 @@ test("pricing splits NK fees into configurable 6% and 4% vehicle-price component
   assert.equal(configured.platformTransactionAmountThb, 35000);
   assert.equal(configured.buyingServiceAmountThb, 15000);
   assert.equal(configured.lines.find((line) => line.key === "inspection")?.amountThb, 100000, "pass-through cost is not marked up");
+});
+
+test("quotation readiness blocks unverified facts and requires explicit zero-value cost confirmations", () => {
+  const listing = presentCustomerListing(source);
+  const vehicleCase = createVehicleCase(listing, [], "customer-1", "2026-08-26T12:00:00.000Z").caseRecord;
+  const pending = assessQuotationReadiness(vehicleCase);
+  assert.equal(pending.ready, false);
+  assert.equal(pending.status, "Not Ready");
+  assert.equal(pending.piStatus, "Blocked - Quotation Not Accepted");
+  assert.equal(pending.items.find((item) => item.key === "inspection")?.ready, true);
+  assert.equal(pending.pendingCount, 6);
+
+  const verified = {
+    ...vehicleCase,
+    availability: "Verified Available",
+    actualVehiclePurchasePriceThb: 880000,
+    domesticTransportThb: 0,
+    repairModificationThb: 0,
+    exportShippingThb: 54000,
+    otherAgreedThb: 0,
+  };
+  const ready = assessQuotationReadiness(verified);
+  assert.equal(ready.ready, true);
+  assert.equal(ready.status, "Ready for NK Review");
+  assert.equal(ready.pendingCount, 0);
+  assert.equal(ready.piStatus, "Blocked - Quotation Not Accepted", "PI remains gated even after pricing facts are ready");
+});
+
+test("quotation request records history without issuing a quote, PI, payment, or external message", () => {
+  const listing = presentCustomerListing(source);
+  const vehicleCase = createVehicleCase(listing, [], "customer-1", "2026-08-26T12:00:00.000Z").caseRecord;
+  const requested = requestQuotation(vehicleCase, "2026-08-26T12:05:00.000Z", "th");
+  assert.equal(requested.quotationRequest.status, "Requested - Awaiting NK Review");
+  assert.equal(requested.timeline.at(-1).title, "Quotation requested");
+  assert.match(requested.messages.at(-1).text, /PI/);
+  assert.ok(requested.messages.every((message) => message.delivery !== "Prepared - not sent"), "no seller/customer channel send is prepared");
+  assert.equal(requestQuotation(requested, "2026-08-26T12:06:00.000Z"), requested, "request is idempotent");
+  assert.equal("piNumber" in requested, false);
+  assert.equal("paymentStatus" in requested, false);
+});
+
+test("commercial readiness UI explains quotation before PI in all customer languages", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const component = await readFile(new URL("../app/buying-browser/components/CommercialReadiness.tsx", import.meta.url), "utf8");
+  assert.match(component, /Quotation readiness/);
+  assert.match(component, /报价准备状态/);
+  assert.match(component, /ความพร้อมของใบเสนอราคา/);
+  assert.match(component, /Proforma Invoice \(PI\)/);
+  assert.match(component, /Authorized Finance must confirm actual funds received/);
 });
 
 test("localization changes presentation without mutating authoritative listing data", () => {

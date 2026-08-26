@@ -133,6 +133,10 @@ export type VehicleCase = {
   repairModificationThb: number | null;
   exportShippingThb: number | null;
   otherAgreedThb: number | null;
+  quotationRequest?: {
+    status: "Requested - Awaiting NK Review";
+    requestedAt: string;
+  } | null;
   translationHistory: TranslationTrace[];
   messages: CaseMessage[];
   timeline: CaseTimelineItem[];
@@ -202,6 +206,19 @@ export type SourceAdapterStatus = {
   live: boolean;
   state: "ready" | "login_required" | "not_connected" | "error";
   message: string;
+};
+
+export type QuotationReadinessItem = {
+  key: "availability" | "vehiclePrice" | "inspection" | "transport" | "repair" | "shipping" | "other";
+  ready: boolean;
+};
+
+export type QuotationReadiness = {
+  status: "Not Ready" | "Ready for NK Review";
+  ready: boolean;
+  items: QuotationReadinessItem[];
+  pendingCount: number;
+  piStatus: "Blocked - Quotation Not Accepted";
 };
 
 export type WorkspaceSyncStatus = {

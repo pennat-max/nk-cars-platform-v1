@@ -798,3 +798,25 @@ Started Milestone 1: Next.js shell and visual parity.
 ### Next
 
 - `BB-V1D-02 - Quotation Readiness`: add deterministic readiness checks and a customer-safe quotation draft. PI issuance remains blocked until verified availability, actual purchase price, all required material amounts, and approval rules are satisfied.
+
+## 2026-08-26 - Deterministic Quotation And PI Gate
+
+### Completed
+
+- Added a deterministic Quotation readiness checklist inside each Vehicle Case.
+- Requires verified availability, actual vehicle purchase price, and explicit confirmation of inspection/travel, domestic transport, repair/modification, export/shipping, and other agreed charges.
+- Treats null as Pending and zero as an explicit no-charge confirmation.
+- Added an idempotent Request Quotation Review action that records the request in the durable Case timeline/messages without sending any external message.
+- Added English, Simplified Chinese, and Thai readiness presentation.
+- Kept PI issuance blocked until an approved final quotation is accepted and added the Finance confirmation boundary for real funds received.
+- Did not add invoice/PI numbering, payment, seller communication, or financial commitment.
+
+### Verification
+
+- Targeted Buying Browser tests: passed 28/28 after correcting null-versus-zero readiness handling.
+- Local Vehicle Case interaction: readiness checklist rendered, six unresolved checks were shown for the unverified POC case, Request Quotation Review changed to Quotation Requested, timeline history updated, and browser console had no errors.
+- Responsive CSS keeps the checklist single-column and the action full-width below 720px.
+
+### Next
+
+- `BB-V1D-03 - Owner Case Verification Queue`: give the authenticated Owner a controlled view of customer Case requests and audited controls for verified availability, actual purchase price, and material cost confirmations. Continue blocking quote issue, PI, payments, and real messages until their approval rules are implemented.

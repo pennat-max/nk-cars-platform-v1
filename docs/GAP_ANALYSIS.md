@@ -274,6 +274,27 @@ BB-V1D is blocked on approved production project/configuration and must not depl
 
 `BB-V1D-02 - Quotation Readiness`: add a deterministic Case readiness checklist and customer-safe quotation draft only after current vehicle price and availability are verified. Block PI issuance while material amounts or required approvals are unresolved; do not enable payment.
 
+## Quotation Readiness Update - 2026-08-26
+
+### Implemented
+
+- Added a deterministic readiness engine that requires verified availability, actual vehicle purchase price, inspection/travel, domestic transport, repair/modification, export/shipping, and other agreed charges.
+- Null amounts remain Pending; an explicit zero is required to confirm that a cost line does not apply.
+- Added English, Simplified Chinese, and Thai customer presentation for every readiness check.
+- Added an idempotent Request Quotation Review action that records customer/system messages and Case timeline history without sending an external message or issuing a document.
+- PI remains deterministically blocked even when all pricing facts are ready. It may only follow an approved final quotation accepted by the customer.
+- Added explicit Finance language: PI, invoice, receipt, or payment slip does not confirm payment; authorized Finance must confirm actual funds received.
+
+### Remaining V1 Gaps
+
+- Owner/staff cannot yet update availability, actual purchase price, or material cost confirmations through an authenticated operational Case screen.
+- No quotation number, approved quotation document, acceptance record, PI number, PI document, document visibility classification, or expiry workflow is issued.
+- No payment workflow is enabled.
+
+### Smallest Next V1 Milestone
+
+`BB-V1D-03 - Owner Case Verification Queue`: add Owner-only Case lookup and controlled updates for availability, actual purchase price, and material cost lines with audit evidence. Keep quotation issue and payment disabled until those facts are reviewed.
+
 ## Google Staging Sync Update - 2026-08-26
 
 ### Implemented

@@ -130,6 +130,27 @@ export function calculatePricing(input) {
   return { platformTransactionRate, buyingServiceRate, platformTransactionAmountThb: platformTransactionAmount, buyingServiceAmountThb: buyingServiceAmount, totalNkFeeAmountThb: vehiclePrice === null ? null : platformTransactionAmount + buyingServiceAmount, knownSubtotalThb: lines.reduce((total, line) => total + (line.amountThb ?? 0), 0), pendingCount: lines.filter((line) => line.amountThb === null).length, lines };
 }
 
+export function assessQuotationReadiness(caseRecord) {
+  const nonNegativeAmount = (value) => value !== null && value !== undefined && value !== "" && Number.isFinite(Number(value)) && Number(value) >= 0;
+  const items = [
+    { key: "availability", ready: caseRecord.availability === "Verified Available" },
+    { key: "vehiclePrice", ready: Number.isFinite(Number(caseRecord.actualVehiclePurchasePriceThb)) && Number(caseRecord.actualVehiclePurchasePriceThb) > 0 },
+    { key: "inspection", ready: Boolean(caseRecord.inspectionQuote && caseRecord.inspectionQuote.status === "Quote Ready" && nonNegativeAmount(caseRecord.inspectionQuote.totalThb)) },
+    { key: "transport", ready: nonNegativeAmount(caseRecord.domesticTransportThb) },
+    { key: "repair", ready: nonNegativeAmount(caseRecord.repairModificationThb) },
+    { key: "shipping", ready: nonNegativeAmount(caseRecord.exportShippingThb) },
+    { key: "other", ready: nonNegativeAmount(caseRecord.otherAgreedThb) },
+  ];
+  const pendingCount = items.filter((item) => !item.ready).length;
+  return {
+    status: pendingCount === 0 ? "Ready for NK Review" : "Not Ready",
+    ready: pendingCount === 0,
+    items,
+    pendingCount,
+    piStatus: "Blocked - Quotation Not Accepted",
+  };
+}
+
 /** @returns {import("./types").BuyingBrowserState} */
 export function initialBuyingBrowserState() {
   return { version: 1, savedListingIds: [], cases: [], importedListings: [], sourceCaptures: [], generalMessages: [{ id: "welcome", sender: "NK AI", text: "Tell me the model, year, transmission, drive, body type, budget, and preferred Thai search area. I will only use available vehicle facts and will mark unknown information clearly.", createdAt: "2026-08-23T09:00:00.000Z" }] };
@@ -204,7 +225,7 @@ export function createVehicleCase(listing, existingCases, customerId, now = new 
   const platformTransactionRate = Number.isFinite(Number(pricingSettings.platformTransactionRate)) ? Math.max(0, Number(pricingSettings.platformTransactionRate)) : DEFAULT_PLATFORM_TRANSACTION_RATE;
   const buyingServiceRate = Number.isFinite(Number(pricingSettings.buyingServiceRate)) ? Math.max(0, Number(pricingSettings.buyingServiceRate)) : DEFAULT_BUYING_SERVICE_RATE;
   const caseRecord = {
-    id: caseId, customerId, listingId: listing.id, sourceReference: listing.sourceReference, sourceCaptureId, createdAt, updatedAt: createdAt, status: "Saved", availability: "Availability Not Yet Confirmed", vehicle: { ...listing, availability: "Availability Not Yet Confirmed" }, actualVehiclePurchasePriceThb: null, platformTransactionRate, buyingServiceRate, inspectionQuote: quote, domesticTransportThb: null, repairModificationThb: null, exportShippingThb: null, otherAgreedThb: null, translationHistory: [],
+    id: caseId, customerId, listingId: listing.id, sourceReference: listing.sourceReference, sourceCaptureId, createdAt, updatedAt: createdAt, status: "Saved", availability: "Availability Not Yet Confirmed", vehicle: { ...listing, availability: "Availability Not Yet Confirmed" }, actualVehiclePurchasePriceThb: null, platformTransactionRate, buyingServiceRate, inspectionQuote: quote, domesticTransportThb: null, repairModificationThb: null, exportShippingThb: null, otherAgreedThb: null, quotationRequest: null, translationHistory: [],
     messages: [{ id: `${caseId}-welcome`, sender: "NK AI", text: `I created ${caseId} for this ${listing.title}. Availability and the current seller price have not been verified yet.`, createdAt, delivery: "Local preview" }],
     timeline: [{ id: `${caseId}-saved`, title: "Vehicle saved", detail: sourceCaptureId ? "External source link captured internally and customer-safe listing data saved as an NK Vehicle Case." : "Customer-safe source result saved as an NK Vehicle Case.", createdAt }],
   };
@@ -216,6 +237,33 @@ function availabilityRequestText(language) {
   if (selected === "zh-CN") return "请确认这辆车是否仍可购买，并确认当前价格、里程和 VIN 证据。";
   if (selected === "th") return "กรุณาตรวจสอบว่ารถคันนี้ยังอยู่หรือไม่ และยืนยันราคาปัจจุบัน เลขไมล์ และหลักฐาน VIN";
   return "Please check whether this vehicle is still available and confirm the current price, mileage, and VIN evidence.";
+}
+
+export function requestQuotation(caseRecord, now = new Date(), language = "en") {
+  if (caseRecord.quotationRequest?.status === "Requested - Awaiting NK Review") return caseRecord;
+  const createdAt = safeTime(now);
+  const selected = normalizeLanguage(language);
+  const customerText = selected === "zh-CN"
+    ? "请准备这辆车的报价。所有未确认的费用请保持待确认，不要估算。"
+    : selected === "th"
+      ? "กรุณาเตรียมใบเสนอราคาสำหรับรถคันนี้ โดยคงรายการที่ยังไม่ยืนยันเป็นรอยืนยันและไม่ประมาณตัวเลข"
+      : "Please prepare a quotation for this vehicle. Keep every unconfirmed amount pending and do not estimate it.";
+  const systemText = selected === "zh-CN"
+    ? "报价申请已记录，等待 NK 审核。车辆可售状态、实际购车价格和所有重要费用确认前，不会签发最终报价或 PI。"
+    : selected === "th"
+      ? "บันทึกคำขอใบเสนอราคาแล้วและรอ NK ตรวจสอบ จะยังไม่ออกใบเสนอราคาสุดท้ายหรือ PI จนกว่าจะยืนยันสถานะรถ ราคาซื้อจริง และค่าใช้จ่ายสำคัญครบถ้วน"
+      : "Quotation request recorded for NK review. No final quotation or PI will be issued until availability, actual purchase price, and all material costs are confirmed.";
+  return {
+    ...caseRecord,
+    updatedAt: createdAt,
+    quotationRequest: { status: "Requested - Awaiting NK Review", requestedAt: createdAt },
+    messages: [
+      ...caseRecord.messages,
+      { id: `${caseRecord.id}-quotation-customer-${createdAt}`, sender: "Customer", text: customerText, createdAt, delivery: "Recorded" },
+      { id: `${caseRecord.id}-quotation-system-${createdAt}`, sender: "System", text: systemText, createdAt, delivery: "Recorded" },
+    ],
+    timeline: [...caseRecord.timeline, { id: `${caseRecord.id}-quotation-${createdAt}`, title: "Quotation requested", detail: "Waiting for NK to verify the vehicle and every material pricing line before review.", createdAt }],
+  };
 }
 
 function thaiSellerRequest() {

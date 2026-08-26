@@ -265,9 +265,10 @@ Next priority:
 1. Owner configures the runtime service-account secret and shares the private staging root with that account
 2. verify live sync in a non-production preview: customer Browse remains 10 approved vehicles/64 approved media, while Owner review sees all 20 vehicles and the 10-item review queue
 3. verify the deployed Owner account allowlist and D1 account-workspace migration on the existing Site
-4. add deterministic Quotation readiness and PI gating after durable Case identity and sync audit
-5. add private operational media storage/retention beyond the reviewed customer asset boundary
-6. automate authorized capture -> normalize -> review rows/media without bypassing source controls
+4. verify Quotation requests and readiness history through a signed-in production account; PI remains gated until an approved final quotation is accepted
+5. add an authenticated Owner operations queue for availability, actual purchase price, and material cost confirmation
+6. add private operational media storage/retention beyond the reviewed customer asset boundary
+7. automate authorized capture -> normalize -> review rows/media without bypassing source controls
 
 ## 14. Future QNAP / Hermes direction
 

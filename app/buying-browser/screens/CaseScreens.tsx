@@ -7,6 +7,7 @@ import { useBuyingBrowser } from "../BuyingBrowserProvider";
 import { formatDateTime, formatUsdFromThb } from "../format";
 import { useI18n } from "../use-i18n";
 import PricingBreakdown from "../components/PricingBreakdown";
+import CommercialReadiness from "../components/CommercialReadiness";
 import VehiclePhoto from "../components/VehiclePhoto";
 
 export function CasesScreen() {
@@ -64,6 +65,7 @@ export function CaseDetailScreen({ caseId }: { caseId?: string }) {
       </section>
 
       <PricingBreakdown vehicleCase={vehicleCase} />
+      <CommercialReadiness vehicleCase={vehicleCase} />
 
       <section className="bb-case-split">
         <div className="bb-case-facts">

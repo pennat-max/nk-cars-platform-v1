@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useEffectEvent, useMemo, useRef, useState, type ReactNode } from "react";
-import { addCaseQuestion, createVehicleCase, initialBuyingBrowserState, requestAvailability, requestInspection } from "./domain.mjs";
+import { addCaseQuestion, createVehicleCase, initialBuyingBrowserState, requestAvailability, requestInspection, requestQuotation } from "./domain.mjs";
 import { normalizeLanguage } from "./i18n.mjs";
 import { loadPricingSettings } from "./pricing-settings";
 import { clearPreviewMedia, hydratePreviewMedia, persistPreviewMedia, stateForLocalStorage } from "./preview-media";
@@ -24,6 +24,7 @@ type BuyingBrowserContextValue = {
   findCaseByListing: (listingId: string) => VehicleCase | undefined;
   requestCaseAvailability: (caseId: string) => void;
   requestCaseInspection: (caseId: string) => void;
+  requestCaseQuotation: (caseId: string) => void;
   askCaseQuestion: (caseId: string, question: string) => void;
   addImportedListing: (listing: CustomerListing, sourceCapture?: SourceCapture) => void;
   askFindOne: (question: string) => void;
@@ -139,6 +140,7 @@ export function BuyingBrowserProvider({
               actualVehiclePurchasePriceThb: record.actualVehiclePurchasePriceThb ?? null,
               platformTransactionRate: record.platformTransactionRate ?? 6,
               buyingServiceRate: record.buyingServiceRate ?? 4,
+              quotationRequest: record.quotationRequest ?? null,
               translationHistory: Array.isArray(record.translationHistory) ? record.translationHistory : [],
             })),
           }), seedCases);
@@ -277,6 +279,10 @@ export function BuyingBrowserProvider({
     setState(initialBuyingBrowserState());
   }
 
+  function requestCaseQuotation(caseId: string) {
+    updateCase(caseId, (record) => requestQuotation(record, new Date(), language));
+  }
+
   function setLanguage(nextLanguage: CustomerLanguage) {
     const normalized = normalizeLanguage(nextLanguage) as CustomerLanguage;
     setLanguageState(normalized);
@@ -299,6 +305,7 @@ export function BuyingBrowserProvider({
     findCaseByListing: (listingId) => state.cases.find((item) => item.listingId === listingId),
     requestCaseAvailability,
     requestCaseInspection,
+    requestCaseQuotation,
     askCaseQuestion,
     addImportedListing,
     askFindOne,
