@@ -1,4 +1,15 @@
 export const DEFAULT_COMMISSION_RATE = 10;
+export const CUSTOMER_FX_THB_PER_USD = 35;
+
+export function formatCustomerUsd(value) {
+  if (value === null || value === undefined) return "Pending";
+  return `USD ${Math.round(value / CUSTOMER_FX_THB_PER_USD).toLocaleString("en-US")}`;
+}
+
+export function customerUsdToThb(value) {
+  const amountUsd = Number(value);
+  return value && Number.isFinite(amountUsd) ? String(amountUsd * CUSTOMER_FX_THB_PER_USD) : "";
+}
 
 /** @type {import("./types").BrowseFilters} */
 export const DEFAULT_FILTERS = Object.freeze({
@@ -183,7 +194,7 @@ export function requestInspection(caseRecord, now = new Date()) {
   if (!caseRecord.inspectionQuote || caseRecord.inspectionQuote.status === "Requested - Awaiting Provider") return caseRecord;
   const createdAt = safeTime(now);
   return { ...caseRecord, status: "Inspection Requested", updatedAt: createdAt, inspectionQuote: { ...caseRecord.inspectionQuote, status: "Requested - Awaiting Provider", requestedAt: createdAt },
-    messages: [...caseRecord.messages, { id: `${caseRecord.id}-inspection-${createdAt}`, sender: "System", text: `Inspection requested at the configured price of THB ${caseRecord.inspectionQuote.totalThb.toLocaleString("en-US")}. No provider is assigned or booked yet.`, createdAt, delivery: "Recorded" }],
+    messages: [...caseRecord.messages, { id: `${caseRecord.id}-inspection-${createdAt}`, sender: "System", text: `Inspection requested at the configured preview price of ${formatCustomerUsd(caseRecord.inspectionQuote.totalThb)}. No provider is assigned or booked yet.`, createdAt, delivery: "Recorded" }],
     timeline: [...caseRecord.timeline, { id: `${caseRecord.id}-inspection-${createdAt}`, title: "Inspection requested", detail: "Waiting for an approved provider to accept the job.", createdAt }],
   };
 }
@@ -194,9 +205,9 @@ export function buildGroundedAssistantReply(caseRecord, question) {
   if (/available|availability|still there|seller/.test(text)) return caseRecord.availability === "Verified Available" ? "This case has a recorded Verified Available status. Open the case timeline for the verification time and evidence." : `Availability is not confirmed. The current case state is “${caseRecord.availability}”. I will not guess or present the vehicle as available.`;
   if (/price|cost|fee|total|commission/.test(text)) {
     const pricing = calculatePricing({ vehiclePriceThb: vehicle.observedPriceThb, commissionRate: caseRecord.commissionRate, inspectionTravelThb: caseRecord.inspectionQuote?.totalThb ?? null, domesticTransportThb: caseRecord.domesticTransportThb, repairModificationThb: caseRecord.repairModificationThb, exportShippingThb: caseRecord.exportShippingThb, otherAgreedThb: caseRecord.otherAgreedThb });
-    return `The known subtotal is THB ${pricing.knownSubtotalThb.toLocaleString("en-US")}, including a ${pricing.commissionRate}% NK service fee applied only to the observed vehicle price. ${pricing.pendingCount} cost line${pricing.pendingCount === 1 ? " is" : "s are"} still pending and excluded from that subtotal.`;
+    return `The known subtotal is ${formatCustomerUsd(pricing.knownSubtotalThb)}, including a ${pricing.commissionRate}% NK service fee applied only to the observed vehicle price. ${pricing.pendingCount} cost line${pricing.pendingCount === 1 ? " is" : "s are"} still pending and excluded from that subtotal. The preview uses THB ${CUSTOMER_FX_THB_PER_USD.toFixed(2)} per USD; an approved quote sets the final USD price.`;
   }
-  if (/inspection|inspect|condition/.test(text)) return !caseRecord.inspectionQuote ? "The vehicle location does not match a configured inspection zone yet. NK must confirm the location before quoting; I will not estimate the fee." : `The configured inspection and travel quote is THB ${caseRecord.inspectionQuote.totalThb.toLocaleString("en-US")} for ${caseRecord.inspectionQuote.region}. Current status: ${caseRecord.inspectionQuote.status}.`;
+  if (/inspection|inspect|condition/.test(text)) return !caseRecord.inspectionQuote ? "The vehicle location does not match a configured inspection zone yet. NK must confirm the location before quoting; I will not estimate the fee." : `The configured inspection and travel preview is ${formatCustomerUsd(caseRecord.inspectionQuote.totalThb)} for ${caseRecord.inspectionQuote.region}. Current status: ${caseRecord.inspectionQuote.status}.`;
   if (/mileage|engine|transmission|drive|spec|model|year/.test(text)) return `${vehicle.title}: ${vehicle.engine || "engine unknown"}, ${vehicle.transmission}, ${vehicle.drive}, ${vehicle.body}, ${vehicle.mileageKm === null ? "mileage needs review" : `${vehicle.mileageKm.toLocaleString("en-US")} km`}. These are normalized from the available ${vehicle.demo ? "labeled demo evidence" : "captured listing evidence"} and remain subject to verification.`;
   return `${vehicle.summary} Availability, current price, VIN, and condition must be verified before purchase. Ask me about specifications, pricing, availability, or inspection and I will answer only from this case.`;
 }

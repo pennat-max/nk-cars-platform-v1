@@ -2,19 +2,27 @@
 
 /* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
-import { ArrowLeft, Bot, CheckCircle2, ChevronRight, ClipboardCheck, Clock3, Gauge, Heart, MapPin, ShieldCheck, ShoppingBag } from "lucide-react";
-import { useState } from "react";
+import { ArrowLeft, Bot, CheckCircle2, ChevronLeft, ChevronRight, ClipboardCheck, Clock3, Gauge, Heart, MapPin, ShieldCheck, ShoppingBag } from "lucide-react";
+import { useRef, useState } from "react";
 import { useBuyingBrowser } from "../BuyingBrowserProvider";
-import { formatDateTime, formatMileage, formatThb } from "../format";
+import { customerFxDisclosure, formatDateTime, formatMileage, formatUsdFromThb } from "../format";
 import VehiclePhoto from "../components/VehiclePhoto";
 
 export default function VehicleScreen({ sourceId }: { sourceId?: string }) {
   const { listings, isSaved, toggleSaved, saveAsCase, findCaseByListing } = useBuyingBrowser();
   const listing = listings.find((item) => item.id === sourceId);
   const [imageIndex, setImageIndex] = useState(0);
+  const galleryTrack = useRef<HTMLDivElement>(null);
 
   if (!listing) return <section className="bb-empty-state"><h1>Vehicle result not found</h1><p>This source result may no longer be in the preview set.</p><Link className="bb-button primary" href="/buy"><ArrowLeft size={17} />Back to Browse</Link></section>;
   const existingCase = findCaseByListing(listing.id);
+
+  function showPhoto(index: number) {
+    const nextIndex = Math.min(Math.max(index, 0), listing!.imageUrls.length - 1);
+    const track = galleryTrack.current;
+    if (track) track.scrollTo({ left: track.clientWidth * nextIndex, behavior: "smooth" });
+    setImageIndex(nextIndex);
+  }
 
   function openCase(action?: "availability" | "inspection") {
     const caseId = saveAsCase(listing!, action);
@@ -26,15 +34,21 @@ export default function VehicleScreen({ sourceId }: { sourceId?: string }) {
       <Link className="bb-back-link" href="/buy"><ArrowLeft size={18} />Browse Vehicles</Link>
       <article className="bb-vehicle-detail" data-vehicle-detail-v2>
         <section className="bb-gallery">
-          <div className="bb-gallery-main"><VehiclePhoto listing={listing} imageUrl={listing.imageUrls[imageIndex] || listing.imageUrls[0]} alt={`${listing.title} view ${imageIndex + 1}`} /><span>{listing.demo ? "Demo" : `${imageIndex + 1} of ${listing.imageUrls.length}`}</span></div>
-          {!listing.demo && listing.imageUrls.length > 1 && <div className="bb-gallery-thumbs">{listing.imageUrls.map((image, index) => <button key={image} className={index === imageIndex ? "active" : ""} onClick={() => setImageIndex(index)} aria-label={`Show vehicle image ${index + 1}`}><img src={image} alt="" /></button>)}</div>}
+          <div className="bb-gallery-stage" data-swipe-gallery>
+            <div ref={galleryTrack} className="bb-gallery-track" onScroll={(event) => { const width = event.currentTarget.clientWidth; if (width) setImageIndex(Math.round(event.currentTarget.scrollLeft / width)); }}>
+              {listing.imageUrls.map((image, index) => <div className="bb-gallery-slide" key={image}><VehiclePhoto listing={listing} imageUrl={image} alt={`${listing.title} view ${index + 1}`} /></div>)}
+            </div>
+            <span className="bb-gallery-counter">{imageIndex + 1} of {listing.imageUrls.length}</span>
+            {listing.imageUrls.length > 1 && <><button className="bb-gallery-arrow previous" onClick={() => showPhoto(imageIndex - 1)} disabled={imageIndex === 0} aria-label="Previous photo" title="Previous photo"><ChevronLeft size={21} /></button><button className="bb-gallery-arrow next" onClick={() => showPhoto(imageIndex + 1)} disabled={imageIndex === listing.imageUrls.length - 1} aria-label="Next photo" title="Next photo"><ChevronRight size={21} /></button></>}
+          </div>
+          {!listing.demo && listing.imageUrls.length > 1 && <div className="bb-gallery-thumbs">{listing.imageUrls.map((image, index) => <button key={image} className={index === imageIndex ? "active" : ""} onClick={() => showPhoto(index)} aria-label={`Show vehicle image ${index + 1}`}><img src={image} alt="" /></button>)}</div>}
         </section>
         <section className="bb-vehicle-summary">
           <div className="bb-status-row"><span className="bb-status-chip market">{listing.demo ? "Demo" : "NK Selection"}</span><span className="bb-status-chip pending"><Clock3 size={13} />{listing.availability}</span></div>
           <h1>{listing.title}</h1>
           <p className="bb-grade">{listing.grade} · {listing.color}</p>
-          <strong className="bb-vehicle-price">{formatThb(listing.observedPriceThb)}</strong>
-          <p className="bb-price-caption">Observed asking price at {formatDateTime(listing.observedAt)}. Current price is not yet verified.</p>
+          <strong className="bb-vehicle-price">{formatUsdFromThb(listing.observedPriceThb)}</strong>
+          <p className="bb-price-caption">Observed asking price at {formatDateTime(listing.observedAt)}. {customerFxDisclosure()} Current price is not yet verified.</p>
           <div className="bb-detail-location"><MapPin size={17} /><div><small>General vehicle location</small><b>{listing.generalLocation}, Thailand</b></div></div>
           <p className="bb-honesty-note"><ShieldCheck size={16} />This is a source vehicle, not NK-owned stock. Seller identity and source link remain internal.</p>
         </section>

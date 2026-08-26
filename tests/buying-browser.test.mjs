@@ -1,12 +1,15 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  CUSTOMER_FX_THB_PER_USD,
   DEFAULT_FILTERS,
   addCaseQuestion,
   calculatePricing,
+  customerUsdToThb,
   createExternalSourceCapture,
   createVehicleCase,
   filterListings,
+  formatCustomerUsd,
   inspectionQuoteForLocation,
   presentCustomerListing,
   requestAvailability,
@@ -69,6 +72,13 @@ test("pricing applies commission only to vehicle purchase price", () => {
   assert.equal(result.knownSubtotalThb, 1_073_500);
   assert.equal(result.pendingCount, 1);
   assert.equal(result.lines.find((line) => line.key === "other")?.status, "Pending");
+});
+
+test("customer USD display uses one deterministic preview FX rate", () => {
+  assert.equal(CUSTOMER_FX_THB_PER_USD, 35);
+  assert.equal(formatCustomerUsd(759000), "USD 21,686");
+  assert.equal(customerUsdToThb("20000"), "700000");
+  assert.equal(customerUsdToThb(""), "");
 });
 
 test("inspection quote uses deterministic configured location zones", () => {
@@ -138,6 +148,7 @@ test("renders additive Buying Browser routes without customer source leakage", a
     const response = await worker.fetch(new Request(`http://localhost${route}`, { headers: { accept: "text/html" } }), env, ctx);
     assert.equal(response.status, 200, route);
     const html = await response.text();
+    const textHtml = html.replaceAll("<!-- -->", "");
     assert.match(html, /data-buying-browser-v1/i, route);
     assert.doesNotMatch(html, /Siam Pickup Demo|\+66 81 000 0101|example\.invalid\/internal|Demo partner feed|Bang Kapi/i, route);
     assert.doesNotMatch(html, /facebook\.com\/marketplace\/item\/1716607786274590|1IXEZTH2EYcIeM6HQKJ2Qfk4LZYsVWu4ipNolXoTnxhw|1oR6RF0CZpokbnEcWQ7iMtWiplnskWEB1/i, route);
@@ -146,6 +157,7 @@ test("renders additive Buying Browser routes without customer source leakage", a
       assert.match(html, /data-browse-marketplace-v2/i);
       assert.match(html, /data-vehicle-card-v2/i);
       assert.match(html, /10 selected/i);
+      assert.match(html, /USD 21,686/i);
       assert.doesNotMatch(html, /data-real-source-launch/i);
     }
     if (route === "/buy/browse") {
@@ -169,6 +181,10 @@ test("renders additive Buying Browser routes without customer source leakage", a
     if (route === "/buy/vehicle/nk-market-2026-0825-01" || route === "/buy/vehicle/nk-market-2026-0825-05") {
       assert.match(html, /data-vehicle-detail-v2/i);
       assert.match(html, /data-vehicle-actions-v2/i);
+      assert.match(html, /data-swipe-gallery/i);
+      assert.match(textHtml, /1 of 6/i);
+      assert.match(html, /aria-label="Next photo"/i);
+      assert.match(html, /Preview FX: THB 35\.00 = USD 1/i);
       const actionLabels = ["Save Vehicle", "Ask NK AI", "Check Availability", "Request Inspection", "Buy Through NK"];
       const actionPositions = actionLabels.map((label) => html.indexOf(label));
       assert.ok(actionPositions.every((position) => position >= 0), "all vehicle actions render");
@@ -245,8 +261,8 @@ test("customer marketplace exposes ten reviewed listings with only reviewed medi
   const images = await Promise.all(listingFolders.map((entry) => readdir(new URL(`${entry.name}/`, root))));
 
   assert.equal(listingFolders.length, 10);
-  assert.equal(images.flat().length, 30);
-  assert.ok(images.every((files) => files.length === 3));
+  assert.equal(images.flat().length, 60);
+  assert.ok(images.every((files) => files.length === 6));
   for (const secret of ["facebook.com", "sellerName", "sellerPhone", "sourceUrl", "nk-capture-batch-2026-08-25", "Pranee Pra Jaideaw", "080 632 3247"]) {
     assert.doesNotMatch(moduleText, new RegExp(secret.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"));
   }

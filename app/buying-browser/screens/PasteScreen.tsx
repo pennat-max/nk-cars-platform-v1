@@ -7,7 +7,7 @@ import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from "re
 import { useBuyingBrowser } from "../BuyingBrowserProvider";
 import { createExternalSourceCapture } from "../domain.mjs";
 import { nativeCaptureMethod } from "../native-bridge";
-import { formatMileage, formatThb } from "../format";
+import { formatMileage, formatUsdFromThb } from "../format";
 import type { CustomerListing, SourceCapture } from "../types";
 
 type ImportPayload = {
@@ -248,7 +248,7 @@ export default function PasteScreen({ autoCapture = false }: { autoCapture?: boo
         {message && <div className={result ? "bb-import-message success" : "bb-import-message"}><span>{result ? <CheckCircle2 size={19} /> : <AlertCircle size={19} />}</span><p>{message}</p>{validExternalUrl && !result && <a href={validExternalUrl} target="_blank" rel="noreferrer">Open source listing<ExternalLink size={15} /></a>}</div>}
       </section>
 
-      {result && <section className="bb-import-preview"><div className="bb-import-cover">{result.imageUrls[0] ? <img src={result.imageUrls[0]} alt={result.title} /> : <div className="bb-photo-placeholder"><Camera size={27} /><span>Vehicle photo pending</span></div>}{rawResult?.images?.length && <span>{rawResult.images.length}{rawResult.expected_image_count ? ` of ${rawResult.expected_image_count}` : ""} accessible image{rawResult.images.length === 1 ? "" : "s"}</span>}</div><div><p className="bb-kicker">Customer-safe imported preview</p><h2>{result.title}</h2><strong>{formatThb(result.observedPriceThb)}</strong><p>{result.summary}</p><dl><div><dt>Transmission</dt><dd>{result.transmission}</dd></div><div><dt>Drive</dt><dd>{result.drive}</dd></div><div><dt>Body</dt><dd>{result.body}</dd></div><div><dt>Mileage</dt><dd>{formatMileage(result.mileageKm)}</dd></div></dl><button className="bb-button primary" onClick={openCase}><FolderPlus size={18} />Save as Vehicle Case</button></div></section>}
+      {result && <section className="bb-import-preview"><div className="bb-import-cover">{result.imageUrls[0] ? <img src={result.imageUrls[0]} alt={result.title} /> : <div className="bb-photo-placeholder"><Camera size={27} /><span>Vehicle photo pending</span></div>}{rawResult?.images?.length && <span>{rawResult.images.length}{rawResult.expected_image_count ? ` of ${rawResult.expected_image_count}` : ""} accessible image{rawResult.images.length === 1 ? "" : "s"}</span>}</div><div><p className="bb-kicker">Customer-safe imported preview</p><h2>{result.title}</h2><strong>{formatUsdFromThb(result.observedPriceThb)}</strong><p>{result.summary}</p><dl><div><dt>Transmission</dt><dd>{result.transmission}</dd></div><div><dt>Drive</dt><dd>{result.drive}</dd></div><div><dt>Body</dt><dd>{result.body}</dd></div><div><dt>Mileage</dt><dd>{formatMileage(result.mileageKm)}</dd></div></dl><button className="bb-button primary" onClick={openCase}><FolderPlus size={18} />Save as Vehicle Case</button></div></section>}
 
       <section className="bb-fallback-tool">
         <div className="bb-section-heading"><div><p className="bb-kicker">Working fallback</p><h2>Upload Screenshots / Photos</h2><p>Select up to 30 images from one vehicle. They are analyzed together, not as unrelated vehicles.</p></div><span><Camera size={20} /></span></div>

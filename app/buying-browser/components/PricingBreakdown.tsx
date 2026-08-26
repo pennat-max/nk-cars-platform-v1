@@ -2,7 +2,7 @@
 
 import { Check, Clock3, Info } from "lucide-react";
 import { calculatePricing } from "../domain.mjs";
-import { formatThb } from "../format";
+import { customerFxDisclosure, formatUsdFromThb } from "../format";
 import type { VehicleCase } from "../types";
 
 export default function PricingBreakdown({ vehicleCase }: { vehicleCase: VehicleCase }) {
@@ -19,9 +19,9 @@ export default function PricingBreakdown({ vehicleCase }: { vehicleCase: Vehicle
     <div className="bb-pricing-tool">
       <header><div><p className="bb-kicker">Transparent pricing</p><h2>Working price structure</h2></div><span>{pricing.commissionRate}% service fee</span></header>
       <div className="bb-price-lines">
-        {pricing.lines.map((line) => <div key={line.key}><span>{line.status === "Known" ? <Check size={15} /> : <Clock3 size={15} />}<b>{line.label}</b></span><strong className={line.status === "Pending" ? "pending" : ""}>{formatThb(line.amountThb)}</strong></div>)}
+        {pricing.lines.map((line) => <div key={line.key}><span>{line.status === "Known" ? <Check size={15} /> : <Clock3 size={15} />}<b>{line.label}</b></span><strong className={line.status === "Pending" ? "pending" : ""}>{formatUsdFromThb(line.amountThb)}</strong></div>)}
       </div>
-      <footer><div><small>Known subtotal</small><strong>{formatThb(pricing.knownSubtotalThb)}</strong></div><p><Info size={15} />{pricing.pendingCount ? `${pricing.pendingCount} pending cost lines are excluded. This is not a final quote.` : "All current cost lines are included. Final approval is still required."}</p></footer>
+      <footer><div><small>Known subtotal</small><strong>{formatUsdFromThb(pricing.knownSubtotalThb)}</strong></div><p><Info size={15} />{pricing.pendingCount ? `${pricing.pendingCount} pending cost lines are excluded. This is not a final quote. ${customerFxDisclosure()}` : `All current cost lines are included. Final approval is still required. ${customerFxDisclosure()}`}</p></footer>
     </div>
   );
 }

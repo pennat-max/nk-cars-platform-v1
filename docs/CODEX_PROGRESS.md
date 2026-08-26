@@ -1,5 +1,32 @@
 # Codex Progress
 
+## 2026-08-26 - Customer Swipe Galleries And USD Pricing
+
+Branch: `codex/buying-browser-rebuild`
+
+### Completed
+
+- Expanded the ten Owner-reviewed Marketplace snapshots from three to six customer-safe images per vehicle, for 60 reviewed customer assets total. Raw evidence remains internal and images exposing source identity/contact or visible registration were not promoted.
+- Rebuilt the customer vehicle-detail gallery as a touch-swipe, horizontal scroll-snap gallery with synchronized counter, thumbnails, and accessible previous/next controls.
+- Changed customer Browse cards, USD price filters, imported previews, Vehicle Cases, transparent pricing, inspections, and grounded price replies to USD.
+- Centralized the deterministic customer preview conversion at `THB 35.00 = USD 1`; internal source values and calculations remain in THB. The UI states that an Owner-approved quote sets the final USD price and stored FX.
+- Preserved the existing design, five vehicle actions, customer/internal DTO separation, Owner THB source view, and all source/seller redaction controls.
+
+### Verification
+
+- `npm.cmd test`: passed, 31/31, including build and rendered-route leakage checks.
+- Typecheck: passed.
+- Lint: passed with 0 errors and 13 existing legacy `<img>` warnings outside Buying Browser.
+- iPhone viewport 390 x 844: Browse and detail verified with no horizontal overflow, no broken gallery images, and no console errors/warnings.
+- Touch-style horizontal gesture moved the gallery from image 2 to image 3; counter and active thumbnail stayed synchronized.
+- USD maximum-price filter at `USD 16,000` returned the expected four vehicles.
+
+### Current Limitation / Next
+
+- The THB/USD rate is a configurable deterministic preview rate, not a live market feed and not a final commercial quote. Production Quotes/PIs must persist their approved historical FX rate.
+- Production Auth, durable cases/media, live source sync, external AI/provider messaging, and native iOS/Android runtime validation remain blocked or future integration work.
+- The approved deployment target is the separate Owner-only ChatGPT Site review project. The existing NK Cars live Site remains unchanged and must not be overwritten without explicit production approval.
+
 ## 2026-08-25 - One-Car Google Sheet Snapshot In Buying Browser
 
 Branch: `codex/buying-browser-rebuild`

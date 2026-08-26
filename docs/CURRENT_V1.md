@@ -198,7 +198,7 @@ All 18 Buying Browser V1 preview targets are implemented additively under `/buy`
 - Paste Link through the real import boundary when supported, with an honest photo/text/manual fallback when blocked and a reload-safe multi-photo preview gallery;
 - customer-safe normalized English vehicle facts, ten Owner-reviewed capture snapshots in the default Marketplace, deterministic grounded NK AI preview replies, and no invented facts;
 - deduplicated Vehicle Cases, availability requests, inspection requests, case timelines, and conversation history;
-- deterministic 10% preview commission on vehicle price only, explicit inspection/travel zones, and Pending pass-through costs;
+- deterministic 10% preview commission on vehicle price only, explicit inspection/travel zones, Pending pass-through costs, and customer-facing USD conversion using one configured preview rate of THB 35.00 per USD;
 - separate customer and internal source DTOs with customer redaction tests;
 - responsive verification at 390 x 844 and 1280 x 900 with no horizontal overflow or browser console errors.
 
@@ -206,7 +206,7 @@ Preview state is intentionally browser-local and snapshot/demo source-adapter ba
 
 ### Reviewed capture snapshots
 
-The default `/buy` Marketplace contains ten customer-safe snapshots produced from the Owner's authenticated browser capture batch. Each vehicle has evidence-backed English facts, three visually reviewed customer photos, deterministic preview pricing, and the existing case actions. Public asset paths use NK references rather than upstream listing IDs. All 167 raw images, source URLs, seller identity/contact, exact source location, and internal notes remain behind the authenticated Owner boundary.
+The default `/buy` Marketplace contains ten customer-safe snapshots produced from the Owner's authenticated browser capture batch. Each vehicle has evidence-backed English facts, six visually reviewed customer photos, a touch-swipe detail gallery, deterministic USD preview pricing, and the existing case actions. Public asset paths use NK references rather than upstream listing IDs. All 167 raw images, source URLs, seller identity/contact, exact source location, and internal notes remain behind the authenticated Owner boundary.
 
 This is not a live Marketplace feed. The UI labels the records `NK Selection`, the adapter reports `snapshot`, and price/availability remain unverified. The legacy one-car Google Sheet POC and labeled demo records remain available as rollback/reference but are not the default customer Browse feed.
 
