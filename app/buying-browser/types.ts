@@ -226,3 +226,37 @@ export type WorkspaceSyncStatus = {
   message: string;
   updatedAt: string | null;
 };
+
+export type OwnerCaseQueueItem = {
+  workspaceUserId: string;
+  customerEmail: string;
+  customerDisplayName: string;
+  workspaceRevision: number;
+  workspaceUpdatedAt: string;
+  vehicleCase: VehicleCase;
+  quotationReadiness: QuotationReadiness;
+  auditEvents: OwnerCaseAuditEvent[];
+};
+
+export type OwnerCaseVerificationInput = {
+  availability: AvailabilityState;
+  actualVehiclePurchasePriceThb: number | null;
+  inspectionTravelThb: number | null;
+  domesticTransportThb: number | null;
+  repairModificationThb: number | null;
+  exportShippingThb: number | null;
+  otherAgreedThb: number | null;
+  evidenceNote: string;
+};
+
+export type OwnerCaseAuditEvent = {
+  id: string;
+  workspaceUserId: string;
+  caseId: string;
+  actorUserId: string;
+  action: "owner_case_verification_updated";
+  oldValue: Omit<OwnerCaseVerificationInput, "evidenceNote">;
+  newValue: Omit<OwnerCaseVerificationInput, "evidenceNote">;
+  evidenceNote: string;
+  createdAt: string;
+};

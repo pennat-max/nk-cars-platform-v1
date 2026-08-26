@@ -366,3 +366,35 @@ BB-V1D is blocked on approved production project/configuration and must not depl
 
 - **V1:** cover selection and ordering are now deterministic for the first approved batch; review-to-publish automation for later batches remains.
 - **V2-V5:** no scope or business-rule change.
+
+## Owner Case Verification Queue Update - 2026-08-26
+
+### Implemented
+
+- Owner-only lookup across durable customer workspaces, enforced by the server-side account allowlist.
+- Deterministic verification updates for availability, actual purchase price, and every material cost line used by quotation readiness.
+- Required evidence notes, optimistic Revision protection, and append-only old/new value audit events.
+- Atomic customer Case, timeline, workspace Revision, workspace event, and Owner audit updates.
+- Responsive operational UI that preserves the approved customer Marketplace and Vehicle Case presentation.
+- Continued hard block on quotation issue, PI, payment, purchase, and real external messages.
+
+### Remaining V1 Gaps
+
+- **Quotation:** no approved quotation record, number, immutable pricing snapshot, customer-visible document, validity window, acceptance/rejection record, or material-change invalidation yet.
+- **PI:** no gated PI number/document or three-day expiry/recheck workflow; PI must remain after quotation acceptance.
+- **Operational availability:** Owner can record verified facts, but no approved seller channel, send authorization, reply ingestion, freshness expiry, or evidence attachment storage exists.
+- **Inspection operations:** deterministic preview rates exist, but provider assignment, appointment, checklist/evidence, and real booking remain unconnected.
+- **Source staging:** live Google credential activation and second-batch review/publication remain incomplete.
+- **Storage/recovery:** private object storage and production backup/restore policy remain incomplete.
+
+### V1-V5 Impact
+
+- **V1:** durable Owner verification and audit are implemented. Quotation approval/acceptance, PI gating, source freshness, inspection operations, staging activation, and private media remain.
+- **V2:** dealer/source network, trust scoring, matching, and controlled source automation remain unchanged.
+- **V3:** payment confirmation, purchase approval, deposits/refunds, procurement finance, and Purchase Fund remain future scope and disabled.
+- **V4:** secured vehicle, inspection execution, repair, export/shipping, delivery, and after-sales remain future scope.
+- **V5:** expanded immutable audit, 360 views, task/KPI engine, risk detection, reporting, forecast, and command center remain future scope.
+
+### Smallest Next V1 Milestone
+
+`BB-V1D-04 - Owner-Approved Quotation Record`: snapshot only verified Case pricing, require Owner approval to issue a uniquely numbered customer-visible quotation with a validity deadline, record customer acceptance, invalidate approval on material changes, and keep PI/payment disabled until acceptance.

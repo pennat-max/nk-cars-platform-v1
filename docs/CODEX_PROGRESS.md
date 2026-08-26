@@ -820,3 +820,37 @@ Started Milestone 1: Next.js shell and visual parity.
 ### Next
 
 - `BB-V1D-03 - Owner Case Verification Queue`: give the authenticated Owner a controlled view of customer Case requests and audited controls for verified availability, actual purchase price, and material cost confirmations. Continue blocking quote issue, PI, payments, and real messages until their approval rules are implemented.
+
+## 2026-08-26 - Owner Vehicle Case Verification Queue
+
+### Completed
+
+- Added an authenticated Owner-only queue that reads signed-in customer Vehicle Cases from D1 rather than browser-local preview state.
+- Added controlled updates for availability, actual vehicle purchase price, inspection/travel, domestic transport, repair/modification, export/shipping, and other agreed charges.
+- Preserved the pricing rule that null remains Pending and explicit zero means a confirmed no-charge line.
+- Added required verification evidence notes, optimistic workspace Revision checks, and append-only audit events containing actor, Case, old values, new values, reason/evidence, and timestamp.
+- Customer workspace state, Case timeline, and NK Team history update atomically. Internal evidence notes remain Owner-only.
+- Quotation readiness recalculates deterministically after Owner verification. Final quotation issue, PI, payment, purchase, and external messages remain disabled.
+- Added responsive Owner controls for phone and desktop without changing the customer Marketplace design or navigation.
+
+### Verification
+
+- `npm.cmd test`: passed, including production build and 47/47 tests.
+- Tests cover anonymous denial, non-Owner denial, Owner allowlist access, cross-account Case lookup, stale Revision rejection, append-only audit, customer workspace update, null-versus-zero costs, and continued PI/payment blocking.
+- TypeScript `--noEmit`: passed.
+- ESLint: 0 errors; 13 pre-existing `<img>` optimization warnings.
+- `git diff --check`: passed.
+- iPhone viewport 390 x 844: Browse layout, filters, cards, and bottom navigation passed without overlap or customer-flow changes.
+
+### Remaining V1 Work
+
+- Issue an Owner-approved customer-visible final quotation with deterministic numbering, validity, visibility classification, and acceptance history; do not enable PI or payment before acceptance.
+- Add controlled PI generation after accepted quotation, with document visibility and three-day validity/recheck rules.
+- Activate live read-only Google staging sync when the approved service-account secret is available.
+- Review/redact/approve the second ten-vehicle batch and persist publication decisions.
+- Add real availability/inspection operational assignments only after approved providers, rate tables, and communication channels exist.
+- Add private object storage, retention, backup, and restore policy for customer and source evidence.
+
+### Next
+
+- `BB-V1D-04 - Owner-Approved Quotation Record`: create a customer-safe quotation draft from verified Case facts, require Owner approval before issue, assign a unique number and validity period, record customer acceptance, and keep PI/payment disabled until acceptance.

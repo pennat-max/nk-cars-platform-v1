@@ -20,6 +20,7 @@ import {
 import { detectSourceLanguage, localizeAvailability, localizeListingSummary, normalizeLanguage, translate } from "../app/buying-browser/i18n.mjs";
 import { normalizeCustomerImageContentType, parseGoogleStagingValues, readBoundedResponseBytes } from "../app/buying-browser/source-adapters/google-staging-parser.mjs";
 import { customerWorkspaceId, mergeBuyingBrowserStates, validateAndOwnBuyingBrowserState, workspaceSummary } from "../app/buying-browser/workspace-state.mjs";
+import { applyOwnerCaseVerification, normalizeOwnerCaseVerification } from "../app/buying-browser/owner-case-verification.mjs";
 
 const source = {
   id: "listing-1",
@@ -57,23 +58,35 @@ class MemoryWorkspaceD1 {
   constructor() {
     this.workspaces = new Map();
     this.events = new Map();
+    this.caseAudits = new Map();
   }
 
   prepare(sql) {
     const workspaces = this.workspaces;
     const events = this.events;
+    const caseAudits = this.caseAudits;
     let values = [];
     return {
       bind(...nextValues) { values = nextValues; return this; },
       async first() {
-        if (!sql.startsWith("SELECT state_json")) throw new Error(`Unexpected first SQL: ${sql}`);
-        return workspaces.get(values[0]) ?? null;
+        if (sql.startsWith("SELECT state_json")) return workspaces.get(values[0]) ?? null;
+        if (sql.startsWith("SELECT user_id, email, display_name, state_json")) return workspaces.get(values[0]) ?? null;
+        throw new Error(`Unexpected first SQL: ${sql}`);
+      },
+      async all() {
+        if (sql.startsWith("SELECT user_id, email, display_name, state_json")) return { success: true, results: [...workspaces.values()] };
+        if (sql.startsWith("SELECT id, workspace_user_id, case_id")) return { success: true, results: [...caseAudits.values()].sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 100) };
+        throw new Error(`Unexpected all SQL: ${sql}`);
       },
       async run() {
         if (sql.startsWith("INSERT INTO buying_browser_workspaces")) {
           const [userId, email, displayName, stateJson, revision, createdAt, updatedAt] = values;
           if (workspaces.has(userId)) throw new Error("workspace_unique_conflict");
           workspaces.set(userId, { user_id: userId, email, display_name: displayName, state_json: stateJson, revision, created_at: createdAt, updated_at: updatedAt });
+        } else if (sql.startsWith("UPDATE buying_browser_workspaces SET state_json")) {
+          const [stateJson, revision, updatedAt, userId, expectedRevision] = values;
+          const existing = workspaces.get(userId);
+          if (existing?.revision === expectedRevision) workspaces.set(userId, { ...existing, state_json: stateJson, revision, updated_at: updatedAt });
         } else if (sql.startsWith("UPDATE buying_browser_workspaces")) {
           const [email, displayName, stateJson, revision, updatedAt, userId, expectedRevision] = values;
           const existing = workspaces.get(userId);
@@ -83,6 +96,9 @@ class MemoryWorkspaceD1 {
           const uniqueKey = `${userId}:${revision}`;
           if (events.has(uniqueKey)) throw new Error("event_revision_conflict");
           events.set(uniqueKey, { id, userId, revision, eventType, summaryJson, createdAt });
+        } else if (sql.startsWith("INSERT INTO buying_browser_case_audit_events")) {
+          const [id, workspaceUserId, caseId, actorUserId, action, oldValueJson, newValueJson, evidenceNote, createdAt] = values;
+          caseAudits.set(id, { id, workspace_user_id: workspaceUserId, case_id: caseId, actor_user_id: actorUserId, action, old_value_json: oldValueJson, new_value_json: newValueJson, evidence_note: evidenceNote, created_at: createdAt });
         } else {
           throw new Error(`Unexpected run SQL: ${sql}`);
         }
@@ -94,6 +110,7 @@ class MemoryWorkspaceD1 {
   async batch(statements) {
     const workspaceBackup = new Map(this.workspaces);
     const eventBackup = new Map(this.events);
+    const caseAuditBackup = new Map(this.caseAudits);
     try {
       const results = [];
       for (const statement of statements) results.push(await statement.run());
@@ -101,8 +118,10 @@ class MemoryWorkspaceD1 {
     } catch (error) {
       this.workspaces.clear();
       this.events.clear();
+      this.caseAudits.clear();
       for (const entry of workspaceBackup) this.workspaces.set(...entry);
       for (const entry of eventBackup) this.events.set(...entry);
+      for (const entry of caseAuditBackup) this.caseAudits.set(...entry);
       throw error;
     }
   }
@@ -160,6 +179,95 @@ test("authenticated workspace API persists cases, isolates accounts, and rejects
   assert.equal((await stale.json()).revision, 1);
   assert.equal(DB.events.size, 1);
   delete globalThis.__NK_WORKSPACE_TEST_DB__;
+});
+
+test("Owner verification validates evidence and preserves deterministic commercial gates", () => {
+  const listing = presentCustomerListing(source);
+  const vehicleCase = createVehicleCase(listing, [], "customer-1", "2026-08-26T10:00:00.000Z").caseRecord;
+  assert.throws(() => normalizeOwnerCaseVerification({ availability: "Verified Available", evidenceNote: "x" }), /invalid_evidence_note/);
+  assert.throws(() => normalizeOwnerCaseVerification({ availability: "Verified Available", actualVehiclePurchasePriceThb: -1, evidenceNote: "Verified by Owner" }), /invalid_vehicle_price/);
+  const applied = applyOwnerCaseVerification(vehicleCase, {
+    availability: "Verified Available",
+    actualVehiclePurchasePriceThb: 880000,
+    inspectionTravelThb: 3500,
+    domesticTransportThb: 0,
+    repairModificationThb: 0,
+    exportShippingThb: 42000,
+    otherAgreedThb: 0,
+    evidenceNote: "Seller confirmed availability and price; material costs checked against current records.",
+  }, new Date("2026-08-26T11:00:00.000Z"));
+  assert.equal(applied.quotationReadiness.ready, true);
+  assert.equal(applied.caseRecord.vehicle.availability, "Verified Available");
+  assert.equal(applied.caseRecord.inspectionQuote.totalThb, 3500);
+  assert.equal(applied.caseRecord.quotationRequest, null);
+  assert.match(applied.caseRecord.messages.at(-1).text, /no quotation, PI, payment, or purchase/i);
+  assert.doesNotMatch(JSON.stringify(applied.caseRecord), /paymentConfirmed|piNumber|quotationNumber/i);
+});
+
+test("Owner Case API is allowlisted, auditable, conflict-safe, and updates the customer workspace", async () => {
+  const workerUrl = new URL("../dist/server/index.js", import.meta.url);
+  workerUrl.searchParams.set("test", `owner-case-${process.pid}-${Date.now()}`);
+  const { default: worker } = await import(workerUrl.href);
+  const DB = new MemoryWorkspaceD1();
+  globalThis.__NK_WORKSPACE_TEST_DB__ = DB;
+  const env = { DB, ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) } };
+  const ctx = { waitUntil() {}, passThroughOnException() {} };
+  const customerHeaders = { "content-type": "application/json", "oai-authenticated-user-id": "customer-account", "oai-authenticated-user-email": "buyer@example.com" };
+  const ownerHeaders = { "content-type": "application/json", "oai-authenticated-user-id": "owner-account", "oai-authenticated-user-email": "owner@example.com" };
+  const listing = presentCustomerListing(source);
+  const vehicleCase = requestQuotation(createVehicleCase(listing, [], "spoofed", "2026-08-26T10:00:00.000Z").caseRecord, new Date("2026-08-26T10:05:00.000Z"));
+  const state = { version: 1, savedListingIds: [listing.id], cases: [vehicleCase], importedListings: [], sourceCaptures: [], generalMessages: [] };
+  const saved = await worker.fetch(new Request("http://localhost/api/buying-browser/workspace", { method: "PUT", headers: customerHeaders, body: JSON.stringify({ state, expectedRevision: 0 }) }), env, ctx);
+  assert.equal(saved.status, 200);
+
+  const previousOwnerIds = process.env.NK_OWNER_ACCOUNT_IDS;
+  process.env.NK_OWNER_ACCOUNT_IDS = "owner-account";
+  try {
+    const anonymous = await worker.fetch(new Request("http://localhost/api/buying-browser/owner/cases"), env, ctx);
+    assert.equal(anonymous.status, 401);
+    const denied = await worker.fetch(new Request("http://localhost/api/buying-browser/owner/cases", { headers: customerHeaders }), env, ctx);
+    assert.equal(denied.status, 403);
+    const queue = await worker.fetch(new Request("http://localhost/api/buying-browser/owner/cases", { headers: ownerHeaders }), env, ctx);
+    assert.equal(queue.status, 200);
+    const queuePayload = await queue.json();
+    assert.equal(queuePayload.cases.length, 1);
+    assert.equal(queuePayload.cases[0].customerEmail, "buyer@example.com");
+    assert.equal(queuePayload.cases[0].workspaceRevision, 1);
+
+    const verification = {
+      availability: "Verified Available",
+      actualVehiclePurchasePriceThb: 880000,
+      inspectionTravelThb: 3500,
+      domesticTransportThb: 0,
+      repairModificationThb: 0,
+      exportShippingThb: 42000,
+      otherAgreedThb: 0,
+      evidenceNote: "Seller confirmed current availability and price; remaining costs checked by Owner.",
+    };
+    const updated = await worker.fetch(new Request("http://localhost/api/buying-browser/owner/cases", { method: "PATCH", headers: ownerHeaders, body: JSON.stringify({ workspaceUserId: "customer-account", caseId: vehicleCase.id, expectedRevision: 1, verification }) }), env, ctx);
+    assert.equal(updated.status, 200);
+    const updatedPayload = await updated.json();
+    assert.equal(updatedPayload.case.workspaceRevision, 2);
+    assert.equal(updatedPayload.case.quotationReadiness.ready, true);
+    assert.equal(updatedPayload.case.vehicleCase.quotationRequest.status, "Requested - Awaiting NK Review");
+    assert.equal(updatedPayload.case.auditEvents[0].oldValue.actualVehiclePurchasePriceThb, null);
+    assert.equal(updatedPayload.case.auditEvents[0].newValue.actualVehiclePurchasePriceThb, 880000);
+    assert.equal(DB.caseAudits.size, 1);
+
+    const customerWorkspace = await worker.fetch(new Request("http://localhost/api/buying-browser/workspace", { headers: customerHeaders }), env, ctx);
+    const customerPayload = await customerWorkspace.json();
+    assert.equal(customerPayload.revision, 2);
+    assert.equal(customerPayload.state.cases[0].availability, "Verified Available");
+    assert.equal(customerPayload.state.cases[0].actualVehiclePurchasePriceThb, 880000);
+
+    const stale = await worker.fetch(new Request("http://localhost/api/buying-browser/owner/cases", { method: "PATCH", headers: ownerHeaders, body: JSON.stringify({ workspaceUserId: "customer-account", caseId: vehicleCase.id, expectedRevision: 1, verification }) }), env, ctx);
+    assert.equal(stale.status, 409);
+    assert.equal(DB.caseAudits.size, 1);
+  } finally {
+    if (previousOwnerIds === undefined) delete process.env.NK_OWNER_ACCOUNT_IDS;
+    else process.env.NK_OWNER_ACCOUNT_IDS = previousOwnerIds;
+    delete globalThis.__NK_WORKSPACE_TEST_DB__;
+  }
 });
 
 test("Google staging uses named columns, keeps review rows internal, and exposes only approved customer-safe records and media", () => {
@@ -540,6 +648,8 @@ test("renders captured and demo source records only in the owner view", async ()
   assert.match(html, /Vehicle photo pending/i);
   assert.match(html, /Mileage conflict: 35,000 vs 36,000 km/i);
   assert.match(html, /Authenticated Owner access/i);
+  assert.match(html, /Vehicle Case verification queue/i);
+  assert.match(html, /No signed-in customer Vehicle Cases yet/i);
   assert.doesNotMatch(html, /\/vehicle-evidence\//i);
   assert.match(html, /NK fee settings/i);
   assert.match(html, /Platform &amp; Transaction component/i);

@@ -254,6 +254,13 @@ Latest confirmed checkpoint from Codex:
 
 Do not rewrite working Buying Browser / Vehicle Case / pricing / inspection / localization modules.
 
+Latest durable operations update:
+- Authenticated Owner Case verification is implemented with server-side allowlist enforcement.
+- Owner can record availability, actual purchase price, and material cost confirmations; null remains Pending and explicit zero is required for no-charge lines.
+- Every Owner update uses optimistic Revision protection and append-only old/new value audit evidence.
+- Final quotation issue, PI, payment, purchase, and external communication remain disabled.
+- Next milestone is `BB-V1D-04 - Owner-Approved Quotation Record`, followed by gated PI preparation only after customer acceptance.
+
 Completed source-layer items:
 1. stable header-mapped Google Sheet schema
 2. deterministic per-vehicle Drive structure

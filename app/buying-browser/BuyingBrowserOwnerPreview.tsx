@@ -17,18 +17,20 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import VehiclePhoto from "./components/VehiclePhoto";
+import OwnerCaseVerificationQueue from "./components/OwnerCaseVerificationQueue";
 import { formatDateTime, formatThb } from "./format";
 import { DEFAULT_PRICING_SETTINGS, loadPricingSettings, savePricingSettings, TOTAL_NK_FEE_TARGET, type PricingSettings } from "./pricing-settings";
 import type { InternalSourceRecord } from "./source-adapters/demo-internal-data";
-import type { BuyingBrowserState, SourceAdapterStatus } from "./types";
+import type { BuyingBrowserState, OwnerCaseQueueItem, SourceAdapterStatus } from "./types";
 
 type OwnerPreviewProps = {
   records: InternalSourceRecord[];
   sourceStatus: SourceAdapterStatus;
   storageCustomerId: string;
+  initialCaseQueue: OwnerCaseQueueItem[];
 };
 
-export default function BuyingBrowserOwnerPreview({ records, sourceStatus, storageCustomerId }: OwnerPreviewProps) {
+export default function BuyingBrowserOwnerPreview({ records, sourceStatus, storageCustomerId, initialCaseQueue }: OwnerPreviewProps) {
   const [state, setState] = useState<BuyingBrowserState | null>(null);
   const [pricingSettings, setPricingSettings] = useState<PricingSettings>({ ...DEFAULT_PRICING_SETTINGS });
   const [pricingMessage, setPricingMessage] = useState("");
@@ -109,9 +111,11 @@ export default function BuyingBrowserOwnerPreview({ records, sourceStatus, stora
         <section className="bb-owner-kpis">
           <article><Database size={20} /><span><small>Real source captures</small><b>{sourceCaptures.length + capturedRecordCount}</b></span></article>
           <article><Gauge size={20} /><span><small>Inventory source</small><b>{sourceStatus.live ? "Google Sync" : "Verified Fallback"}</b></span></article>
-          <article><UserRound size={20} /><span><small>Preview cases</small><b>{cases.length}</b></span></article>
+          <article><UserRound size={20} /><span><small>Customer cases</small><b>{initialCaseQueue.length}</b></span></article>
           <article><EyeOff size={20} /><span><small>Customer redaction</small><b>Separate DTO</b></span></article>
         </section>
+
+        <OwnerCaseVerificationQueue initialCases={initialCaseQueue} />
 
         <section className="bb-owner-warning" data-google-staging-status>
           <Database size={18} />

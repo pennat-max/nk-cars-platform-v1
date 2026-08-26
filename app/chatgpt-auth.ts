@@ -41,15 +41,19 @@ export async function getChatGPTUser(): Promise<ChatGPTUser | null> {
 
 export async function requireOwnerUser(returnTo: string): Promise<ChatGPTUser> {
   const user = await requireChatGPTUser(returnTo);
+  if (!isOwnerUser(user)) notFound();
+  return user;
+}
+
+export function isOwnerUser(user: ChatGPTUser | null): user is ChatGPTUser {
+  if (!user) return false;
   const ownerIds = new Set(
     (process.env.NK_OWNER_ACCOUNT_IDS ?? "")
       .split(",")
       .map((value) => value.trim())
       .filter(Boolean),
   );
-
-  if (!ownerIds.has(user.id)) notFound();
-  return user;
+  return ownerIds.has(user.id);
 }
 
 export async function requireChatGPTUser(
