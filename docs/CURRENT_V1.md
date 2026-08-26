@@ -2,49 +2,106 @@
 
 Status: Active working context for Codex
 Purpose: Keep routine development fast and token-efficient.
-Implementation status: The Owner-approved cross-platform Buying Browser direction supersedes the earlier external-share-only conclusion. Native WKWebView, Android WebView, and Windows WebView2 proof-of-concept adapters are in progress; external Share and Copy Link remain required fallbacks. Production activation is not approved.
+
+## Source of truth policy
+
+GitHub is the project memory / single source of truth for approved product, architecture, pricing, workflow, recovery, and implementation decisions.
+
+Routine Codex work should read `AGENTS.md` + this file first. Approved material changes must be recorded in GitHub before being treated as authoritative. Codex should update this file and `docs/DECISION_LOG.md` when a milestone materially changes the current system, then commit/push the docs together with stable implementation work.
+
+GitHub is authoritative for code and decisions; it is not the runtime database for vehicle inventory or customer data.
+
+Implementation status: The Owner-approved cross-platform Buying Browser direction remains valid. Native WKWebView, Android WebView, and Windows WebView2 proof-of-concept adapters are separate platform work; external Share and Copy Link remain fallbacks. Production activation is not approved.
 
 Web companion status: `/buy/browser` provides a browser-style NK shell on iPhone, Android, and Windows web browsers. It opens the real Facebook Marketplace in Facebook's own tab/app, accepts the selected listing link, and forwards explicit NK actions into the existing Vehicle Case flow. It does not embed, proxy, inspect, or control Facebook and must not be described as a native in-app Facebook browser.
-
-Use this file with `AGENTS.md` as the default context. Consult larger product specs only when necessary.
 
 ## 1. Current product
 
 NK Cars is being rebuilt as an **AI Vehicle Buying Browser / Buying Platform for Thailand**.
 
+The Owner has approved an additional V1 ingestion/staging direction:
+
+**Marketplace / authorized capture -> AI normalize -> Google Sheets vehicle staging + Google Drive media/evidence staging -> NK App browse/selection -> customer interest -> Vehicle Case -> availability / inspection / pricing / buy workflow.**
+
+Google Sheets + Google Drive are the approved V1 staging layer for captured vehicle inventory. They are not intended to become the permanent business-domain database. The architecture must keep a clean adapter boundary so the staging layer can later move to PostgreSQL/QNAP storage without rewriting Vehicle Case, pricing, inspection, or customer workflows.
+
 Primary real-source customer journey:
 
-**Open real Facebook Marketplace inside the NK native browser where technically permitted, using the customer's own session**
--> customer browses/selects a real listing
--> Share -> Save to NK Cars where the installed platform supports it
--> create Vehicle Case
+**Find/capture a real source vehicle**
+-> normalize and stage source data/media
+-> show a customer-safe NK Selection in the app
+-> customer saves/asks/checks availability/requests inspection
+-> create or activate Vehicle Case
 -> AI translates/normalizes vehicle information
 -> Check Availability
 -> Request Inspection
 -> transparent NK pricing
 -> later Buy Through NK / procurement / export.
 
-The NK demo vehicle grid and old stock-first implementation remain fallback/downstream and rollback/reference. Do not treat demo cards as proof of real Marketplace browsing.
+Native NK browser/share flows remain valid ways to select/capture a source vehicle, but customer browse does not require a live Facebook feed at runtime when a reviewed Sheet/Drive staged snapshot is available.
 
-## 2. Current customer UX direction
+The old stock-first implementation remains rollback/reference. Demo cards are not proof of real Marketplace browsing.
+
+## 2. Marketplace ingestion and staging — approved V1 direction
+
+The intended V1 operational ingestion flow is:
+
+1. Authorized operator/agent/browser workflow finds a candidate listing from Facebook Marketplace or another supported source.
+2. Capture only information/media that the operator is permitted to access and retain.
+3. Preserve source URL/listing reference and capture timestamp internally.
+4. AI extracts/normalizes useful fields such as brand, model, year, grade, engine, transmission, drive, body/cab, mileage, color, location, asking price, condition notes, and confidence/provenance.
+5. Google Drive stores vehicle photos and evidence for the staging workflow.
+6. Google Sheets stores one authoritative staging record per captured vehicle plus customer-safe/internal/audit fields as appropriate.
+7. NK App reads a customer-safe projection of staged vehicle data and media for Browse/NK Selection.
+8. When a customer expresses qualified interest, create/activate a Vehicle Case and snapshot the relevant staged vehicle facts into the case.
+9. Vehicle Case then owns the operational customer/deal workflow; later source changes must not silently rewrite historical case facts.
+
+V1 implementation should move from the current one-car manual Sheet/Drive proof-of-concept toward automated per-vehicle staging and synchronization.
+
+Do not make the customer app depend directly on arbitrary spreadsheet column positions. Use a stable staging schema / adapter so Sheet/Drive can later be replaced by QNAP PostgreSQL + object/file storage.
+
+### Suggested V1 staging identity
+
+Each staged vehicle should have a stable NK vehicle/source capture ID, for example `NK-SRC-2026-000123`.
+
+Minimum staging metadata should include:
+- NK staging vehicle ID
+- source platform
+- source URL / listing ID where available
+- capture timestamp / last checked timestamp
+- normalized specs
+- observed source asking price
+- location
+- internal seller/contact fields where permitted
+- customer-safe translated/normalized summary
+- Drive folder/media references
+- visibility/status
+- duplicate/match key
+- AI confidence/provenance
+- review status
+- availability verification status
+
+Recommended statuses include:
+`Captured -> AI Processing -> Needs Review -> Approved for Browse -> Availability Check -> Reserved/Sold/Unavailable/Archived`.
+
+## 3. Google Drive media/evidence staging
+
+Move beyond the current one-flat-folder POC toward a deterministic per-vehicle structure, for example:
+
+`NK Cars / Vehicle Staging / <NK-STAGING-ID> /`
+- `photos/`
+- `evidence/`
+- optional `documents/`
+
+Do not expose internal source/seller evidence directly to customers. Customer-facing media should be served through the NK customer-safe layer according to rights/policy.
+
+Google Drive is V1 staging storage, not the long-term mandatory storage engine. Future target may move to QNAP/NK storage while preserving the same media-reference interface.
+
+## 4. Current customer UX direction
 
 Mobile-first, especially iPhone.
 
-Primary source experience:
-- open Facebook Marketplace inside the platform browser adapter: iOS WKWebView, Android WebView, or Windows WebView2
-- the customer signs in directly to Facebook; NK never collects or stores Facebook credentials
-- browse/select a real listing, then explicitly use the native NK action bar to save its URL as a Vehicle Case
-- where embedded browsing/login is blocked, use the operating-system `Save to NK Cars` share target
-- capture permitted listing URL/data internally and create a customer-safe Vehicle Case
-- retain screenshots/photos/listing-text fallback when Facebook evidence is inaccessible
-
-Copy Link -> return -> paste is last resort. A signed iOS Share Extension remains the fallback when Facebook blocks embedded WKWebView behavior. See `docs/BUYING_BROWSER_FEASIBILITY_SPIKE.md` for the superseded feasibility baseline and `docs/CROSS_PLATFORM_BUYING_BROWSER.md` for the current direction.
-
-The existing NK vehicle grid, search, filters, and saved vehicles remain secondary fallback/downstream tools.
-
-Customer location/destination country is separate from Search Location.
-
-Do not use the overseas customer's physical location as the Marketplace search area. Default vehicle search should be Thailand / configured Thai region.
+Customer browse may show reviewed staged NK Selections from Sheet/Drive, while real-source selection may also happen via native/source browser adapters.
 
 Primary actions:
 - Browse Vehicles
@@ -58,14 +115,16 @@ Primary actions:
 Suggested customer navigation:
 **Browse | Saved/My Vehicles | My Cases | Inspections | Messages/Account**
 
-## 3. Vehicle Case
+Customer location/destination country is separate from Search Location. Do not use the overseas customer's physical location as the Thai Marketplace search area.
 
-A saved/selected vehicle becomes an NK Vehicle Case.
+## 5. Vehicle Case
+
+A Vehicle Case becomes the operational record once a customer shows qualified interest or triggers a case action.
 
 Vehicle Case should support:
-- source platform
-- source URL/listing ID
-- normalized vehicle spec
+- source platform / staging vehicle reference
+- source URL/listing ID internally
+- normalized vehicle snapshot
 - observed asking price + timestamp
 - internal seller/location data where permitted
 - customer relationship
@@ -73,41 +132,44 @@ Vehicle Case should support:
 - availability/verification status
 - source conversation history
 - inspection status/report
+- pricing snapshot
 - quote/order linkage later
 - audit trail
 
-Do not require permanent storage of every source image/listing. Snapshot operationally important evidence according to policy.
+Important rule: staging inventory may update as the source changes, but an existing Vehicle Case should preserve its historical snapshots/audit trail and only change material facts through explicit verification/update events.
 
-## 4. Source architecture
+## 6. Source architecture
 
-Do not hard-code Facebook into NK business logic.
+Do not hard-code Facebook, Google Sheets, or Google Drive into NK business logic.
 
-Use adapter boundaries for future sources such as:
+Use adapter boundaries for:
 - Facebook Marketplace
 - LINE workflows
 - dealer/partner feeds
 - Thai vehicle websites
 - auction/partner sources
 - Dealer Portal
+- Google Sheets staging adapter
+- Google Drive media adapter
+- future PostgreSQL/QNAP inventory adapter
+- future QNAP/object media storage adapter
 
-Source access may use supported APIs, authorized sessions/browser workflows, share/copy-link flows, or other source-appropriate methods.
+Source access may use supported APIs, authorized sessions/browser workflows, share/copy-link flows, or other source-appropriate methods. Never fake successful source access.
 
-Never fake successful source access.
-
-## 5. Source authentication
+## 7. Source authentication
 
 Where source login is required:
-- customer/source user authenticates themselves
+- customer/source operator authenticates themselves
 - no plaintext password storage
 - isolate sessions by customer/profile
 - Login Required state when expired
 - no MFA/CAPTCHA/security bypass
 - fallback to Open Source App/Browser + Share/Copy Link if managed browsing is unsupported
 
-## 6. AI behavior
+## 8. AI behavior
 
 AI may:
-- translate Thai <-> customer language
+- translate Thai <-> English / Simplified Chinese
 - extract vehicle specs
 - summarize listing details
 - rank/match vehicles
@@ -125,13 +187,7 @@ AI must not invent:
 
 Use Unknown / Need Review / Conflict when evidence is insufficient.
 
-Use progressive rendering:
-1. show basic available listing facts immediately
-2. translate concise text asynchronously
-3. perform deeper image/spec analysis in background
-4. cache unchanged normalized/translated results where appropriate
-
-## 7. Commercial model
+## 9. Commercial model
 
 Current intended structure:
 
@@ -144,19 +200,22 @@ Current intended NK fee components:
 
 The two component rates are configurable in Owner settings. Customer screens show monetary amounts and service inclusions, not percentages by default.
 
-Do not apply the 10% silently to pass-through costs.
-
-Future support:
-- minimum commission
-- volume/fleet tiers
-- negotiated commission
-- inspection-fee credits after purchase if configured
+Do not apply NK percentage fees to pass-through costs unless an approved future pricing policy explicitly says otherwise.
 
 All important calculations must be deterministic.
 
-## 8. Inspection Network
+## 10. Language support
 
-Future/near-term direction:
+Customer-facing V1 supports:
+- English (default)
+- Simplified Chinese
+- Thai
+
+Use one authoritative structured business record. Language switching must not duplicate or mutate underlying vehicle/pricing data.
+
+Preserve original source text separately from normalized/translated customer text.
+
+## 11. Inspection Network
 
 Vehicle Case
 -> Request Inspection
@@ -168,100 +227,65 @@ Vehicle Case
 
 Inspection/travel fees must come from configured deterministic rules/rate tables, not AI estimates.
 
-## 9. Current rebuild target
+## 12. Current implementation checkpoint — 2026-08-26
 
-Minimum Buying Browser V1:
+Latest confirmed checkpoint from Codex:
+- Buying Browser web app, search/filters, ten reviewed vehicle snapshots, swipeable six-photo galleries, USD display, Save to NK, Vehicle Cases, availability/inspection/AI/message flows, Owner source boundary, split pricing, and EN/Chinese/Thai localization are complete locally and pushed.
+- Tests: 34/34 passed; build and typecheck passed; lint has 0 errors and 13 existing image warnings.
+- No local unpushed work at checkpoint.
+- Current ten-car Browse feed is repository snapshot data, not synchronized Google Sheets data.
+- One-car Google Sheet/Drive POC exists, but continuous Sheet/Drive ingestion is not yet implemented.
+- Current preview Vehicle Cases are browser-local, not durable production records.
+- Current branch: `codex/buying-browser-rebuild`.
+- Checkpoint latest pushed implementation commit before this documentation update: `e1b4cacc57bdd914c09c671be908f32e817e7a8f`.
 
-1. customer account/app shell
-2. mobile Browse Vehicles UI
-3. Search / filters / location
-4. Paste Vehicle Link
-5. Save Vehicle
-6. Vehicle Case
-7. AI translation / normalized vehicle details boundary
-8. Ask NK AI
-9. Check Availability workflow
-10. transparent price calculator with configurable service commission
-11. Request Inspection
-12. inspection/travel pricing structure
-13. My Cases
-14. messages/conversation-history structure
-15. Owner/internal source information
-16. source-adapter boundary
-17. mobile-accessible preview
-18. relevant tests/build passing
+## 13. Next implementation priority
 
-Do not expand into full Payment/Purchase/Shipping ERP before this customer journey is proven.
+Do not rewrite working Buying Browser / Vehicle Case / pricing / inspection / localization modules.
 
-### Preview completion
+Next source-layer milestone should focus on:
+1. define stable Google Sheet staging schema
+2. define deterministic per-vehicle Google Drive folder/media structure
+3. automate authorized capture -> AI normalize -> Sheet/Drive staging
+4. add staging adapter that reads customer-safe approved vehicle records
+5. make Browse/NK Selection able to render Sheet/Drive staged records without coupling UI to spreadsheet columns
+6. preserve current repository snapshots as fallback/test fixtures
+7. create Vehicle Case from staged record
+8. add sync/error/audit states
+9. test duplicate handling and missing-media fallback
+10. document migration path from Sheet/Drive staging to QNAP PostgreSQL + storage
 
-All 18 Buying Browser V1 preview targets are implemented additively under `/buy` on `codex/buying-browser-rebuild`:
+## 14. Future QNAP / Hermes direction
 
-- customer shell, Browse, Saved, Vehicle detail, My Cases, Inspections, Messages, Account, and separate Owner demo routes;
-- text search plus year, price, mileage, location, transmission, drive, body, and sort controls;
-- Paste Link through the real import boundary when supported, with an honest photo/text/manual fallback when blocked and a reload-safe multi-photo preview gallery;
-- customer-safe normalized English vehicle facts, ten Owner-reviewed capture snapshots in the default Marketplace, deterministic grounded NK AI preview replies, and no invented facts;
-- deduplicated Vehicle Cases, availability requests, inspection requests, case timelines, and conversation history;
-- deterministic 6% Platform & Transaction plus 4% Buying Service amounts on vehicle price only, explicit inspection/travel zones, Pending pass-through costs, and customer-facing USD conversion using one configured preview rate of THB 35.00 per USD;
-- English, Simplified Chinese, and Thai presentation from one authoritative structured record, with original source text preserved separately from normalized/translated customer text;
-- separate customer and internal source DTOs with customer redaction tests;
-- responsive verification at 390 x 844 and 1280 x 900 with no horizontal overflow or browser console errors.
+Approved infrastructure direction under evaluation:
+- GitHub remains source-of-truth for code and project decisions.
+- QNAP may become web/API server, PostgreSQL database, private media/file storage, background-worker host, and Hermes host.
+- Hermes may perform sourcing/AI operator tasks through authorized browser/source workflows.
+- Google Sheets + Drive remain useful as V1 staging/control layer while the QNAP runtime is being proven.
+- Future migration target may be `Hermes/QNAP -> Source -> PostgreSQL + QNAP storage -> NK App`, with Sheets retained as optional admin/export/control view.
 
-Preview state is intentionally browser-local and snapshot/demo source-adapter backed. Production Auth, tenant isolation, RLS, durable storage, encrypted source sessions, real AI, real provider assignment, and real messaging remain blocked integrations rather than simulated successes.
+Do not switch production architecture to QNAP until backup, recovery, security, networking, and deployment controls are documented and tested.
 
-### Reviewed capture snapshots
-
-The default `/buy` Marketplace contains ten customer-safe snapshots produced from the Owner's authenticated browser capture batch. Each vehicle has evidence-backed structured facts rendered in English, Simplified Chinese, or Thai, six visually reviewed customer photos, a touch-swipe detail gallery, deterministic USD preview pricing, and the existing case actions. Public asset paths use NK references rather than upstream listing IDs. All 167 raw images, source URLs, seller identity/contact, exact source location, and internal notes remain behind the authenticated Owner boundary.
-
-This is not a live Marketplace feed. The UI labels the records `NK Selection`, the adapter reports `snapshot`, and price/availability remain unverified. The legacy one-car Google Sheet POC and labeled demo records remain available as rollback/reference but are not the default customer Browse feed.
-
-### Real-source proof of concept
-
-The earlier iframe result remains valid for web pages but does not decide native browser behavior. The Owner-approved direction now tests native WKWebView, Android WebView, and WebView2 directly. No adapter may bypass Facebook security controls.
-
-External share capture remains a proven fallback. Supported installed Chromium PWAs receive an actual Marketplace URL through `/buy/share`; signed native share targets are required for platform-complete fallback delivery.
-
-Approach 3, a remote isolated browser session, remains a contingency and was not selected because approach 2 works without NK taking custody of the customer's Facebook session.
-
-## 10. Current technical strategy
-
-Prefer reuse over rewrite.
-
-Keep business logic independent from UI and source adapters.
-
-Important conceptual modules:
-- SourceAdapter
-- SourceSession/Profile Manager
-- VehicleNormalizer
-- VehicleIntelligence
-- VehicleCase service
-- Availability Verification workflow
-- Pricing/Commission engine
-- Inspection Quote/Assignment boundary
-- customer-safe presenter/DTO
-
-Use the repository's existing production architecture where it remains sound.
-
-## 11. Working assumptions
+## 15. Working assumptions
 
 - Current public/old implementation remains rollback/reference.
 - No production deployment without Owner approval.
 - No destructive replacement until mobile preview is reviewed.
-- Real Facebook/LINE/source integrations may remain blocked by authentication/platform constraints; implement honest adapter/fallback interfaces and continue other V1 work.
 - Real external messaging remains approval-gated until explicitly authorized.
+- Secrets, sessions, customer data, and production data do not belong in GitHub.
 
-## 12. Codex routine workflow
+## 16. Codex routine workflow
 
 For each small milestone:
-
-1. Read `AGENTS.md` + this file.
+1. Read `AGENTS.md` + this file + recent relevant entries in `docs/DECISION_LOG.md`.
 2. Inspect only task-relevant files.
 3. Implement.
 4. Run targeted tests.
 5. Run broader checks only when warranted/milestone complete.
 6. Fix issues.
 7. Update this file if current state materially changed.
-8. Commit and push stable work.
-9. Report only: result, tests, commit SHA, blocker/next item.
+8. Append approved material decisions to `docs/DECISION_LOG.md`.
+9. Commit and push stable work.
+10. Report only: result, tests, commit SHA, blocker/next item.
 
 Do not reread the full Master Spec unless scope is ambiguous or changing.
