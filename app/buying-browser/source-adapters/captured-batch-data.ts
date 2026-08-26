@@ -159,8 +159,6 @@ const seeds: CaptureSeed[] = [
   },
 ];
 
-const batchRoot = "/vehicle-evidence/nk-capture-batch-2026-08-25";
-
 // Raw browser evidence remains internal until plates and source clues are redacted.
 export const capturedBatchInternalRecords: InternalSourceRecord[] = seeds.map((seed, index) => {
   const { listingId, files, evidenceLabels, ...record } = seed;
@@ -173,7 +171,7 @@ export const capturedBatchInternalRecords: InternalSourceRecord[] = seeds.map((s
     sourceReference: `NK-FB-2026-0825-${sequence}`,
     sourcePlatform: "Facebook Marketplace",
     sourceUrl: `https://www.facebook.com/marketplace/item/${listingId}/`,
-    imageUrls: fileNames.map((file) => `${batchRoot}/${listingId}/${file}`),
+    imageUrls: [],
     availability: "Availability Not Yet Confirmed",
     demo: false,
     originalMediaCount: fileNames.length,

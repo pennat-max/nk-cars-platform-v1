@@ -1,6 +1,6 @@
 # NK Cars Gap Analysis
 
-Status: Buying Browser includes a private Google Sheets + Drive staging contract with twenty vehicles: ten Owner-reviewed vehicles and sixty approved media items plus ten Needs Review vehicles and 137 private evidence items. The server adapter, customer-safe media proxy, repository fallback, swipe galleries, deterministic split NK fees, and English/Simplified Chinese/Thai presentation are implemented; runtime Google credentials, durable identity/cases, production translation, and mobile native runtime validation remain.
+Status: Buying Browser includes a private Google Sheets + Drive staging contract with twenty vehicles: ten Owner-reviewed vehicles and 64 approved media items plus ten Needs Review vehicles and 137 private evidence items. The server adapter, customer-safe media proxy, repository fallback, swipe galleries, deterministic split NK fees, English/Simplified Chinese/Thai presentation, fail-closed Owner route, and private raw-evidence build boundary are implemented; runtime Google credentials, durable identity/cases, production translation, and mobile native runtime validation remain.
 Date: 2026-08-26
 Branch: `codex/buying-browser-rebuild`
 
@@ -152,13 +152,13 @@ The approved Buying Browser V1 preview acceptance criteria are complete. The fol
 ## Technical Blockers
 
 - The private Google staging data is populated, but the application runtime has no `GOOGLE_SERVICE_ACCOUNT_JSON`. Live sync requires an approved Google Cloud service account with Viewer access to the staging root and the JSON stored only in the hosting secret manager.
-- The 167 raw source-evidence images still exist under repository `public/vehicle-evidence/`. They must move to authenticated private storage before production; no source copy should be deleted until the migration is verified.
+- The 167 raw source-evidence images are preserved under repository-private evidence storage and are excluded from the public Site build. Google Drive remains the private operational copy; authenticated private object storage, retention, backup, and restore policy remain future production work.
 - Real NK customer authentication, tenant isolation, database project/configuration, RLS, and durable Storage are not connected.
 - Web iframe embedding remains blocked by Facebook's `X-Frame-Options: DENY`. Native top-level browser adapters are now the approved experiment; runtime support must be reported per platform and external Share/Copy Link retained wherever blocked.
 - A remote customer-specific source session, if later activated, requires an approved encrypted session-storage design and manual user authentication.
 - Facebook/other source UI and access can change; live browser access cannot be a CI dependency.
 - No production connector URL/token, AI model/key, durable worker, monitoring, or alerting configuration is approved.
-- The persisted Sites project ID points to the existing live NK Cars Site. A separate review Site is not configured in this working tree, so review deployment remains blocked by the no-overwrite/no-production rule; local-network preview remains available.
+- The persisted Sites project ID points to the existing live NK Cars Site. The Owner approved deploying each completed, tested milestone to this existing Site; deployment approval does not authorize real messages, payments, destructive data actions, or unrelated production configuration.
 - Real inspection provider directory, service areas, availability, and Owner-approved rate table do not yet exist.
 - Production commission/minimum-fee/fleet-tier configuration is not commercially or legally activated.
 - Remote media retention/proxy rights and evidence-retention policy require confirmation before production copying.

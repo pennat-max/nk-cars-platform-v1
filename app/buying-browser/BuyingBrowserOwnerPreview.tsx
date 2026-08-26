@@ -13,7 +13,6 @@ import {
   Phone,
   Save,
   Settings2,
-  ShieldAlert,
   UserRound,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -87,13 +86,13 @@ export default function BuyingBrowserOwnerPreview({ records, sourceStatus, stora
             <h1>Source & Case Control</h1>
             <p>Customer-submitted source links and internal source facts stay outside customer-facing case details.</p>
           </div>
-          <span className="bb-status-chip pending"><ShieldAlert size={13} />Preview / not an auth boundary</span>
+          <span className="bb-status-chip requested"><LockKeyhole size={13} />Authenticated Owner access</span>
         </section>
         <div className="bb-owner-warning">
           <LockKeyhole size={18} />
           <div>
-            <b>Production control required</b>
-            <p>This preview can show internal source links. Production requires server-enforced Owner/Staff RBAC, tenant isolation, encrypted persistence, audit, and no client-side role switch.</p>
+            <b>Internal source data</b>
+            <p>This route requires a signed-in account in the server-side Owner allowlist. Customer routes never receive seller contacts, source links, or private evidence references.</p>
           </div>
         </div>
         <section className="bb-owner-pricing-settings" data-owner-pricing-settings>

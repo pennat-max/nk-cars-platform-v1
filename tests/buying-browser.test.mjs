@@ -356,7 +356,13 @@ test("renders captured and demo source records only in the owner view", async ()
   const anonymousResponse = await worker.fetch(new Request("http://localhost/buy/owner", { headers: { accept: "text/html" } }), env, ctx);
   assert.ok([302, 303, 307, 308].includes(anonymousResponse.status));
   assert.doesNotMatch(await anonymousResponse.text(), /NK-POC-2026-0001|facebook\.com\/marketplace\/item|Google Sheet|Evidence folder/i);
-  const response = await worker.fetch(new Request("http://localhost/buy/owner", { headers: { accept: "text/html", "oai-authenticated-user-email": "owner@example.com" } }), env, ctx);
+  const previousOwnerIds = process.env.NK_OWNER_ACCOUNT_IDS;
+  process.env.NK_OWNER_ACCOUNT_IDS = "owner-account-id";
+  const deniedResponse = await worker.fetch(new Request("http://localhost/buy/owner", { headers: { accept: "text/html", "oai-authenticated-user-id": "customer-account-id", "oai-authenticated-user-email": "customer@example.com" } }), env, ctx);
+  assert.equal(deniedResponse.status, 404);
+  const response = await worker.fetch(new Request("http://localhost/buy/owner", { headers: { accept: "text/html", "oai-authenticated-user-id": "owner-account-id", "oai-authenticated-user-email": "owner@example.com" } }), env, ctx);
+  if (previousOwnerIds === undefined) delete process.env.NK_OWNER_ACCOUNT_IDS;
+  else process.env.NK_OWNER_ACCOUNT_IDS = previousOwnerIds;
   assert.equal(response.status, 200);
   const html = await response.text();
   const textHtml = html.replaceAll("<!-- -->", "");
@@ -370,9 +376,10 @@ test("renders captured and demo source records only in the owner view", async ()
   assert.match(textHtml, /Google Sheet \+ Drive staging: Fallback active/i);
   assert.match(html, /NK-FB-2026-0825-01/);
   assert.match(html, /NK-FB-2026-0825-10/);
-  assert.match(textHtml, /Review all 19 captured images/i);
+  assert.match(html, /Vehicle photo pending/i);
   assert.match(html, /Mileage conflict: 35,000 vs 36,000 km/i);
-  assert.match(html, /Preview \/ not an auth boundary/i);
+  assert.match(html, /Authenticated Owner access/i);
+  assert.doesNotMatch(html, /\/vehicle-evidence\//i);
   assert.match(html, /NK fee settings/i);
   assert.match(html, /Platform &amp; Transaction component/i);
 });
@@ -400,9 +407,9 @@ test("customer pricing component renders amount-only NK fee labels and inclusion
   assert.doesNotMatch(component, /commissionRate|% service fee|10%/i);
 });
 
-test("browser capture evidence contains ten real listings and 167 local images", async () => {
+test("browser capture evidence remains private with ten real listings and 167 local images", async () => {
   const { readdir } = await import("node:fs/promises");
-  const root = new URL("../public/vehicle-evidence/nk-capture-batch-2026-08-25/", import.meta.url);
+  const root = new URL("../private/vehicle-evidence/nk-capture-batch-2026-08-25/", import.meta.url);
   const listingFolders = (await readdir(root, { withFileTypes: true })).filter((entry) => entry.isDirectory());
   const images = await Promise.all(listingFolders.map((entry) => readdir(new URL(`${entry.name}/`, root))));
   assert.equal(listingFolders.length, 10);
@@ -414,7 +421,7 @@ test("customer marketplace exposes ten reviewed listings with only reviewed medi
   const { readFile, readdir } = await import("node:fs/promises");
   const moduleText = await readFile(new URL("../app/buying-browser/source-adapters/captured-customer-data.ts", import.meta.url), "utf8");
   const root = new URL("../public/vehicle-marketplace/owner-reviewed-2026-08-26/", import.meta.url);
-  const listingFolders = (await readdir(root, { withFileTypes: true })).filter((entry) => entry.isDirectory());
+  const listingFolders = (await readdir(root, { withFileTypes: true })).filter((entry) => entry.isDirectory() && entry.name.startsWith("nk-mkt-"));
   const images = await Promise.all(listingFolders.map((entry) => readdir(new URL(`${entry.name}/`, root))));
 
   assert.equal(listingFolders.length, 10);

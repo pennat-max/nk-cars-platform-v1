@@ -11,7 +11,7 @@ Routine Codex work should read `AGENTS.md` + this file first. Approved material 
 
 GitHub is authoritative for code and decisions; it is not the runtime database for vehicle inventory or customer data.
 
-Implementation status: The Owner-approved cross-platform Buying Browser direction remains valid. Native WKWebView, Android WebView, and Windows WebView2 proof-of-concept adapters are separate platform work; external Share and Copy Link remain fallbacks. Production activation is not approved.
+Implementation status: The Owner-approved cross-platform Buying Browser direction remains valid. Native WKWebView, Android WebView, and Windows WebView2 proof-of-concept adapters are separate platform work; external Share and Copy Link remain fallbacks. The Owner approved deployment of each completed, tested milestone to the existing NK Cars Production Site. This does not authorize real messages, payments, destructive data actions, paid services, or security bypasses.
 
 Web companion status: `/buy/browser` provides a browser-style NK shell on iPhone, Android, and Windows web browsers. It opens the real Facebook Marketplace in Facebook's own tab/app, accepts the selected listing link, and forwards explicit NK actions into the existing Vehicle Case flow. It does not embed, proxy, inspect, or control Facebook and must not be described as a native in-app Facebook browser.
 
@@ -240,6 +240,7 @@ Latest confirmed checkpoint from Codex:
 - The private `NK Cars Vehicle Staging Registry` contains 20 vehicle rows: 10 approved vehicles plus a second deduplicated batch of 10 vehicles in `Needs Review`.
 - Google Drive now has deterministic per-vehicle `photos/` and `evidence/` folders for all 20 vehicles. Drive contains 64 approved customer images plus 137 private Needs Review evidence images for the second batch.
 - `Media.sort_order = 1` is the reviewed customer cover contract. Four approved records that previously opened with interior/bed photos now use deterministic redacted derivatives of their real source covers; original files remain internal evidence.
+- Production public/internal hardening now requires an explicit server-side Owner account allowlist for `/buy/owner`. Raw browser evidence is retained under repository-private evidence storage and is no longer shipped from `public/`; the nine reviewed POC images were moved under the approved customer marketplace asset boundary.
 - The customer DTO uses first-party NK media-proxy URLs and never receives source URL, seller data, Drive file IDs, or Drive URLs.
 - Runtime activation still requires `GOOGLE_SERVICE_ACCOUNT_JSON` in the approved hosting secret store and Viewer access to the staging root. Without it, the tested repository snapshot remains active.
 - Current preview Vehicle Cases are browser-local, not durable production records.
@@ -263,9 +264,10 @@ Completed source-layer items:
 Next priority:
 1. Owner configures the runtime service-account secret and shares the private staging root with that account
 2. verify live sync in a non-production preview: customer Browse remains 10 approved vehicles/64 approved media, while Owner review sees all 20 vehicles and the 10-item review queue
-3. migrate 167 raw evidence images from public repository assets to private evidence storage without deleting the source copies until verified
-4. persist Vehicle Cases independently so Sheet changes cannot rewrite historical customer case facts
-5. automate authorized capture -> normalize -> review rows/media without bypassing source controls
+3. activate the Owner account allowlist in the existing Site runtime and verify anonymous/signed-in non-Owner denial
+4. persist authenticated Vehicle Cases independently so Sheet changes cannot rewrite historical customer case facts
+5. add deterministic Quotation/PI preparation after durable Case identity and audit exist
+6. automate authorized capture -> normalize -> review rows/media without bypassing source controls
 
 ## 14. Future QNAP / Hermes direction
 

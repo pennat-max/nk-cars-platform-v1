@@ -4,15 +4,15 @@ import type { InternalSourceRecord } from "./demo-internal-data";
 const capturedAt = "2026-08-25T13:21:03.000Z";
 
 const customerSafeImages = [
-  "/vehicle-evidence/nk-poc-2026-0001/cover-plate-masked.png",
-  "/vehicle-evidence/nk-poc-2026-0001/engine-bay.jpg",
-  "/vehicle-evidence/nk-poc-2026-0001/front-cabin.jpg",
-  "/vehicle-evidence/nk-poc-2026-0001/passenger-cabin.jpg",
-  "/vehicle-evidence/nk-poc-2026-0001/infotainment.jpg",
-  "/vehicle-evidence/nk-poc-2026-0001/camera-system.jpg",
-  "/vehicle-evidence/nk-poc-2026-0001/automatic-transmission.jpg",
-  "/vehicle-evidence/nk-poc-2026-0001/four-wheel-drive-controls.jpg",
-  "/vehicle-evidence/nk-poc-2026-0001/odometer.jpg",
+  "/vehicle-marketplace/owner-reviewed-2026-08-26/nk-poc-2026-0001/cover-plate-masked.png",
+  "/vehicle-marketplace/owner-reviewed-2026-08-26/nk-poc-2026-0001/engine-bay.jpg",
+  "/vehicle-marketplace/owner-reviewed-2026-08-26/nk-poc-2026-0001/front-cabin.jpg",
+  "/vehicle-marketplace/owner-reviewed-2026-08-26/nk-poc-2026-0001/passenger-cabin.jpg",
+  "/vehicle-marketplace/owner-reviewed-2026-08-26/nk-poc-2026-0001/infotainment.jpg",
+  "/vehicle-marketplace/owner-reviewed-2026-08-26/nk-poc-2026-0001/camera-system.jpg",
+  "/vehicle-marketplace/owner-reviewed-2026-08-26/nk-poc-2026-0001/automatic-transmission.jpg",
+  "/vehicle-marketplace/owner-reviewed-2026-08-26/nk-poc-2026-0001/four-wheel-drive-controls.jpg",
+  "/vehicle-marketplace/owner-reviewed-2026-08-26/nk-poc-2026-0001/odometer.jpg",
 ];
 
 export const capturedPocCustomerListing: CustomerListing = {

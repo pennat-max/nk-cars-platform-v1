@@ -1,4 +1,4 @@
-import { requireChatGPTUser } from "../chatgpt-auth";
+import { requireOwnerUser } from "../chatgpt-auth";
 import BuyingBrowserOwnerPreview from "./BuyingBrowserOwnerPreview";
 import { capturedBatchInternalRecords } from "./source-adapters/captured-batch-data";
 import { demoInternalSourceRecords } from "./source-adapters/demo-internal-data";
@@ -11,7 +11,7 @@ function storageCustomerId(email: string | null) {
 }
 
 export default async function BuyingBrowserOwnerRoute() {
-  const user = await requireChatGPTUser("/buy/owner");
+  const user = await requireOwnerUser("/buy/owner");
   const [snapshot, sourceStatus] = await Promise.all([
     getGoogleStagingSnapshot().catch(() => null),
     getGoogleStagingStatus(),

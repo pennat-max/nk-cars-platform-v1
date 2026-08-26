@@ -748,3 +748,23 @@ Started Milestone 1: Next.js shell and visual parity.
 - Runtime live sync still requires the approved read-only service account and `GOOGLE_SERVICE_ACCOUNT_JSON`; until then the app uses the updated repository fallback.
 - The ten new records remain private pending explicit Owner review and customer-safe media approval.
 - Next remains `BB-V1-SYNC-02 - Activate And Verify Private Google Sync`, followed by review/redaction of the second batch and durable tenant-scoped Vehicle Cases.
+
+## 2026-08-26 - Production Public/Internal Security Boundary
+
+### Completed
+
+- Extended the existing ChatGPT identity helper to require both the stable authenticated user ID and email.
+- Changed `/buy/owner` from signed-in-only access to a fail-closed server-side Owner allowlist using `NK_OWNER_ACCOUNT_IDS`. Anonymous visitors are redirected to ChatGPT sign-in; signed-in non-Owners and deployments without an allowlist receive Not Found.
+- Preserved all 167 raw Marketplace evidence images while moving them out of `public/` so Sites no longer packages or serves them as static customer assets.
+- Moved the nine already reviewed POC customer images into the approved `vehicle-marketplace/owner-reviewed-2026-08-26` public boundary and updated their references without changing customer behavior.
+- Removed raw evidence image URLs from repository fallback Owner records. The internal UI shows an honest pending-image state until authenticated Google/private-media sync is available.
+
+### Security Contract
+
+- Customer routes continue to receive only the customer-safe DTO and approved media.
+- ChatGPT authentication alone does not grant Owner access; the authenticated account must also match the server-side Owner allowlist.
+- Source files and business evidence were not deleted. Public build exclusion is independent of private evidence retention.
+
+### Next
+
+- Deploy and verify the Owner allowlist on the existing Site, then implement authenticated durable Vehicle Case persistence. Quotation/PI preparation follows durable Case identity and audit; real payment remains disabled.
