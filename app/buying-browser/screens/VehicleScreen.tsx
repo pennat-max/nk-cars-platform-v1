@@ -2,8 +2,8 @@
 
 /* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
-import { ArrowLeft, Bot, CheckCircle2, ChevronLeft, ChevronRight, ClipboardCheck, Clock3, Gauge, Heart, MapPin, ShieldCheck, ShoppingBag } from "lucide-react";
-import { useRef, useState } from "react";
+import { ArrowLeft, Bot, CheckCircle2, ChevronLeft, ChevronRight, ClipboardCheck, Clock3, Gauge, Heart, MapPin, ShieldCheck, ShoppingBag, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { useBuyingBrowser } from "../BuyingBrowserProvider";
 import { customerFxDisclosure, formatDateTime, formatMileage, formatUsdFromThb } from "../format";
 import { useI18n } from "../use-i18n";
@@ -14,7 +14,48 @@ export default function VehicleScreen({ sourceId }: { sourceId?: string }) {
   const { t, listingSummary, availabilityLabel } = useI18n();
   const listing = listings.find((item) => item.id === sourceId);
   const [imageIndex, setImageIndex] = useState(0);
+  const [fullscreenOpen, setFullscreenOpen] = useState(false);
   const galleryTrack = useRef<HTMLDivElement>(null);
+  const fullscreenTrack = useRef<HTMLDivElement>(null);
+  const fullscreenStartIndex = useRef(0);
+
+  useEffect(() => {
+    if (!fullscreenOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = previousOverflow; };
+  }, [fullscreenOpen]);
+
+  useEffect(() => {
+    if (!fullscreenOpen) return;
+    const frame = window.requestAnimationFrame(() => {
+      const track = fullscreenTrack.current;
+      if (track) track.scrollTo({ left: track.clientWidth * fullscreenStartIndex.current });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [fullscreenOpen]);
+
+  useEffect(() => {
+    if (!fullscreenOpen) return;
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setFullscreenOpen(false);
+        window.requestAnimationFrame(() => {
+          const track = galleryTrack.current;
+          if (track) track.scrollTo({ left: track.clientWidth * imageIndex });
+        });
+        return;
+      }
+      if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+      event.preventDefault();
+      const nextIndex = Math.min(Math.max(imageIndex + (event.key === "ArrowLeft" ? -1 : 1), 0), (listing?.imageUrls.length ?? 1) - 1);
+      const track = fullscreenTrack.current;
+      if (track) track.scrollTo({ left: track.clientWidth * nextIndex, behavior: "smooth" });
+      setImageIndex(nextIndex);
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [fullscreenOpen, imageIndex, listing?.imageUrls.length]);
 
   if (!listing) return <section className="bb-empty-state"><h1>Vehicle result not found</h1><p>This source result may no longer be in the preview set.</p><Link className="bb-button primary" href="/buy"><ArrowLeft size={17} />Back to Browse</Link></section>;
   const existingCase = findCaseByListing(listing.id);
@@ -22,6 +63,24 @@ export default function VehicleScreen({ sourceId }: { sourceId?: string }) {
   function showPhoto(index: number) {
     const nextIndex = Math.min(Math.max(index, 0), listing!.imageUrls.length - 1);
     const track = galleryTrack.current;
+    if (track) track.scrollTo({ left: track.clientWidth * nextIndex, behavior: "smooth" });
+    setImageIndex(nextIndex);
+  }
+
+  function openFullscreen(index: number) {
+    fullscreenStartIndex.current = index;
+    setImageIndex(index);
+    setFullscreenOpen(true);
+  }
+
+  function closeFullscreen() {
+    setFullscreenOpen(false);
+    window.requestAnimationFrame(() => showPhoto(imageIndex));
+  }
+
+  function showFullscreenPhoto(index: number) {
+    const nextIndex = Math.min(Math.max(index, 0), listing!.imageUrls.length - 1);
+    const track = fullscreenTrack.current;
     if (track) track.scrollTo({ left: track.clientWidth * nextIndex, behavior: "smooth" });
     setImageIndex(nextIndex);
   }
@@ -38,7 +97,7 @@ export default function VehicleScreen({ sourceId }: { sourceId?: string }) {
         <section className="bb-gallery">
           <div className="bb-gallery-stage" data-swipe-gallery>
             <div ref={galleryTrack} className="bb-gallery-track" onScroll={(event) => { const width = event.currentTarget.clientWidth; if (width) setImageIndex(Math.round(event.currentTarget.scrollLeft / width)); }}>
-              {listing.imageUrls.map((image, index) => <div className="bb-gallery-slide" key={image}><VehiclePhoto listing={listing} imageUrl={image} alt={`${listing.title} view ${index + 1}`} /></div>)}
+              {listing.imageUrls.map((image, index) => <div className="bb-gallery-slide" key={image}><button type="button" className="bb-gallery-open" onClick={() => openFullscreen(index)} aria-label={`Open photo ${index + 1} fullscreen`}><VehiclePhoto listing={listing} imageUrl={image} alt={`${listing.title} view ${index + 1}`} /></button></div>)}
             </div>
             <span className="bb-gallery-counter">{imageIndex + 1} of {listing.imageUrls.length}</span>
             {listing.imageUrls.length > 1 && <><button className="bb-gallery-arrow previous" onClick={() => showPhoto(imageIndex - 1)} disabled={imageIndex === 0} aria-label="Previous photo" title="Previous photo"><ChevronLeft size={21} /></button><button className="bb-gallery-arrow next" onClick={() => showPhoto(imageIndex + 1)} disabled={imageIndex === listing.imageUrls.length - 1} aria-label="Next photo" title="Next photo"><ChevronRight size={21} /></button></>}
@@ -55,6 +114,17 @@ export default function VehicleScreen({ sourceId }: { sourceId?: string }) {
           <p className="bb-honesty-note"><ShieldCheck size={16} />This is a source vehicle, not NK-owned stock. Seller identity and source link remain internal.</p>
         </section>
       </article>
+
+      {fullscreenOpen && <section className="bb-photo-viewer" role="dialog" aria-modal="true" aria-label={`${listing.title} photo gallery`} data-fullscreen-viewer>
+        <header>
+          <button type="button" onClick={closeFullscreen} aria-label="Close fullscreen gallery" title="Close" autoFocus><X size={30} /></button>
+          <strong aria-live="polite">{imageIndex + 1} of {listing.imageUrls.length}</strong>
+        </header>
+        <div ref={fullscreenTrack} className="bb-photo-viewer-track" onScroll={(event) => { const width = event.currentTarget.clientWidth; if (width) setImageIndex(Math.round(event.currentTarget.scrollLeft / width)); }}>
+          {listing.imageUrls.map((image, index) => <div className="bb-photo-viewer-slide" key={image}><VehiclePhoto listing={listing} imageUrl={image} alt={`${listing.title} fullscreen view ${index + 1}`} /></div>)}
+        </div>
+        {listing.imageUrls.length > 1 && <><button type="button" className="bb-photo-viewer-arrow previous" onClick={() => showFullscreenPhoto(imageIndex - 1)} disabled={imageIndex === 0} aria-label="Previous fullscreen photo"><ChevronLeft size={30} /></button><button type="button" className="bb-photo-viewer-arrow next" onClick={() => showFullscreenPhoto(imageIndex + 1)} disabled={imageIndex === listing.imageUrls.length - 1} aria-label="Next fullscreen photo"><ChevronRight size={30} /></button></>}
+      </section>}
 
       <section className="bb-detail-band">
         <div className="bb-section-heading"><div><p className="bb-kicker">AI normalized information</p><h2>{t("vehicleSpecifications")}</h2></div><span className={listing.translationState === "Normalized" ? "bb-normalized" : "bb-review"}>{listing.translationState}</span></div>

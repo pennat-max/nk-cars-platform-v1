@@ -227,6 +227,7 @@ test("renders additive Buying Browser routes without customer source leakage", a
       assert.match(html, /data-swipe-gallery/i);
       assert.match(textHtml, /1 of 6/i);
       assert.match(html, /aria-label="Next photo"/i);
+      assert.match(html, /aria-label="Open photo 1 fullscreen"/i);
       assert.match(html, /Preview FX: THB 35\.00 = USD 1/i);
       const actionLabels = ["Save to NK", "Ask NK AI", "Check Availability", "Request Inspection", "Buy Through NK"];
       const actionPositions = actionLabels.map((label) => html.indexOf(label));
@@ -286,6 +287,20 @@ test("renders captured and demo source records only in the owner view", async ()
   assert.match(html, /Preview \/ not an auth boundary/i);
   assert.match(html, /NK fee settings/i);
   assert.match(html, /Platform &amp; Transaction component/i);
+});
+
+test("vehicle gallery provides an accessible swipeable fullscreen viewer", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const component = await readFile(new URL("../app/buying-browser/screens/VehicleScreen.tsx", import.meta.url), "utf8");
+  const styles = await readFile(new URL("../app/buying-browser/buying-browser.css", import.meta.url), "utf8");
+  assert.match(component, /data-fullscreen-viewer/);
+  assert.match(component, /role="dialog"/);
+  assert.match(component, /aria-modal="true"/);
+  assert.match(component, /Close fullscreen gallery/);
+  assert.match(component, /event\.key === "Escape"/);
+  assert.match(styles, /\.bb-photo-viewer\{[^}]*position:fixed/);
+  assert.match(styles, /height:100dvh/);
+  assert.match(styles, /\.bb-photo-viewer-track\{[^}]*scroll-snap-type:x mandatory/);
 });
 
 test("customer pricing component renders amount-only NK fee labels and inclusions", async () => {

@@ -1,5 +1,27 @@
 # Codex Progress
 
+## 2026-08-26 - Fullscreen Mobile Vehicle Gallery
+
+Branch: `codex/buying-browser-rebuild`
+
+### Completed
+
+- Made every primary vehicle image tappable without changing the existing gallery layout or vehicle workflow.
+- Added a Facebook-style fullscreen viewer with a black background, safe-area-aware close control, current/total counter, touch swipe, desktop previous/next controls, keyboard arrows, and Escape-to-close behavior.
+- Kept the selected photo synchronized with the existing inline swipe gallery and locked background page scrolling while the viewer is open.
+
+### Verification
+
+- `npm.cmd test`: passed, 35/35, including the production build and fullscreen-gallery contract coverage.
+- Typecheck: passed.
+- Lint: passed with 0 errors and the existing 13 legacy `<img>` warnings outside Buying Browser.
+- `git diff --check`: passed with line-ending notices only.
+- iPhone viewport 390 x 844: tapping the primary image opened a full-viewport viewer at `1 of 6`; horizontal navigation advanced the counter to `2 of 6`; close restored the inline gallery and page scrolling. No horizontal overflow, error overlay, or console error was found.
+
+### Deployment
+
+- The milestone will be committed and pushed to the development branch. Updating the public Production Site still requires explicit Owner approval.
+
 ## 2026-08-26 - Split NK Fees And Three-Language Customer UI
 
 Branch: `codex/buying-browser-rebuild`
