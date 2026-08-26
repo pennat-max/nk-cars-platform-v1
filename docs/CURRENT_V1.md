@@ -243,7 +243,7 @@ Latest confirmed checkpoint from Codex:
 - Production public/internal hardening now requires an explicit server-side Owner account allowlist for `/buy/owner`. Raw browser evidence is retained under repository-private evidence storage and is no longer shipped from `public/`; the nine reviewed POC images were moved under the approved customer marketplace asset boundary.
 - The customer DTO uses first-party NK media-proxy URLs and never receives source URL, seller data, Drive file IDs, or Drive URLs.
 - Runtime activation still requires `GOOGLE_SERVICE_ACCOUNT_JSON` in the approved hosting secret store and Viewer access to the staging root. Without it, the tested repository snapshot remains active.
-- Current preview Vehicle Cases are browser-local, not durable production records.
+- Signed-in customer Vehicle Cases, saved vehicles, imported customer-safe listings, and conversation history now synchronize to a D1-backed account workspace. Anonymous activity remains device-local until the customer signs in.
 - Current branch: `codex/buying-browser-rebuild`.
 - Previous pushed implementation checkpoint: `e1b4cacc57bdd914c09c671be908f32e817e7a8f`. The current sync milestone commit is recorded in `docs/CODEX_PROGRESS.md`.
 - Bangkok Metro is now the default Browse scope. Six of the current ten reviewed records are in the default operating area; direct links and All Thailand filtering still retain access to the remaining records.
@@ -264,9 +264,9 @@ Completed source-layer items:
 Next priority:
 1. Owner configures the runtime service-account secret and shares the private staging root with that account
 2. verify live sync in a non-production preview: customer Browse remains 10 approved vehicles/64 approved media, while Owner review sees all 20 vehicles and the 10-item review queue
-3. activate the Owner account allowlist in the existing Site runtime and verify anonymous/signed-in non-Owner denial
-4. persist authenticated Vehicle Cases independently so Sheet changes cannot rewrite historical customer case facts
-5. add deterministic Quotation/PI preparation after durable Case identity and audit exist
+3. verify the deployed Owner account allowlist and D1 account-workspace migration on the existing Site
+4. add deterministic Quotation readiness and PI gating after durable Case identity and sync audit
+5. add private operational media storage/retention beyond the reviewed customer asset boundary
 6. automate authorized capture -> normalize -> review rows/media without bypassing source controls
 
 ## 14. Future QNAP / Hermes direction

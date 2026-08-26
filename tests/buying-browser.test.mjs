@@ -17,6 +17,7 @@ import {
 } from "../app/buying-browser/domain.mjs";
 import { detectSourceLanguage, localizeAvailability, localizeListingSummary, normalizeLanguage, translate } from "../app/buying-browser/i18n.mjs";
 import { normalizeCustomerImageContentType, parseGoogleStagingValues, readBoundedResponseBytes } from "../app/buying-browser/source-adapters/google-staging-parser.mjs";
+import { customerWorkspaceId, mergeBuyingBrowserStates, validateAndOwnBuyingBrowserState, workspaceSummary } from "../app/buying-browser/workspace-state.mjs";
 
 const source = {
   id: "listing-1",
@@ -49,6 +50,115 @@ const source = {
   evidenceLabels: ["Listing title"],
   demo: true,
 };
+
+class MemoryWorkspaceD1 {
+  constructor() {
+    this.workspaces = new Map();
+    this.events = new Map();
+  }
+
+  prepare(sql) {
+    const workspaces = this.workspaces;
+    const events = this.events;
+    let values = [];
+    return {
+      bind(...nextValues) { values = nextValues; return this; },
+      async first() {
+        if (!sql.startsWith("SELECT state_json")) throw new Error(`Unexpected first SQL: ${sql}`);
+        return workspaces.get(values[0]) ?? null;
+      },
+      async run() {
+        if (sql.startsWith("INSERT INTO buying_browser_workspaces")) {
+          const [userId, email, displayName, stateJson, revision, createdAt, updatedAt] = values;
+          if (workspaces.has(userId)) throw new Error("workspace_unique_conflict");
+          workspaces.set(userId, { user_id: userId, email, display_name: displayName, state_json: stateJson, revision, created_at: createdAt, updated_at: updatedAt });
+        } else if (sql.startsWith("UPDATE buying_browser_workspaces")) {
+          const [email, displayName, stateJson, revision, updatedAt, userId, expectedRevision] = values;
+          const existing = workspaces.get(userId);
+          if (existing?.revision === expectedRevision) workspaces.set(userId, { ...existing, email, display_name: displayName, state_json: stateJson, revision, updated_at: updatedAt });
+        } else if (sql.startsWith("INSERT INTO buying_browser_workspace_events")) {
+          const [id, userId, revision, eventType, summaryJson, createdAt] = values;
+          const uniqueKey = `${userId}:${revision}`;
+          if (events.has(uniqueKey)) throw new Error("event_revision_conflict");
+          events.set(uniqueKey, { id, userId, revision, eventType, summaryJson, createdAt });
+        } else {
+          throw new Error(`Unexpected run SQL: ${sql}`);
+        }
+        return { success: true, meta: {} };
+      },
+    };
+  }
+
+  async batch(statements) {
+    const workspaceBackup = new Map(this.workspaces);
+    const eventBackup = new Map(this.events);
+    try {
+      const results = [];
+      for (const statement of statements) results.push(await statement.run());
+      return results;
+    } catch (error) {
+      this.workspaces.clear();
+      this.events.clear();
+      for (const entry of workspaceBackup) this.workspaces.set(...entry);
+      for (const entry of eventBackup) this.events.set(...entry);
+      throw error;
+    }
+  }
+}
+
+test("account workspace validation enforces ownership and customer-safe fields", () => {
+  const listing = presentCustomerListing(source);
+  const vehicleCase = createVehicleCase(listing, [], "spoofed-customer", "2026-08-26T10:00:00.000Z").caseRecord;
+  const state = { version: 1, savedListingIds: [listing.id], cases: [vehicleCase], importedListings: [listing], sourceCaptures: [], generalMessages: [] };
+  const owned = validateAndOwnBuyingBrowserState(state, "account-1");
+  assert.equal(owned.cases[0].customerId, customerWorkspaceId("account-1"));
+  assert.deepEqual(workspaceSummary(owned), { savedVehicles: 1, vehicleCases: 1, importedListings: 1, sourceCaptures: 0, messages: 1 });
+  assert.throws(() => validateAndOwnBuyingBrowserState({ ...state, importedListings: [{ ...listing, sellerPhone: "private" }] }, "account-1"), /internal_field_not_allowed/);
+});
+
+test("workspace conflict merge preserves newer cases and unique history", () => {
+  const listing = presentCustomerListing(source);
+  const original = createVehicleCase(listing, [], "customer", "2026-08-26T10:00:00.000Z").caseRecord;
+  const server = { version: 1, savedListingIds: ["server"], cases: [original], importedListings: [], sourceCaptures: [], generalMessages: [{ id: "server-message", sender: "System", text: "server", createdAt: "2026-08-26T10:00:00.000Z" }] };
+  const local = { version: 1, savedListingIds: ["local"], cases: [{ ...original, status: "Availability Requested", updatedAt: "2026-08-26T11:00:00.000Z" }], importedListings: [], sourceCaptures: [], generalMessages: [{ id: "local-message", sender: "Customer", text: "local", createdAt: "2026-08-26T11:00:00.000Z" }] };
+  const merged = mergeBuyingBrowserStates(server, local);
+  assert.deepEqual(merged.savedListingIds.sort(), ["local", "server"]);
+  assert.equal(merged.cases[0].status, "Availability Requested");
+  assert.deepEqual(merged.generalMessages.map((item) => item.id), ["server-message", "local-message"]);
+});
+
+test("authenticated workspace API persists cases, isolates accounts, and rejects stale writes", async () => {
+  const workerUrl = new URL("../dist/server/index.js", import.meta.url);
+  workerUrl.searchParams.set("test", `workspace-${process.pid}-${Date.now()}`);
+  const { default: worker } = await import(workerUrl.href);
+  const DB = new MemoryWorkspaceD1();
+  globalThis.__NK_WORKSPACE_TEST_DB__ = DB;
+  const env = { DB, ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) } };
+  const ctx = { waitUntil() {}, passThroughOnException() {} };
+  const authHeaders = { "content-type": "application/json", "oai-authenticated-user-id": "account-1", "oai-authenticated-user-email": "buyer@example.com" };
+  const listing = presentCustomerListing(source);
+  const vehicleCase = createVehicleCase(listing, [], "spoofed", "2026-08-26T10:00:00.000Z").caseRecord;
+  const state = { version: 1, savedListingIds: [listing.id], cases: [vehicleCase], importedListings: [], sourceCaptures: [], generalMessages: [] };
+
+  const anonymous = await worker.fetch(new Request("http://localhost/api/buying-browser/workspace", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ state, expectedRevision: 0 }) }), env, ctx);
+  assert.equal(anonymous.status, 401);
+
+  const saved = await worker.fetch(new Request("http://localhost/api/buying-browser/workspace", { method: "PUT", headers: authHeaders, body: JSON.stringify({ state, expectedRevision: 0 }) }), env, ctx);
+  assert.equal(saved.status, 200);
+  const savedPayload = await saved.json();
+  assert.equal(savedPayload.revision, 1);
+  assert.equal(savedPayload.state.cases[0].customerId, customerWorkspaceId("account-1"));
+
+  const otherAccount = await worker.fetch(new Request("http://localhost/api/buying-browser/workspace", { headers: { "oai-authenticated-user-id": "account-2", "oai-authenticated-user-email": "other@example.com" } }), env, ctx);
+  assert.equal(otherAccount.status, 200);
+  assert.equal((await otherAccount.json()).state, null);
+
+  const stale = await worker.fetch(new Request("http://localhost/api/buying-browser/workspace", { method: "PUT", headers: authHeaders, body: JSON.stringify({ state, expectedRevision: 0 }) }), env, ctx);
+  assert.equal(stale.status, 409);
+  assert.equal((await stale.json()).revision, 1);
+  assert.equal(DB.events.size, 1);
+  delete globalThis.__NK_WORKSPACE_TEST_DB__;
+});
 
 test("Google staging uses named columns, keeps review rows internal, and exposes only approved customer-safe records and media", () => {
   const vehicleRows = [

@@ -153,7 +153,7 @@ The approved Buying Browser V1 preview acceptance criteria are complete. The fol
 
 - The private Google staging data is populated, but the application runtime has no `GOOGLE_SERVICE_ACCOUNT_JSON`. Live sync requires an approved Google Cloud service account with Viewer access to the staging root and the JSON stored only in the hosting secret manager.
 - The 167 raw source-evidence images are preserved under repository-private evidence storage and are excluded from the public Site build. Google Drive remains the private operational copy; authenticated private object storage, retention, backup, and restore policy remain future production work.
-- Real NK customer authentication, tenant isolation, database project/configuration, RLS, and durable Storage are not connected.
+- ChatGPT customer identity and D1-backed account-isolated Buying Browser workspaces are connected for saved vehicles, Vehicle Cases, and conversation history. Organization membership, normalized operational tables, private blob storage, backup/restore, and broader role-based authorization remain incomplete.
 - Web iframe embedding remains blocked by Facebook's `X-Frame-Options: DENY`. Native top-level browser adapters are now the approved experiment; runtime support must be reported per platform and external Share/Copy Link retained wherever blocked.
 - A remote customer-specific source session, if later activated, requires an approved encrypted session-storage design and manual user authentication.
 - Facebook/other source UI and access can change; live browser access cannot be a CI dependency.
@@ -245,6 +245,34 @@ BB-V1D is blocked on approved production project/configuration and must not depl
 ### Smallest Next V1 Milestone
 
 `BB-V1D-01 - Durable Review And Cases`: connect the approved development identity/database boundary and persist review decisions, saved vehicles, Vehicle Cases, timeline, and messages under tenant-scoped RLS. Keep the current Marketplace UI, deterministic pricing, inspection rules, customer-safe DTOs, and internal source records unchanged.
+
+## Durable Customer Workspace Update - 2026-08-26
+
+### Implemented
+
+- Signed-in customers now use the stable ChatGPT Site account ID rather than email-derived identity.
+- Added D1-backed account workspaces for saved vehicles, imported customer-safe listings, Vehicle Cases, case timelines, and conversations.
+- Added optimistic Revision checks, deterministic conflict merging, account ownership enforcement on every Case, bounded payload validation, and rejection of internal seller/source fields in customer listing snapshots.
+- Added append-only workspace sync events containing non-sensitive record counts for audit and recovery diagnosis.
+- Anonymous Browse remains available and device-local; the Account screen clearly offers Sign in before business-critical Case use.
+- Preserved the current UI, source adapters, customer-safe DTO, pricing engine, inspection rules, and local fallback.
+
+### Remaining V1 Gaps
+
+- Owner publication decisions remain staging/code-backed rather than durable workflow records with Approve/Edit/Reject audit.
+- Vehicle media uploaded by customers still requires private object storage; embedded local photo evidence is intentionally not copied into D1.
+- Quotation readiness, PI issuance gating, automatic document numbering, authorized document visibility, and approval history are not implemented.
+- Real availability confirmation, seller messaging, inspection assignment, payment, and purchase commitment remain disabled or approval-gated.
+- D1 backup/export/restore policy and operational monitoring remain required before treating this as the only business record store.
+
+### V1-V5 Impact
+
+- **V1:** durable customer Case identity and account isolation are implemented. Durable Owner review, quote readiness, private media, source freshness, and live operations remain.
+- **V2-V5:** no scope or business-rule change.
+
+### Smallest Next V1 Milestone
+
+`BB-V1D-02 - Quotation Readiness`: add a deterministic Case readiness checklist and customer-safe quotation draft only after current vehicle price and availability are verified. Block PI issuance while material amounts or required approvals are unresolved; do not enable payment.
 
 ## Google Staging Sync Update - 2026-08-26
 

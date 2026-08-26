@@ -1,11 +1,12 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useEffectEvent, useMemo, useRef, useState, type ReactNode } from "react";
 import { addCaseQuestion, createVehicleCase, initialBuyingBrowserState, requestAvailability, requestInspection } from "./domain.mjs";
 import { normalizeLanguage } from "./i18n.mjs";
 import { loadPricingSettings } from "./pricing-settings";
 import { clearPreviewMedia, hydratePreviewMedia, persistPreviewMedia, stateForLocalStorage } from "./preview-media";
-import type { BuyingBrowserState, CustomerIdentity, CustomerLanguage, CustomerListing, GeneralMessage, SourceAdapterStatus, SourceCapture, VehicleCase } from "./types";
+import { mergeBuyingBrowserStates } from "./workspace-state.mjs";
+import type { BuyingBrowserState, CustomerIdentity, CustomerLanguage, CustomerListing, GeneralMessage, SourceAdapterStatus, SourceCapture, VehicleCase, WorkspaceSyncStatus } from "./types";
 
 type BuyingBrowserContextValue = {
   customer: CustomerIdentity;
@@ -14,6 +15,7 @@ type BuyingBrowserContextValue = {
   listings: CustomerListing[];
   hydrated: boolean;
   language: CustomerLanguage;
+  workspaceSync: WorkspaceSyncStatus;
   setLanguage: (language: CustomerLanguage) => void;
   isSaved: (listingId: string) => boolean;
   toggleSaved: (listingId: string) => void;
@@ -52,19 +54,72 @@ export function BuyingBrowserProvider({
   sourceStatus,
   initialListings,
   seedCases = [],
+  durableAccount = false,
+  legacyCustomerId,
   children,
 }: {
   customer: CustomerIdentity;
   sourceStatus: SourceAdapterStatus;
   initialListings: CustomerListing[];
   seedCases?: VehicleCase[];
+  durableAccount?: boolean;
+  legacyCustomerId?: string;
   children: ReactNode;
 }) {
   const [state, setState] = useState<BuyingBrowserState>(() => withSeedCases(initialBuyingBrowserState(), seedCases));
   const [hydrated, setHydrated] = useState(false);
   const [language, setLanguageState] = useState<CustomerLanguage>("en");
+  const [workspaceSync, setWorkspaceSync] = useState<WorkspaceSyncStatus>({
+    mode: durableAccount ? "syncing" : "local",
+    message: durableAccount ? "Connecting secure account workspace" : "Stored on this device only",
+    updatedAt: null,
+  });
   const storageKey = useMemo(() => `nk-cars-buying-browser-v1:${customer.id}`, [customer.id]);
+  const legacyStorageKey = useMemo(() => legacyCustomerId ? `nk-cars-buying-browser-v1:${legacyCustomerId}` : null, [legacyCustomerId]);
   const languageStorageKey = useMemo(() => `nk-cars-language:${customer.id}`, [customer.id]);
+  const revisionRef = useRef(0);
+  const serverReadyRef = useRef(false);
+  const pendingServerStateRef = useRef<BuyingBrowserState | null>(null);
+  const syncingRef = useRef(false);
+  const syncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const flushServerState = useEffectEvent(async () => {
+    if (!durableAccount || syncingRef.current || !serverReadyRef.current) return;
+    syncingRef.current = true;
+    let attempts = 0;
+    try {
+      while (pendingServerStateRef.current && attempts < 4) {
+        attempts += 1;
+        const snapshot = pendingServerStateRef.current;
+        pendingServerStateRef.current = null;
+        setWorkspaceSync((current) => ({ ...current, mode: "syncing", message: "Saving account workspace" }));
+        const response = await fetch("/api/buying-browser/workspace", {
+          method: "PUT",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ state: snapshot, expectedRevision: revisionRef.current }),
+        });
+        const payload = await response.json().catch(() => null);
+        if (response.status === 409 && payload && validStoredState(payload.state)) {
+          revisionRef.current = Number(payload.revision) || 0;
+          const merged = mergeBuyingBrowserStates(payload.state, snapshot) as BuyingBrowserState;
+          pendingServerStateRef.current = merged;
+          setState(merged);
+          continue;
+        }
+        if (!response.ok) throw new Error(payload?.error || "workspace_sync_failed");
+        revisionRef.current = Number(payload.revision) || revisionRef.current + 1;
+        setWorkspaceSync({ mode: "synced", message: "Saved to secure account workspace", updatedAt: payload.updatedAt || new Date().toISOString() });
+      }
+      if (pendingServerStateRef.current) throw new Error("workspace_sync_conflict");
+    } catch {
+      setWorkspaceSync((current) => ({ ...current, mode: "error", message: "Account sync unavailable; this device copy is preserved" }));
+    } finally {
+      syncingRef.current = false;
+      if (pendingServerStateRef.current && serverReadyRef.current) {
+        syncTimerRef.current = setTimeout(() => void flushServerState(), 1000);
+      }
+    }
+  });
 
   useEffect(() => {
     let cancelled = false;
@@ -72,7 +127,7 @@ export function BuyingBrowserProvider({
       let nextState: BuyingBrowserState | null = null;
       try {
         setLanguageState(normalizeLanguage(window.localStorage.getItem(languageStorageKey)) as CustomerLanguage);
-        const raw = window.localStorage.getItem(storageKey);
+        const raw = window.localStorage.getItem(storageKey) || (legacyStorageKey ? window.localStorage.getItem(legacyStorageKey) : null);
         if (raw) {
           const parsed: unknown = JSON.parse(raw);
           if (validStoredState(parsed)) nextState = withSeedCases(await hydratePreviewMedia(storageKey, {
@@ -91,6 +146,19 @@ export function BuyingBrowserProvider({
       } catch {
         // A blocked or corrupt local preview store falls back to a fresh state.
       }
+      if (durableAccount) {
+        try {
+          const response = await fetch("/api/buying-browser/workspace", { cache: "no-store" });
+          const payload = await response.json().catch(() => null);
+          if (!response.ok) throw new Error(payload?.error || "workspace_load_failed");
+          revisionRef.current = Number(payload.revision) || 0;
+          if (validStoredState(payload.state)) nextState = mergeBuyingBrowserStates(payload.state, nextState) as BuyingBrowserState;
+          serverReadyRef.current = true;
+          setWorkspaceSync({ mode: "synced", message: payload.state ? "Loaded from secure account workspace" : "Secure account workspace ready", updatedAt: payload.updatedAt || null });
+        } catch {
+          setWorkspaceSync({ mode: "error", message: "Account sync unavailable; using this device copy", updatedAt: null });
+        }
+      }
       if (cancelled) return;
       queueMicrotask(() => {
         if (nextState) setState(nextState);
@@ -99,7 +167,7 @@ export function BuyingBrowserProvider({
     }
     void hydrate();
     return () => { cancelled = true; };
-  }, [languageStorageKey, seedCases, storageKey]);
+  }, [durableAccount, languageStorageKey, legacyStorageKey, seedCases, storageKey]);
 
   useEffect(() => {
     document.documentElement.lang = language;
@@ -112,7 +180,16 @@ export function BuyingBrowserProvider({
     } catch {
       // Production persistence will use a server database; preview storage may be unavailable.
     }
-  }, [hydrated, state, storageKey]);
+    if (durableAccount && serverReadyRef.current) {
+      pendingServerStateRef.current = stateForLocalStorage(state);
+      if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
+      syncTimerRef.current = setTimeout(() => void flushServerState(), 500);
+    }
+  }, [durableAccount, hydrated, state, storageKey]);
+
+  useEffect(() => () => {
+    if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
+  }, []);
 
   const listings = useMemo(() => {
     const importedIds = new Set(state.importedListings.map((item) => item.id));
@@ -213,6 +290,7 @@ export function BuyingBrowserProvider({
     listings,
     hydrated,
     language,
+    workspaceSync,
     setLanguage,
     isSaved,
     toggleSaved,

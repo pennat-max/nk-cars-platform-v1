@@ -19,6 +19,8 @@ export default function BuyingBrowserApp({
   sourceStatus,
   listings,
   seedCases,
+  durableAccount = false,
+  legacyCustomerId,
 }: {
   view: BuyingBrowserView;
   sourceId?: string;
@@ -27,9 +29,11 @@ export default function BuyingBrowserApp({
   sourceStatus: SourceAdapterStatus;
   listings: CustomerListing[];
   seedCases?: VehicleCase[];
+  durableAccount?: boolean;
+  legacyCustomerId?: string;
 }) {
   return (
-    <BuyingBrowserProvider customer={customer} sourceStatus={sourceStatus} initialListings={listings} seedCases={seedCases}>
+    <BuyingBrowserProvider customer={customer} sourceStatus={sourceStatus} initialListings={listings} seedCases={seedCases} durableAccount={durableAccount} legacyCustomerId={legacyCustomerId}>
       <BuyingBrowserShell view={view}>
         {view === "source" && <SourceLaunchScreen />}
         {view === "web-browser" && <WebBrowserScreen />}

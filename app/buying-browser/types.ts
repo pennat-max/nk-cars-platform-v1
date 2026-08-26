@@ -203,3 +203,9 @@ export type SourceAdapterStatus = {
   state: "ready" | "login_required" | "not_connected" | "error";
   message: string;
 };
+
+export type WorkspaceSyncStatus = {
+  mode: "local" | "syncing" | "synced" | "error";
+  message: string;
+  updatedAt: string | null;
+};

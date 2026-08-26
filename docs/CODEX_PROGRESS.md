@@ -768,3 +768,33 @@ Started Milestone 1: Next.js shell and visual parity.
 ### Next
 
 - Deploy and verify the Owner allowlist on the existing Site, then implement authenticated durable Vehicle Case persistence. Quotation/PI preparation follows durable Case identity and audit; real payment remains disabled.
+
+## 2026-08-26 - Authenticated Durable Vehicle Case Workspace
+
+### Completed
+
+- Added stable ChatGPT account identity for signed-in customers while retaining anonymous device-local Browse and Save behavior.
+- Added a D1 schema and additive migration for account workspaces plus append-only workspace sync events.
+- Added authenticated read/write API routes with server-side account ownership, bounded state validation, customer-safe field enforcement, optimistic Revision checks, and conflict responses.
+- Added client synchronization that migrates the existing signed-in device state, serializes saves, merges concurrent-device conflicts without dropping unique history, and keeps a local safety copy.
+- Updated Account to show Local, Syncing, Synced, or Error state and to offer ChatGPT sign-in for anonymous users.
+- Removed the seeded demonstration Vehicle Case from signed-in accounts; it remains only in anonymous preview mode.
+- Preserved current Marketplace, pricing, inspection, translation, customer-safe DTO, source adapter, and Owner flows.
+
+### Verification
+
+- `npm.cmd test`: passed, including production build and 42/42 tests.
+- Workspace coverage verifies authentication rejection, cross-account isolation, server-owned Case identity, stale Revision rejection, conflict merging, append-only event creation, and internal-field rejection.
+- TypeScript `--noEmit`: passed.
+- ESLint: passed with 0 errors and 13 existing `<img>` optimization warnings.
+- `git diff --check`: passed.
+
+### Production Boundary
+
+- The additive D1 migration does not delete or rewrite existing records.
+- No real seller/customer message, payment, purchase, invoice, or commercial commitment is sent or enabled.
+- Device-local embedded image evidence is not copied into D1; private object storage remains a separate milestone.
+
+### Next
+
+- `BB-V1D-02 - Quotation Readiness`: add deterministic readiness checks and a customer-safe quotation draft. PI issuance remains blocked until verified availability, actual purchase price, all required material amounts, and approval rules are satisfied.

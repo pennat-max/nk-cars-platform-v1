@@ -10,14 +10,18 @@ function customerIdFromEmail(email: string | null) {
   return `chatgpt-${email.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 80)}`;
 }
 
+function customerIdFromAccountId(accountId: string) {
+  return `chatgpt-${accountId}`;
+}
+
 export default async function BuyingBrowserRoute({ view, sourceId, caseId }: { view: BuyingBrowserView; sourceId?: string; caseId?: string }) {
   const signedIn = await getChatGPTUser();
   const customer: CustomerIdentity = signedIn
-    ? { id: customerIdFromEmail(signedIn.email), displayName: signedIn.displayName, email: signedIn.email, country: "Not set", destinationPort: "Not set", isPreview: false }
+    ? { id: customerIdFromAccountId(signedIn.id), displayName: signedIn.displayName, email: signedIn.email, country: "Not set", destinationPort: "Not set", isPreview: false }
     : { id: "preview-james-mwangi", displayName: "James Mwangi", email: null, country: "Kenya", destinationPort: "Mombasa", isPreview: true };
   const [sourceStatus, result] = await Promise.all([
     customerMarketplaceAdapter.getStatus(),
     customerMarketplaceAdapter.search({ customerId: customer.id, searchArea: "Thailand", filters: { ...DEFAULT_FILTERS, location: "All Thailand" }, limit: 50 }),
   ]);
-  return <BuyingBrowserApp view={view} sourceId={sourceId} caseId={caseId} customer={customer} sourceStatus={sourceStatus} listings={result.results} seedCases={[createCapturedPocCase(customer.id)]} />;
+  return <BuyingBrowserApp view={view} sourceId={sourceId} caseId={caseId} customer={customer} sourceStatus={sourceStatus} listings={result.results} seedCases={signedIn ? [] : [createCapturedPocCase(customer.id)]} durableAccount={Boolean(signedIn)} legacyCustomerId={signedIn ? customerIdFromEmail(signedIn.email) : undefined} />;
 }
