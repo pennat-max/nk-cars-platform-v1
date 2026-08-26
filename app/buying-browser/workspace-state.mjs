@@ -1,3 +1,5 @@
+import { inspectionQuoteForLocation } from "./domain.mjs";
+
 const MAX_STATE_BYTES = 900_000;
 const MAX_COLLECTION_ITEMS = 500;
 const MAX_TEXT_LENGTH = 20_000;
@@ -11,6 +13,60 @@ const CUSTOMER_LISTING_FORBIDDEN_KEYS = new Set([
   "sourceCost",
   "dealerIdentity",
 ]);
+const CUSTOMER_REQUEST_AVAILABILITY = new Set(["Availability Not Yet Confirmed", "Availability Check Requested"]);
+
+function configuredInspectionQuote(caseRecord) {
+  const quote = inspectionQuoteForLocation(caseRecord?.vehicle?.generalLocation);
+  if (!quote) return null;
+  const requested = caseRecord.inspectionQuote?.status === "Requested - Awaiting Provider";
+  return {
+    ...quote,
+    status: requested ? "Requested - Awaiting Provider" : "Quote Ready",
+    ...(requested && caseRecord.inspectionQuote?.requestedAt ? { requestedAt: caseRecord.inspectionQuote.requestedAt } : {}),
+  };
+}
+
+function mergeHistory(serverItems, incomingItems) {
+  const merged = new Map((Array.isArray(incomingItems) ? incomingItems : []).map((item) => [item.id, item]));
+  for (const item of Array.isArray(serverItems) ? serverItems : []) merged.set(item.id, item);
+  return [...merged.values()].sort((a, b) => String(a.createdAt || "").localeCompare(String(b.createdAt || "")));
+}
+
+function customerControlledCase(caseRecord, currentCase) {
+  if (currentCase?.ownerVerification?.status === "Owner Verified") {
+    return {
+      ...caseRecord,
+      availability: currentCase.availability,
+      vehicle: { ...caseRecord.vehicle, availability: currentCase.availability },
+      actualVehiclePurchasePriceThb: currentCase.actualVehiclePurchasePriceThb,
+      platformTransactionRate: currentCase.platformTransactionRate,
+      buyingServiceRate: currentCase.buyingServiceRate,
+      inspectionQuote: currentCase.inspectionQuote,
+      domesticTransportThb: currentCase.domesticTransportThb,
+      repairModificationThb: currentCase.repairModificationThb,
+      exportShippingThb: currentCase.exportShippingThb,
+      otherAgreedThb: currentCase.otherAgreedThb,
+      ownerVerification: currentCase.ownerVerification,
+      messages: mergeHistory(currentCase.messages, caseRecord.messages),
+      timeline: mergeHistory(currentCase.timeline, caseRecord.timeline),
+    };
+  }
+  const availability = CUSTOMER_REQUEST_AVAILABILITY.has(caseRecord.availability) ? caseRecord.availability : "Availability Not Yet Confirmed";
+  return {
+    ...caseRecord,
+    availability,
+    vehicle: { ...caseRecord.vehicle, availability },
+    actualVehiclePurchasePriceThb: null,
+    platformTransactionRate: 6,
+    buyingServiceRate: 4,
+    inspectionQuote: configuredInspectionQuote(caseRecord),
+    domesticTransportThb: null,
+    repairModificationThb: null,
+    exportShippingThb: null,
+    otherAgreedThb: null,
+    ownerVerification: null,
+  };
+}
 
 function isRecord(value) {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
@@ -75,6 +131,18 @@ export function validateAndOwnBuyingBrowserState(value, userId) {
   const json = JSON.stringify(state);
   if (new TextEncoder().encode(json).byteLength > MAX_STATE_BYTES) throw new Error("workspace_state_too_large");
   return state;
+}
+
+/**
+ * @param {import("./types").BuyingBrowserState} state
+ * @param {import("./types").BuyingBrowserState | null} [currentState]
+ */
+export function enforceServerControlledWorkspaceState(state, currentState = null) {
+  const currentCases = new Map((currentState?.cases || []).map((item) => [item.id, item]));
+  return {
+    ...state,
+    cases: state.cases.map((caseRecord) => customerControlledCase(caseRecord, currentCases.get(caseRecord.id))),
+  };
 }
 
 function mergeById(base, incoming, preferIncoming) {

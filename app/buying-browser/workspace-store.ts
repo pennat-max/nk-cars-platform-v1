@@ -2,7 +2,7 @@ import { isOwnerUser, type ChatGPTUser } from "../chatgpt-auth";
 import { assessQuotationReadiness } from "./domain.mjs";
 import { applyOwnerCaseVerification } from "./owner-case-verification.mjs";
 import type { BuyingBrowserState, OwnerCaseAuditEvent, OwnerCaseQueueItem, OwnerCaseVerificationInput, QuotationReadiness } from "./types";
-import { validateAndOwnBuyingBrowserState, workspaceSummary } from "./workspace-state.mjs";
+import { enforceServerControlledWorkspaceState, validateAndOwnBuyingBrowserState, workspaceSummary } from "./workspace-state.mjs";
 
 export type WorkspaceRecord = {
   state: BuyingBrowserState | null;
@@ -50,8 +50,9 @@ export async function readWorkspace(user: ChatGPTUser): Promise<WorkspaceRecord>
     .first<WorkspaceRow>();
   if (!row) return { state: null, revision: 0, updatedAt: null };
   const parsed: unknown = JSON.parse(row.state_json);
+  const validated = validateAndOwnBuyingBrowserState(parsed, user.id) as BuyingBrowserState;
   return {
-    state: validateAndOwnBuyingBrowserState(parsed, user.id) as BuyingBrowserState,
+    state: enforceServerControlledWorkspaceState(validated, validated) as BuyingBrowserState,
     revision: row.revision,
     updatedAt: row.updated_at,
   };
@@ -66,7 +67,8 @@ export async function writeWorkspace(user: ChatGPTUser, value: unknown, expected
     throw conflict;
   }
 
-  const state = validateAndOwnBuyingBrowserState(value, user.id) as BuyingBrowserState;
+  const validated = validateAndOwnBuyingBrowserState(value, user.id) as BuyingBrowserState;
+  const state = enforceServerControlledWorkspaceState(validated, current.state) as BuyingBrowserState;
   const stateJson = JSON.stringify(state);
   const nextRevision = current.revision + 1;
   const now = new Date().toISOString();

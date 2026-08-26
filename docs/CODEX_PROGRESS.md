@@ -854,3 +854,23 @@ Started Milestone 1: Next.js shell and visual parity.
 ### Next
 
 - `BB-V1D-04 - Owner-Approved Quotation Record`: create a customer-safe quotation draft from verified Case facts, require Owner approval before issue, assign a unique number and validity period, record customer acceptance, and keep PI/payment disabled until acceptance.
+
+## 2026-08-26 - Server-Authoritative Commercial Case Fields
+
+### Completed
+
+- Closed the customer workspace sync boundary so a customer device cannot self-verify availability, set the actual purchase price, change NK fee rates, or write pass-through commercial amounts.
+- New customer Cases are normalized server-side to configured 6% + 4% NK rates, deterministic inspection zones, Pending material costs, and customer-request availability states only.
+- After Owner verification, all commercial fields and the Owner verification marker are server-authoritative on later customer syncs.
+- Owner-generated customer timeline/messages are preserved even if a stale or modified customer payload omits them.
+- Customer actions that are still allowed, including save, availability request, inspection request, quotation request, and conversation history, continue through the existing workspace flow.
+
+### Verification
+
+- Production build and 48/48 tests passed.
+- Added tests for attempted customer self-verification, fee-rate manipulation, price/cost overwrite, and removal of Owner audit history.
+- TypeScript `--noEmit` and `git diff --check` passed.
+
+### Next
+
+- Continue with `BB-V1D-04 - Owner-Approved Quotation Record` on top of the protected commercial data boundary.

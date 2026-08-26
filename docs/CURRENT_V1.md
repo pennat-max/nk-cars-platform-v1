@@ -259,6 +259,7 @@ Latest durable operations update:
 - Owner can record availability, actual purchase price, and material cost confirmations; null remains Pending and explicit zero is required for no-charge lines.
 - Every Owner update uses optimistic Revision protection and append-only old/new value audit evidence.
 - Final quotation issue, PI, payment, purchase, and external communication remain disabled.
+- Customer workspace sync cannot self-verify or overwrite Owner-confirmed availability, purchase price, fee rates, material costs, or Owner audit history.
 - Next milestone is `BB-V1D-04 - Owner-Approved Quotation Record`, followed by gated PI preparation only after customer acceptance.
 
 Completed source-layer items:

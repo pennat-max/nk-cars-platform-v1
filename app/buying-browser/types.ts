@@ -133,6 +133,10 @@ export type VehicleCase = {
   repairModificationThb: number | null;
   exportShippingThb: number | null;
   otherAgreedThb: number | null;
+  ownerVerification?: {
+    status: "Owner Verified";
+    verifiedAt: string;
+  } | null;
   quotationRequest?: {
     status: "Requested - Awaiting NK Review";
     requestedAt: string;

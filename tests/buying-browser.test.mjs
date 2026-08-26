@@ -19,7 +19,7 @@ import {
 } from "../app/buying-browser/domain.mjs";
 import { detectSourceLanguage, localizeAvailability, localizeListingSummary, normalizeLanguage, translate } from "../app/buying-browser/i18n.mjs";
 import { normalizeCustomerImageContentType, parseGoogleStagingValues, readBoundedResponseBytes } from "../app/buying-browser/source-adapters/google-staging-parser.mjs";
-import { customerWorkspaceId, mergeBuyingBrowserStates, validateAndOwnBuyingBrowserState, workspaceSummary } from "../app/buying-browser/workspace-state.mjs";
+import { customerWorkspaceId, enforceServerControlledWorkspaceState, mergeBuyingBrowserStates, validateAndOwnBuyingBrowserState, workspaceSummary } from "../app/buying-browser/workspace-state.mjs";
 import { applyOwnerCaseVerification, normalizeOwnerCaseVerification } from "../app/buying-browser/owner-case-verification.mjs";
 
 const source = {
@@ -135,6 +135,29 @@ test("account workspace validation enforces ownership and customer-safe fields",
   assert.equal(owned.cases[0].customerId, customerWorkspaceId("account-1"));
   assert.deepEqual(workspaceSummary(owned), { savedVehicles: 1, vehicleCases: 1, importedListings: 1, sourceCaptures: 0, messages: 1 });
   assert.throws(() => validateAndOwnBuyingBrowserState({ ...state, importedListings: [{ ...listing, sellerPhone: "private" }] }, "account-1"), /internal_field_not_allowed/);
+});
+
+test("customer workspace writes cannot self-verify availability or commercial amounts", () => {
+  const listing = presentCustomerListing(source);
+  const spoofed = {
+    ...createVehicleCase(listing, [], "customer", "2026-08-26T10:00:00.000Z").caseRecord,
+    availability: "Verified Available",
+    vehicle: { ...listing, availability: "Verified Available" },
+    actualVehiclePurchasePriceThb: 1,
+    platformTransactionRate: 0,
+    buyingServiceRate: 0,
+    domesticTransportThb: 0,
+    repairModificationThb: 0,
+    exportShippingThb: 0,
+    otherAgreedThb: 0,
+    ownerVerification: { status: "Owner Verified", verifiedAt: "2026-08-26T10:00:00.000Z" },
+  };
+  const protectedState = enforceServerControlledWorkspaceState({ version: 1, savedListingIds: [], cases: [spoofed], importedListings: [], sourceCaptures: [], generalMessages: [] });
+  assert.equal(protectedState.cases[0].availability, "Availability Not Yet Confirmed");
+  assert.equal(protectedState.cases[0].actualVehiclePurchasePriceThb, null);
+  assert.equal(protectedState.cases[0].platformTransactionRate, 6);
+  assert.equal(protectedState.cases[0].buyingServiceRate, 4);
+  assert.equal(protectedState.cases[0].ownerVerification, null);
 });
 
 test("workspace conflict merge preserves newer cases and unique history", () => {
@@ -259,6 +282,28 @@ test("Owner Case API is allowlisted, auditable, conflict-safe, and updates the c
     assert.equal(customerPayload.revision, 2);
     assert.equal(customerPayload.state.cases[0].availability, "Verified Available");
     assert.equal(customerPayload.state.cases[0].actualVehiclePurchasePriceThb, 880000);
+
+    const tamperedState = structuredClone(customerPayload.state);
+    tamperedState.cases[0].availability = "Possibly Unavailable";
+    tamperedState.cases[0].vehicle.availability = "Possibly Unavailable";
+    tamperedState.cases[0].actualVehiclePurchasePriceThb = 1;
+    tamperedState.cases[0].platformTransactionRate = 0;
+    tamperedState.cases[0].buyingServiceRate = 0;
+    tamperedState.cases[0].exportShippingThb = 0;
+    tamperedState.cases[0].messages = [];
+    tamperedState.cases[0].timeline = [];
+    const customerRewrite = await worker.fetch(new Request("http://localhost/api/buying-browser/workspace", { method: "PUT", headers: customerHeaders, body: JSON.stringify({ state: tamperedState, expectedRevision: 2 }) }), env, ctx);
+    assert.equal(customerRewrite.status, 200);
+    const rewritten = await customerRewrite.json();
+    assert.equal(rewritten.revision, 3);
+    assert.equal(rewritten.state.cases[0].availability, "Verified Available");
+    assert.equal(rewritten.state.cases[0].actualVehiclePurchasePriceThb, 880000);
+    assert.equal(rewritten.state.cases[0].platformTransactionRate, 6);
+    assert.equal(rewritten.state.cases[0].buyingServiceRate, 4);
+    assert.equal(rewritten.state.cases[0].exportShippingThb, 42000);
+    assert.equal(rewritten.state.cases[0].ownerVerification.status, "Owner Verified");
+    assert.match(rewritten.state.cases[0].messages.at(-1).text, /no quotation, PI, payment, or purchase/i);
+    assert.match(rewritten.state.cases[0].timeline.at(-1).title, /NK verification updated/i);
 
     const stale = await worker.fetch(new Request("http://localhost/api/buying-browser/owner/cases", { method: "PATCH", headers: ownerHeaders, body: JSON.stringify({ workspaceUserId: "customer-account", caseId: vehicleCase.id, expectedRevision: 1, verification }) }), env, ctx);
     assert.equal(stale.status, 409);

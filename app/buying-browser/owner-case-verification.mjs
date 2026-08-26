@@ -71,6 +71,7 @@ export function applyOwnerCaseVerification(caseRecord, value, now = new Date()) 
     repairModificationThb: input.repairModificationThb,
     exportShippingThb: input.exportShippingThb,
     otherAgreedThb: input.otherAgreedThb,
+    ownerVerification: { status: "Owner Verified", verifiedAt: createdAt },
     updatedAt: createdAt,
     messages: [...caseRecord.messages, {
       id: `${caseRecord.id}-owner-verification-message-${createdAt}`,

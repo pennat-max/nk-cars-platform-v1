@@ -398,3 +398,10 @@ BB-V1D is blocked on approved production project/configuration and must not depl
 ### Smallest Next V1 Milestone
 
 `BB-V1D-04 - Owner-Approved Quotation Record`: snapshot only verified Case pricing, require Owner approval to issue a uniquely numbered customer-visible quotation with a validity deadline, record customer acceptance, invalidate approval on material changes, and keep PI/payment disabled until acceptance.
+
+## Server-Authoritative Commercial Boundary Update - 2026-08-26
+
+- Customer workspace sync can no longer create or overwrite Owner verification, actual purchase price, NK rates, or material cost confirmations.
+- Verified Owner history is preserved across later customer/device syncs.
+- This closes the commercial-integrity prerequisite for quotation records; no V2-V5 scope changed.
+- Remaining next gap is the approved quotation snapshot/number/validity/acceptance workflow itself.
