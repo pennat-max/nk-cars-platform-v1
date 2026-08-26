@@ -1,5 +1,31 @@
 # Codex Progress
 
+## 2026-08-26 - Split NK Fees And Three-Language Customer UI
+
+Branch: `codex/buying-browser-rebuild`
+
+### Completed
+
+- Replaced the customer-visible single 10% service-fee presentation with deterministic NK Platform & Transaction and NK Buying Service monetary lines. New cases record configurable Owner rates of 6% and 4%; both components apply only to the current/actual vehicle purchase price, never to inspection, travel, transport, repair, shipping, tax, or other pass-through costs.
+- Added Owner-only pricing settings with a deterministic 10% combined target. Existing cases retain recorded rates, while legacy browser-local cases migrate safely to 6% + 4% defaults.
+- Added customer-facing “What's included?” disclosures for both NK fee components and an explicit statement that these are NK Cars fees, not Facebook, Marketplace, government, or third-party charges. Percentages are not rendered on customer pricing screens.
+- Added one shared localization layer for English, Simplified Chinese, and Thai with a compact persistent mobile selector. Browse, Vehicle, Vehicle Case, Pricing, Inspection, Messages, and NK AI customer actions now render from the selected language without duplicating vehicle or pricing records.
+- Added structured source-text evidence metadata and case translation traces. Original source/buyer text is preserved, normalized text is separate, and English/Chinese buyer availability or price intent can prepare a Thai seller request without sending it or inventing a reply.
+
+### Verification
+
+- `npm.cmd test`: passed, 34/34, including build, 6% + 4% calculations, pass-through protection, customer redaction, source-text preservation, and language/data immutability tests.
+- Typecheck: passed.
+- Lint: passed with 0 errors and 13 existing legacy `<img>` warnings outside Buying Browser.
+- Browser flow: English -> Simplified Chinese -> Thai switching passed; vehicle price and Case ID stayed unchanged.
+- iPhone viewport 390 x 844: Thai Vehicle Case, actions, split pricing, and bottom navigation passed with no overlap or console errors.
+
+### Current Limitation / Next
+
+- Translation is deterministic preview behavior and preserves prepared-not-sent boundaries. Production multilingual free-text translation and seller reply translation require an approved AI provider, evaluation, durable audit storage, and an authorized messaging channel.
+- Owner pricing settings are browser-local preview configuration. Production requires authenticated server-side settings, versioned pricing snapshots, RBAC, and audit history.
+- No production or ChatGPT Site deployment was performed.
+
 ## 2026-08-26 - Customer Swipe Galleries And USD Pricing
 
 Branch: `codex/buying-browser-rebuild`

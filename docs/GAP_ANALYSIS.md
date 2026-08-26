@@ -1,6 +1,6 @@
 # NK Cars Gap Analysis
 
-Status: Buying Browser now includes ten Owner-reviewed real listing snapshots with customer-safe USD pricing and swipe galleries; live sync, durable identity/persistence, and mobile native runtime validation remain
+Status: Buying Browser includes ten Owner-reviewed snapshots, swipe galleries, deterministic split NK fees, and English/Simplified Chinese/Thai customer presentation; live sync, durable identity/persistence, production translation, and mobile native runtime validation remain
 Date: 2026-08-26
 Branch: `codex/buying-browser-rebuild`
 
@@ -46,7 +46,7 @@ Reusable and working:
 
 - Existing responsive Next.js/Vinext shell, route-level stock/review/lead/wanted demo flows, extraction, photo review, and customer redaction.
 - Hybrid link import: public metadata first, optional connector, then screenshot/photo/text fallback.
-- Customer-safe English vehicle descriptions based only on available evidence.
+- Customer-safe structured vehicle facts based only on available evidence, rendered in English, Simplified Chinese, or Thai without duplicating business records.
 - Local Playwright connector foundation with a versioned source-adapter contract, dedicated persistent browser profiles, manual login, safe login/checkpoint stop states, concurrency-one FIFO queue, limits/timeouts/cancellation, and deterministic browser fixtures.
 - Existing `MARKETPLACE_CONNECTOR_URL` server boundary and safe provider-error handling.
 - Rollback/reference commit `61d4bc8` on `codex/production-rebuild`.
@@ -63,6 +63,8 @@ Buying Browser V1 preview completed on 2026-08-24:
 - Corrected customer Browse UX to a compact marketplace-first mobile layout with vehicle results in the first viewport; Paste Link and Ask NK AI are secondary tools instead of a dominant feature panel.
 - Corrected customer vehicle detail to be photo-first with six reviewed images per vehicle and touch-swipe/scroll-snap navigation, followed by normalized specifications/description and the five approved NK actions, without changing internal visibility boundaries.
 - Changed customer Browse, filters, Vehicle Cases, inspection pricing, and grounded price replies to USD using one deterministic preview FX rate of THB 35.00 per USD. Internal source records and deterministic calculations remain in THB; an approved quote must set the final stored USD/FX values.
+- Split the NK fee into configurable 6% Platform & Transaction and 4% Buying Service components applied only to vehicle purchase price. Customer pricing shows monetary amounts and service inclusions without percentages; pass-through costs are never marked up by these formulas.
+- Added English, Simplified Chinese, and Thai rendering from one authoritative structured vehicle/pricing record, plus preserved source-text metadata and prepared-not-sent buyer-to-Thai-seller translation traces.
 
 One-car data-pipeline snapshot completed on 2026-08-25:
 
@@ -111,11 +113,11 @@ The approved Buying Browser V1 preview acceptance criteria are complete. The fol
 - Complete customer-specific source-profile isolation only if the remote-browser contingency is activated for real multi-user access.
 - Source adapters beyond Facebook and a policy-compliant production connector network path.
 - Live result normalization, ranking, freshness, duplicate matching, and operational snapshot policy.
-- Production AI provider/model, structured extraction/translation, cost policy, retention, and grounded-response evaluation.
+- Production AI provider/model, evaluated English/Chinese/Thai free-text translation, seller-reply translation, cost policy, retention, and grounded-response evaluation.
 
 ### Commercial And Provider Activation
 
-- Owner-approved production commission/minimum/fleet configuration and inspection/travel rate table.
+- Authenticated, versioned, audited Owner pricing settings for the approved 6% + 4% NK fee model, plus future minimum/fleet configuration and inspection/travel rate tables.
 - Real inspection provider directory, service areas, assignment, acceptance, checklist/report, and customer-safe result delivery.
 - Approved seller/provider communication channel with consent, retention, send authorization, delivery status, and audit.
 
