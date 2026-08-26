@@ -632,3 +632,40 @@ Started Milestone 1: Next.js shell and visual parity.
 ### Next Recommended Milestone
 
 - `BB-V1D-01 - Durable Review And Cases` remains next. Preserve the Bangkok Metro defaults and clarified customer action hierarchy while adding tenant-scoped persistence.
+
+## 2026-08-26 - Google Sheets + Drive Staging Sync
+
+### Completed
+
+- Promoted Google Sheets + Drive from a one-car proof to the V1 staging system without changing the customer UI or removing the verified repository fallback.
+- Renamed and retained the existing private spreadsheet as `NK Cars Vehicle Staging Registry` (`1IXEZTH2EYcIeM6HQKJ2Qfk4LZYsVWu4ipNolXoTnxhw`).
+- Created a private `NK Cars Vehicle Staging` root (`1TVQxbCQP7KePJTLoEwHhXQY6FjsLcvc5`) with ten deterministic vehicle folders, each containing `photos/` and `evidence/`.
+- Added header-mapped `Vehicles` and `Media` tabs with ten approved vehicles and sixty approved customer-safe images, six per vehicle. Existing proof/audit tabs were preserved.
+- Added a server-only Google Sheets/Drive adapter using service-account OAuth, bounded responses, schema validation, configurable cache, and repository fallback.
+- Added a first-party media proxy that rechecks vehicle/media publication and visibility, allows only bounded raster image content, and rejects active SVG/HTML before serving Drive media.
+- Connected Browse and the authenticated Owner view to the new adapter. Customer DTOs continue to exclude source URL, seller identity/contact, exact location, internal notes, Google file IDs, and Drive URLs.
+- Added safe sync-status reporting and documented setup, schema, operating procedure, failure behavior, and security boundaries in `docs/GOOGLE_STAGING_SYNC.md`.
+
+### Current Work And Limits
+
+- The Google Registry/Drive data is populated and connector-verified at ten vehicles and sixty media records.
+- The app runtime does not yet have `GOOGLE_SERVICE_ACCOUNT_JSON`; it therefore truthfully serves the tested repository fallback. Live activation requires an approved read-only Google service account and secret configuration.
+- The 167 raw source-evidence images remain in repository public assets. They were not deleted and require a separate verified migration into private evidence storage before production.
+- Vehicle Cases remain browser-local. Google staging is not a replacement for durable tenant-scoped case persistence.
+- No production deploy, existing ChatGPT Site overwrite, public Sheet/Drive sharing, real seller/customer message, or financial action was performed.
+
+### Verification
+
+- Google connector read-back: 10 `Vehicles` rows and 60 `Media` rows; staging root contains the Registry and all ten vehicle folders.
+- TypeScript `--noEmit`: passed.
+- ESLint: passed with zero errors and 13 existing `<img>` optimization warnings.
+- `npm.cmd test`: passed, including the production build and 39/39 Node tests. Coverage includes header-mapped Google staging parsing, visibility enforcement, bounded raster-media enforcement, fail-closed API behavior without credentials, safe fallback status, customer/Owner data separation, and existing Buying Browser flows.
+- iPhone viewport 390 x 844: Bangkok Metro Browse rendered six NK Selection cards with six working images, no horizontal overflow, no console errors, and no Google ID/source/seller leakage in customer HTML.
+
+### Owner Blocker
+
+- Create/approve a Google Cloud read-only service account, share the private staging root as Viewer, and store `GOOGLE_SERVICE_ACCOUNT_JSON` in the approved non-production runtime secret manager. The credential must not be pasted into a public page or committed to GitHub.
+
+### Next Recommended Milestone
+
+- `BB-V1-SYNC-02 - Activate And Verify Private Google Sync`: configure the credential in a separate non-production preview, verify all ten vehicles/sixty media through the live adapter, test fallback/error behavior, then continue to durable tenant-scoped Vehicle Cases.

@@ -130,3 +130,15 @@ Decision:
 - Primary mobile navigation is Browse, Saved, My Cases, Messages, and Account.
 - Inspection is managed inside Vehicle Cases rather than occupying a primary navigation slot.
 - Vehicle detail presents Check Availability as the recommended first step, Ask NK AI as the adjacent assistance action, and Save as a photo-level heart control.
+
+## 2026-08-26 - Google Sheets + Drive staging system
+
+Status: APPROVED AND IMPLEMENTED; RUNTIME CREDENTIAL PENDING
+
+Decision:
+- Google Sheets + Google Drive are the V1 staging and operating layer for reviewed inventory while the future QNAP database/storage runtime is being proven.
+- The private Registry is authoritative for current staged vehicle/media publication state. It is not the durable Vehicle Case database and must never be public.
+- NK reads Google data only on the server through a read-only service account. Customer pages receive customer-safe DTOs and first-party media-proxy URLs, never Google IDs, Drive URLs, source URLs, or seller data.
+- The verified repository snapshot remains the deterministic availability fallback when Google credentials, schema, or network access fail.
+- A Vehicle Case must snapshot the facts used at creation; later Sheet edits must not silently rewrite the historical case.
+- Production activation requires Owner approval plus approved secret configuration. No Google credential may be committed to GitHub.

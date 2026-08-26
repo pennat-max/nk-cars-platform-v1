@@ -16,6 +16,7 @@ import {
   requestInspection,
 } from "../app/buying-browser/domain.mjs";
 import { detectSourceLanguage, localizeAvailability, localizeListingSummary, normalizeLanguage, translate } from "../app/buying-browser/i18n.mjs";
+import { normalizeCustomerImageContentType, parseGoogleStagingValues, readBoundedResponseBytes } from "../app/buying-browser/source-adapters/google-staging-parser.mjs";
 
 const source = {
   id: "listing-1",
@@ -48,6 +49,39 @@ const source = {
   evidenceLabels: ["Listing title"],
   demo: true,
 };
+
+test("Google staging uses named columns and exposes only approved customer-safe records and media", () => {
+  const vehicleRows = [
+    ["title_en", "vehicle_id", "publication_status", "visibility", "source_reference", "summary_en", "brand", "model", "observed_at", "source_url", "seller_name", "drive_folder_id", "year", "transmission", "drive", "availability_status", "translation_state", "evidence_labels_json", "observed_price_thb", "general_location"],
+    ["2020 Toyota Hilux Revo", "vehicle-approved", "Approved for Browse", "CUSTOMER_VISIBLE", "NK-STAGE-001", "Evidence-backed customer summary.", "Toyota", "Hilux Revo", "2026-08-26T01:00:00.000Z", "https://www.facebook.com/marketplace/item/private-source/", "Private Seller", "private-folder-id", 2020, "AT", "4WD", "Availability Not Yet Confirmed", "Normalized", "[\"Listing facts\"]", 500000, "Bangkok"],
+    ["Internal Vehicle", "vehicle-internal", "Needs Review", "INTERNAL_ONLY", "NK-STAGE-002", "Internal only.", "Toyota", "Hilux Revo", "2026-08-26T02:00:00.000Z", "https://private.example/internal", "Internal Seller", "internal-folder", 2021, "AT", "2WD", "Availability Not Yet Confirmed", "Need Review", "[]", 600000, "Bangkok"],
+  ];
+  const mediaRows = [
+    ["drive_file_id", "media_id", "vehicle_id", "source_reference", "sort_order", "visibility", "review_status", "kind", "alt_text_en", "mime_type", "uploaded_at", "fallback_path"],
+    ["drive-approved-secret", "photo-01", "vehicle-approved", "NK-STAGE-001", 1, "CUSTOMER_VISIBLE", "Approved", "photo", "Vehicle front", "image/jpeg", "2026-08-26T01:01:00.000Z", "/safe-fallback.jpg"],
+    ["drive-internal-secret", "photo-02", "vehicle-approved", "NK-STAGE-001", 2, "INTERNAL_ONLY", "Approved", "photo", "Internal evidence", "image/jpeg", "2026-08-26T01:02:00.000Z", "/internal.jpg"],
+    ["drive-unreviewed-secret", "photo-03", "vehicle-approved", "NK-STAGE-001", 3, "CUSTOMER_VISIBLE", "Needs Review", "photo", "Unreviewed", "image/jpeg", "2026-08-26T01:03:00.000Z", "/unreviewed.jpg"],
+  ];
+
+  const snapshot = parseGoogleStagingValues(vehicleRows, mediaRows, "2026-08-26T03:00:00.000Z", "sheet-private-id");
+  assert.equal(snapshot.listings.length, 1);
+  assert.equal(snapshot.internalRecords.length, 1);
+  assert.deepEqual(snapshot.listings[0].imageUrls, ["/api/buying-browser/media/vehicle-approved/photo-01"]);
+  const customerJson = JSON.stringify(snapshot.listings);
+  assert.doesNotMatch(customerJson, /facebook\.com|Private Seller|drive-approved-secret|private-folder-id|sheet-private-id/i);
+  assert.match(snapshot.internalRecords[0].sourceUrl, /facebook\.com/);
+  assert.match(snapshot.internalRecords[0].spreadsheetUrl, /sheet-private-id/);
+  assert.equal(snapshot.media.length, 3, "private media stays available only to the server-side authorization boundary");
+});
+
+test("Google media proxy accepts bounded raster images and rejects active image content", async () => {
+  assert.equal(normalizeCustomerImageContentType("image/jpeg; charset=binary"), "image/jpeg");
+  assert.equal(normalizeCustomerImageContentType("image/jpg"), "image/jpeg");
+  assert.equal(normalizeCustomerImageContentType("image/svg+xml"), "");
+  assert.equal(normalizeCustomerImageContentType("text/html"), "");
+  assert.deepEqual(await readBoundedResponseBytes(new Response(new Uint8Array([1, 2, 3])), 3), new Uint8Array([1, 2, 3]));
+  await assert.rejects(() => readBoundedResponseBytes(new Response(new Uint8Array([1, 2, 3, 4])), 3), /google_media_too_large/);
+});
 
 test("customer presenter strips internal source and seller fields", () => {
   const customer = presentCustomerListing(source);
@@ -278,6 +312,30 @@ test("Buying Browser exposes an installable operating-system share target", asyn
   assert.equal(manifest.share_target.params.url, "url");
 });
 
+test("Google staging API fails closed without a runtime credential", async () => {
+  const workerUrl = new URL("../dist/server/index.js", import.meta.url);
+  workerUrl.searchParams.set("test", `google-fallback-${process.pid}-${Date.now()}`);
+  const { default: worker } = await import(workerUrl.href);
+  const env = { ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) } };
+  const ctx = { waitUntil() {}, passThroughOnException() {} };
+  const statusResponse = await worker.fetch(new Request("http://localhost/api/buying-browser/sync-status"), env, ctx);
+  assert.equal(statusResponse.status, 200);
+  const status = await statusResponse.json();
+  assert.deepEqual(status, {
+    adapter: "google-sheet-drive",
+    state: "not_connected",
+    live: false,
+    mode: "fallback",
+    approvedVehicles: null,
+    approvedMedia: null,
+    synchronizedAt: null,
+    fallbackActive: true,
+  });
+  assert.doesNotMatch(JSON.stringify(status), /1IXEZTH2|1TVQxbCQ|drive_file|source_url|seller/i);
+  const mediaResponse = await worker.fetch(new Request("http://localhost/api/buying-browser/media/vehicle-approved/photo-01"), env, ctx);
+  assert.equal(mediaResponse.status, 404);
+});
+
 test("renders captured and demo source records only in the owner view", async () => {
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
   workerUrl.searchParams.set("test", `buying-owner-${process.pid}-${Date.now()}`);
@@ -296,7 +354,9 @@ test("renders captured and demo source records only in the owner view", async ()
   assert.match(html, /NK-POC-2026-0001/);
   assert.match(html, /Google Sheet/);
   assert.match(html, /Eighteen original listing images/);
-  assert.match(textHtml, /10 browser captures \/ 1 POC \/ 8 demo/i);
+  assert.match(textHtml, /11 staged \/ 8 fallback demo/i);
+  assert.match(html, /data-google-staging-status/i);
+  assert.match(textHtml, /Google Sheet \+ Drive staging: Fallback active/i);
   assert.match(html, /NK-FB-2026-0825-01/);
   assert.match(html, /NK-FB-2026-0825-10/);
   assert.match(textHtml, /Review all 19 captured images/i);

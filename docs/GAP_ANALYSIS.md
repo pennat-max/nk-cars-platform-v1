@@ -1,6 +1,6 @@
 # NK Cars Gap Analysis
 
-Status: Buying Browser includes ten Owner-reviewed snapshots, swipe galleries, deterministic split NK fees, and English/Simplified Chinese/Thai customer presentation; live sync, durable identity/persistence, production translation, and mobile native runtime validation remain
+Status: Buying Browser includes a private Google Sheets + Drive staging contract for ten Owner-reviewed vehicles and sixty approved media items, a server-side sync adapter with customer-safe media proxy, repository fallback, swipe galleries, deterministic split NK fees, and English/Simplified Chinese/Thai presentation; runtime Google credentials, durable identity/cases, production translation, and mobile native runtime validation remain
 Date: 2026-08-26
 Branch: `codex/buying-browser-rebuild`
 
@@ -151,6 +151,8 @@ The approved Buying Browser V1 preview acceptance criteria are complete. The fol
 
 ## Technical Blockers
 
+- The private Google staging data is populated, but the application runtime has no `GOOGLE_SERVICE_ACCOUNT_JSON`. Live sync requires an approved Google Cloud service account with Viewer access to the staging root and the JSON stored only in the hosting secret manager.
+- The 167 raw source-evidence images still exist under repository `public/vehicle-evidence/`. They must move to authenticated private storage before production; no source copy should be deleted until the migration is verified.
 - Real NK customer authentication, tenant isolation, database project/configuration, RLS, and durable Storage are not connected.
 - Web iframe embedding remains blocked by Facebook's `X-Frame-Options: DENY`. Native top-level browser adapters are now the approved experiment; runtime support must be reported per platform and external Share/Copy Link retained wherever blocked.
 - A remote customer-specific source session, if later activated, requires an approved encrypted session-storage design and manual user authentication.
@@ -243,3 +245,32 @@ BB-V1D is blocked on approved production project/configuration and must not depl
 ### Smallest Next V1 Milestone
 
 `BB-V1D-01 - Durable Review And Cases`: connect the approved development identity/database boundary and persist review decisions, saved vehicles, Vehicle Cases, timeline, and messages under tenant-scoped RLS. Keep the current Marketplace UI, deterministic pricing, inspection rules, customer-safe DTOs, and internal source records unchanged.
+
+## Google Staging Sync Update - 2026-08-26
+
+### Implemented
+
+- The private `NK Cars Vehicle Staging Registry` now has header-mapped `Vehicles` and `Media` tabs containing ten approved vehicles and sixty approved customer-safe images.
+- Google Drive has deterministic per-vehicle `photos/` and `evidence/` folders under one private staging root. Six reviewed customer images are stored per vehicle.
+- A server-only Google service-account adapter reads approved rows on demand with a configurable five-minute cache. Authentication, schema, or network failures activate the verified repository snapshot instead of blanking Browse.
+- Customer records expose only first-party NK media-proxy URLs. Source URL, seller identity/contact, exact location, internal notes, Google file IDs, and Drive URLs remain inside the Owner boundary.
+- Sync state is available through a customer-safe status route and the Owner preview. The current runtime truthfully reports fallback mode until credentials are configured.
+
+### Remaining V1 Gaps
+
+- **Runtime activation:** provision the approved read-only Google service account, share the private staging root, and store its JSON only in the approved preview/runtime secret manager.
+- **Private evidence migration:** move all raw source evidence out of public repository assets into private storage with visibility, retention, and audit metadata.
+- **Durable Vehicle Cases:** case creation must snapshot customer-visible facts and media references so later Sheet edits cannot silently rewrite historical customer records.
+- **Automated staging:** authorized capture, normalization, review-state writes, duplicate handling, retries, and source freshness remain operator-assisted.
+
+### V1-V5 Impact
+
+- **V1:** Google staging schema, approved-media storage, server adapter, safe proxy, sync status, and fallback are implemented. Credential activation, private evidence, durable cases, and authorized ingestion remain.
+- **V2:** dealer/source network, trust scoring, offers, matching, and controlled seller automation remain unchanged.
+- **V3:** quote/PI, payment, Purchase Fund, deposits/refunds, and purchase approvals remain unchanged.
+- **V4:** procurement, secured-vehicle controls, inspection operations, repair, export/shipping, delivery, and after-sales remain unchanged.
+- **V5:** 360 views, task/KPI engine, risk detection, immutable audit expansion, reporting, forecast, and Owner command center remain unchanged.
+
+### Smallest Next V1 Milestone
+
+`BB-V1-SYNC-02 - Activate And Verify Private Google Sync`: configure the read-only runtime credential in a non-production preview, verify all ten vehicles and sixty media records through the real server adapter, test fallback/error states, and retain the existing Site unchanged. After that, continue to durable tenant-scoped Vehicle Cases.

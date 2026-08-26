@@ -21,14 +21,15 @@ import VehiclePhoto from "./components/VehiclePhoto";
 import { formatDateTime, formatThb } from "./format";
 import { DEFAULT_PRICING_SETTINGS, loadPricingSettings, savePricingSettings, TOTAL_NK_FEE_TARGET, type PricingSettings } from "./pricing-settings";
 import type { InternalSourceRecord } from "./source-adapters/demo-internal-data";
-import type { BuyingBrowserState } from "./types";
+import type { BuyingBrowserState, SourceAdapterStatus } from "./types";
 
 type OwnerPreviewProps = {
   records: InternalSourceRecord[];
+  sourceStatus: SourceAdapterStatus;
   storageCustomerId: string;
 };
 
-export default function BuyingBrowserOwnerPreview({ records, storageCustomerId }: OwnerPreviewProps) {
+export default function BuyingBrowserOwnerPreview({ records, sourceStatus, storageCustomerId }: OwnerPreviewProps) {
   const [state, setState] = useState<BuyingBrowserState | null>(null);
   const [pricingSettings, setPricingSettings] = useState<PricingSettings>({ ...DEFAULT_PRICING_SETTINGS });
   const [pricingMessage, setPricingMessage] = useState("");
@@ -71,7 +72,6 @@ export default function BuyingBrowserOwnerPreview({ records, storageCustomerId }
   );
   const sourceCaptures = state?.sourceCaptures || [];
   const capturedRecordCount = records.filter((record) => !record.demo).length;
-  const browserCaptureCount = records.filter((record) => record.adapterId === "facebook-owner-browser-capture").length;
   const demoRecordCount = records.length - capturedRecordCount;
 
   return (
@@ -109,9 +109,17 @@ export default function BuyingBrowserOwnerPreview({ records, storageCustomerId }
         </section>
         <section className="bb-owner-kpis">
           <article><Database size={20} /><span><small>Real source captures</small><b>{sourceCaptures.length + capturedRecordCount}</b></span></article>
-          <article><Gauge size={20} /><span><small>Selected path</small><b>External Share Link</b></span></article>
+          <article><Gauge size={20} /><span><small>Inventory source</small><b>{sourceStatus.live ? "Google Sync" : "Verified Fallback"}</b></span></article>
           <article><UserRound size={20} /><span><small>Preview cases</small><b>{cases.length}</b></span></article>
           <article><EyeOff size={20} /><span><small>Customer redaction</small><b>Separate DTO</b></span></article>
+        </section>
+
+        <section className="bb-owner-warning" data-google-staging-status>
+          <Database size={18} />
+          <div>
+            <b>{sourceStatus.label}: {sourceStatus.live ? "Synchronized" : "Fallback active"}</b>
+            <p>{sourceStatus.message}</p>
+          </div>
         </section>
 
         {sourceCaptures.length > 0 && (
@@ -154,7 +162,7 @@ export default function BuyingBrowserOwnerPreview({ records, storageCustomerId }
         <section className="bb-owner-source-list">
           <div className="bb-section-heading">
             <div><p className="bb-kicker">Internal records</p><h2>Source results</h2></div>
-            <span>{browserCaptureCount} browser captures / {capturedRecordCount - browserCaptureCount} POC / {demoRecordCount} demo</span>
+            <span>{capturedRecordCount} staged / {demoRecordCount} fallback demo</span>
           </div>
           {records.map((record) => {
             const vehicleCase = caseByListing.get(record.id);
