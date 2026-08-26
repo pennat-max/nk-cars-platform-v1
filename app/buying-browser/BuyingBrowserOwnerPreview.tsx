@@ -11,12 +11,15 @@ import {
   Gauge,
   LockKeyhole,
   Phone,
+  Save,
+  Settings2,
   ShieldAlert,
   UserRound,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import VehiclePhoto from "./components/VehiclePhoto";
 import { formatDateTime, formatThb } from "./format";
+import { DEFAULT_PRICING_SETTINGS, loadPricingSettings, savePricingSettings, TOTAL_NK_FEE_TARGET, type PricingSettings } from "./pricing-settings";
 import type { InternalSourceRecord } from "./source-adapters/demo-internal-data";
 import type { BuyingBrowserState } from "./types";
 
@@ -27,6 +30,8 @@ type OwnerPreviewProps = {
 
 export default function BuyingBrowserOwnerPreview({ records, storageCustomerId }: OwnerPreviewProps) {
   const [state, setState] = useState<BuyingBrowserState | null>(null);
+  const [pricingSettings, setPricingSettings] = useState<PricingSettings>({ ...DEFAULT_PRICING_SETTINGS });
+  const [pricingMessage, setPricingMessage] = useState("");
 
   useEffect(() => {
     let nextState: BuyingBrowserState | null = null;
@@ -36,8 +41,27 @@ export default function BuyingBrowserOwnerPreview({ records, storageCustomerId }
     } catch {
       nextState = null;
     }
-    queueMicrotask(() => setState(nextState));
+    const storedPricingSettings = loadPricingSettings();
+    queueMicrotask(() => {
+      setState(nextState);
+      setPricingSettings(storedPricingSettings);
+    });
   }, [storageCustomerId]);
+
+  function updateRate(key: keyof PricingSettings, value: string) {
+    setPricingMessage("");
+    setPricingSettings((current) => ({ ...current, [key]: Number(value) }));
+  }
+
+  function persistPricingSettings() {
+    try {
+      const saved = savePricingSettings(pricingSettings);
+      setPricingSettings(saved);
+      setPricingMessage("Saved. New Vehicle Cases will use these rates; existing cases keep their recorded rates.");
+    } catch {
+      setPricingMessage(`The two NK components must be non-negative and total ${TOTAL_NK_FEE_TARGET}%.`);
+    }
+  }
 
   const cases = state?.cases || [];
   const caseByListing = new Map(cases.map((item) => [item.listingId, item]));
@@ -72,6 +96,17 @@ export default function BuyingBrowserOwnerPreview({ records, storageCustomerId }
             <p>This preview can show internal source links. Production requires server-enforced Owner/Staff RBAC, tenant isolation, encrypted persistence, audit, and no client-side role switch.</p>
           </div>
         </div>
+        <section className="bb-owner-pricing-settings" data-owner-pricing-settings>
+          <div className="bb-section-heading"><div><p className="bb-kicker">Deterministic pricing</p><h2>NK fee settings</h2></div><Settings2 size={20} /></div>
+          <p>Owner-only configuration. Customer screens show monetary amounts and service inclusions, not these percentages.</p>
+          <div className="bb-owner-rate-fields">
+            <label><span>Platform & Transaction component</span><input type="number" min="0" max="10" step="0.1" value={pricingSettings.platformTransactionRate} onChange={(event) => updateRate("platformTransactionRate", event.target.value)} /><b>%</b></label>
+            <label><span>Buying Service component</span><input type="number" min="0" max="10" step="0.1" value={pricingSettings.buyingServiceRate} onChange={(event) => updateRate("buyingServiceRate", event.target.value)} /><b>%</b></label>
+            <div><span>Total NK fee target</span><strong>{pricingSettings.platformTransactionRate + pricingSettings.buyingServiceRate}%</strong></div>
+          </div>
+          <button className="bb-button primary" onClick={persistPricingSettings}><Save size={16} />Save pricing settings</button>
+          {pricingMessage && <small role="status">{pricingMessage}</small>}
+        </section>
         <section className="bb-owner-kpis">
           <article><Database size={20} /><span><small>Real source captures</small><b>{sourceCaptures.length + capturedRecordCount}</b></span></article>
           <article><Gauge size={20} /><span><small>Selected path</small><b>External Share Link</b></span></article>

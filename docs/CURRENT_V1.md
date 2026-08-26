@@ -50,7 +50,7 @@ Primary actions:
 - Browse Vehicles
 - Paste Vehicle Link
 - Ask NK AI to Find One
-- Save Vehicle
+- Save to NK
 - Ask NK AI
 - Check Availability
 - Request Inspection
@@ -135,10 +135,14 @@ Use progressive rendering:
 
 Current intended structure:
 
-**Vehicle Purchase Price + NK Service Fee + Inspection/Travel + Domestic Transport + Repair/Modification + Export/Shipping + other agreed charges.**
+**Vehicle Purchase Price + NK Platform & Transaction Fee + NK Buying Service + Inspection/Travel + Domestic Transport + Repair/Modification + Export/Shipping + other agreed charges.**
 
-Current intended NK Service Fee:
-**10% of actual vehicle purchase price**, configurable before production activation.
+Current intended NK fee components:
+- **NK Platform & Transaction: 6% of actual vehicle purchase price**
+- **NK Buying Service: 4% of actual vehicle purchase price**
+- **Total NK fee target: 10% of actual vehicle purchase price**
+
+The two component rates are configurable in Owner settings. Customer screens show monetary amounts and service inclusions, not percentages by default.
 
 Do not apply the 10% silently to pass-through costs.
 
@@ -198,7 +202,8 @@ All 18 Buying Browser V1 preview targets are implemented additively under `/buy`
 - Paste Link through the real import boundary when supported, with an honest photo/text/manual fallback when blocked and a reload-safe multi-photo preview gallery;
 - customer-safe normalized English vehicle facts, ten Owner-reviewed capture snapshots in the default Marketplace, deterministic grounded NK AI preview replies, and no invented facts;
 - deduplicated Vehicle Cases, availability requests, inspection requests, case timelines, and conversation history;
-- deterministic 10% preview commission on vehicle price only, explicit inspection/travel zones, Pending pass-through costs, and customer-facing USD conversion using one configured preview rate of THB 35.00 per USD;
+- deterministic 6% Platform & Transaction plus 4% Buying Service amounts on vehicle price only, explicit inspection/travel zones, Pending pass-through costs, and customer-facing USD conversion using one configured preview rate of THB 35.00 per USD;
+- English, Simplified Chinese, and Thai presentation from one authoritative structured record, with original source text preserved separately from normalized/translated customer text;
 - separate customer and internal source DTOs with customer redaction tests;
 - responsive verification at 390 x 844 and 1280 x 900 with no horizontal overflow or browser console errors.
 
@@ -206,7 +211,7 @@ Preview state is intentionally browser-local and snapshot/demo source-adapter ba
 
 ### Reviewed capture snapshots
 
-The default `/buy` Marketplace contains ten customer-safe snapshots produced from the Owner's authenticated browser capture batch. Each vehicle has evidence-backed English facts, six visually reviewed customer photos, a touch-swipe detail gallery, deterministic USD preview pricing, and the existing case actions. Public asset paths use NK references rather than upstream listing IDs. All 167 raw images, source URLs, seller identity/contact, exact source location, and internal notes remain behind the authenticated Owner boundary.
+The default `/buy` Marketplace contains ten customer-safe snapshots produced from the Owner's authenticated browser capture batch. Each vehicle has evidence-backed structured facts rendered in English, Simplified Chinese, or Thai, six visually reviewed customer photos, a touch-swipe detail gallery, deterministic USD preview pricing, and the existing case actions. Public asset paths use NK references rather than upstream listing IDs. All 167 raw images, source URLs, seller identity/contact, exact source location, and internal notes remain behind the authenticated Owner boundary.
 
 This is not a live Marketplace feed. The UI labels the records `NK Selection`, the adapter reports `snapshot`, and price/availability remain unverified. The legacy one-car Google Sheet POC and labeled demo records remain available as rollback/reference but are not the default customer Browse feed.
 

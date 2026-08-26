@@ -1,4 +1,8 @@
-export const DEFAULT_COMMISSION_RATE = 10;
+import { normalizeLanguage, translate } from "./i18n.mjs";
+
+export const DEFAULT_PLATFORM_TRANSACTION_RATE = 6;
+export const DEFAULT_BUYING_SERVICE_RATE = 4;
+export const DEFAULT_TOTAL_NK_FEE_TARGET = 10;
 export const CUSTOMER_FX_THB_PER_USD = 35;
 
 export function formatCustomerUsd(value) {
@@ -89,18 +93,21 @@ export function inspectionQuoteForLocation(location) {
 
 export function calculatePricing(input) {
   const vehiclePrice = numberOrNull(input.vehiclePriceThb);
-  const commissionRate = Number.isFinite(Number(input.commissionRate)) ? Math.max(0, Number(input.commissionRate)) : DEFAULT_COMMISSION_RATE;
-  const commission = vehiclePrice === null ? null : Math.round(vehiclePrice * commissionRate / 100);
+  const platformTransactionRate = Number.isFinite(Number(input.platformTransactionRate)) ? Math.max(0, Number(input.platformTransactionRate)) : DEFAULT_PLATFORM_TRANSACTION_RATE;
+  const buyingServiceRate = Number.isFinite(Number(input.buyingServiceRate)) ? Math.max(0, Number(input.buyingServiceRate)) : DEFAULT_BUYING_SERVICE_RATE;
+  const platformTransactionAmount = vehiclePrice === null ? null : Math.round(vehiclePrice * platformTransactionRate / 100);
+  const buyingServiceAmount = vehiclePrice === null ? null : Math.round(vehiclePrice * buyingServiceRate / 100);
   const lines = [
-    { key: "vehicle", label: "Vehicle purchase price", amountThb: vehiclePrice },
-    { key: "commission", label: `NK service fee (${commissionRate}%)`, amountThb: commission },
-    { key: "inspection", label: "Inspection & travel", amountThb: numberOrNull(input.inspectionTravelThb) },
-    { key: "transport", label: "Domestic transport", amountThb: numberOrNull(input.domesticTransportThb) },
-    { key: "repair", label: "Repair / modification", amountThb: numberOrNull(input.repairModificationThb) },
-    { key: "shipping", label: "Export / shipping", amountThb: numberOrNull(input.exportShippingThb) },
-    { key: "other", label: "Other agreed charges", amountThb: numberOrNull(input.otherAgreedThb) },
+    { key: "vehicle", amountThb: vehiclePrice },
+    { key: "platformTransaction", amountThb: platformTransactionAmount },
+    { key: "buyingService", amountThb: buyingServiceAmount },
+    { key: "inspection", amountThb: numberOrNull(input.inspectionTravelThb) },
+    { key: "transport", amountThb: numberOrNull(input.domesticTransportThb) },
+    { key: "repair", amountThb: numberOrNull(input.repairModificationThb) },
+    { key: "shipping", amountThb: numberOrNull(input.exportShippingThb) },
+    { key: "other", amountThb: numberOrNull(input.otherAgreedThb) },
   ].map((line) => ({ ...line, status: line.amountThb === null ? "Pending" : "Known" }));
-  return { commissionRate, commissionAmountThb: commission, knownSubtotalThb: lines.reduce((total, line) => total + (line.amountThb ?? 0), 0), pendingCount: lines.filter((line) => line.amountThb === null).length, lines };
+  return { platformTransactionRate, buyingServiceRate, platformTransactionAmountThb: platformTransactionAmount, buyingServiceAmountThb: buyingServiceAmount, totalNkFeeAmountThb: vehiclePrice === null ? null : platformTransactionAmount + buyingServiceAmount, knownSubtotalThb: lines.reduce((total, line) => total + (line.amountThb ?? 0), 0), pendingCount: lines.filter((line) => line.amountThb === null).length, lines };
 }
 
 /** @returns {import("./types").BuyingBrowserState} */
@@ -125,7 +132,7 @@ function externalHttpsUrl(value) {
 
 /**
  * @param {import("./types").CustomerListing} listing
- * @param {{submittedUrl:string,canonicalUrl?:string,sourcePlatform?:string,captureMethod?:"external_share_link"|"web_share_target"|"ios_share_extension"|"ios_wkwebview"|"android_webview"|"windows_webview2"|"web_browser_companion"|"manual_evidence",importStatus?:"imported"|"partial"|"evidence_only"}} input
+ * @param {{submittedUrl:string,canonicalUrl?:string,sourcePlatform?:string,captureMethod?:"external_share_link"|"web_share_target"|"ios_share_extension"|"ios_wkwebview"|"android_webview"|"windows_webview2"|"web_browser_companion"|"manual_evidence",importStatus?:"imported"|"partial"|"evidence_only",textEvidence?:import("./types").SourceTextEvidence}} input
  * @param {Date|string} [now]
  * @returns {import("./types").SourceCapture}
  */
@@ -145,6 +152,7 @@ export function createExternalSourceCapture(listing, input, now = new Date()) {
     captureMethod: ["web_share_target", "ios_share_extension", "ios_wkwebview", "android_webview", "windows_webview2", "web_browser_companion", "manual_evidence"].includes(input?.captureMethod) ? input.captureMethod : "external_share_link",
     importStatus,
     capturedAt: safeTime(now),
+    ...(input?.textEvidence ? { textEvidence: { ...input.textEvidence } } : {}),
   };
 }
 
@@ -155,7 +163,7 @@ export function createExternalSourceCapture(listing, input, now = new Date()) {
  * @param {Date|string} [now]
  * @param {string|null} [sourceCaptureId]
  */
-export function createVehicleCase(listing, existingCases, customerId, now = new Date(), sourceCaptureId = null) {
+export function createVehicleCase(listing, existingCases, customerId, now = new Date(), sourceCaptureId = null, pricingSettings = {}) {
   const existing = existingCases.find((item) => item.listingId === listing.id);
   if (existing) {
     if (!sourceCaptureId || existing.sourceCaptureId === sourceCaptureId) return { caseRecord: existing, created: false };
@@ -173,48 +181,79 @@ export function createVehicleCase(listing, existingCases, customerId, now = new 
   const createdAt = safeTime(now);
   const caseId = nextCaseId(existingCases, createdAt);
   const quote = inspectionQuoteForLocation(listing.generalLocation);
+  const platformTransactionRate = Number.isFinite(Number(pricingSettings.platformTransactionRate)) ? Math.max(0, Number(pricingSettings.platformTransactionRate)) : DEFAULT_PLATFORM_TRANSACTION_RATE;
+  const buyingServiceRate = Number.isFinite(Number(pricingSettings.buyingServiceRate)) ? Math.max(0, Number(pricingSettings.buyingServiceRate)) : DEFAULT_BUYING_SERVICE_RATE;
   const caseRecord = {
-    id: caseId, customerId, listingId: listing.id, sourceReference: listing.sourceReference, sourceCaptureId, createdAt, updatedAt: createdAt, status: "Saved", availability: "Availability Not Yet Confirmed", vehicle: { ...listing, availability: "Availability Not Yet Confirmed" }, commissionRate: DEFAULT_COMMISSION_RATE, inspectionQuote: quote, domesticTransportThb: null, repairModificationThb: null, exportShippingThb: null, otherAgreedThb: null,
+    id: caseId, customerId, listingId: listing.id, sourceReference: listing.sourceReference, sourceCaptureId, createdAt, updatedAt: createdAt, status: "Saved", availability: "Availability Not Yet Confirmed", vehicle: { ...listing, availability: "Availability Not Yet Confirmed" }, actualVehiclePurchasePriceThb: null, platformTransactionRate, buyingServiceRate, inspectionQuote: quote, domesticTransportThb: null, repairModificationThb: null, exportShippingThb: null, otherAgreedThb: null, translationHistory: [],
     messages: [{ id: `${caseId}-welcome`, sender: "NK AI", text: `I created ${caseId} for this ${listing.title}. Availability and the current seller price have not been verified yet.`, createdAt, delivery: "Local preview" }],
     timeline: [{ id: `${caseId}-saved`, title: "Vehicle saved", detail: sourceCaptureId ? "External source link captured internally and customer-safe listing data saved as an NK Vehicle Case." : "Customer-safe source result saved as an NK Vehicle Case.", createdAt }],
   };
   return { caseRecord, created: true };
 }
 
-export function requestAvailability(caseRecord, now = new Date()) {
+function availabilityRequestText(language) {
+  const selected = normalizeLanguage(language);
+  if (selected === "zh-CN") return "请确认这辆车是否仍可购买，并确认当前价格、里程和 VIN 证据。";
+  if (selected === "th") return "กรุณาตรวจสอบว่ารถคันนี้ยังอยู่หรือไม่ และยืนยันราคาปัจจุบัน เลขไมล์ และหลักฐาน VIN";
+  return "Please check whether this vehicle is still available and confirm the current price, mileage, and VIN evidence.";
+}
+
+function thaiSellerRequest() {
+  return "กรุณายืนยันว่ารถคันนี้ยังอยู่หรือไม่ พร้อมราคาปัจจุบัน เลขไมล์ และหลักฐาน VIN";
+}
+
+export function requestAvailability(caseRecord, now = new Date(), language = "en") {
   if (caseRecord.availability === "Availability Check Requested") return caseRecord;
   const createdAt = safeTime(now);
+  const selected = normalizeLanguage(language);
+  const originalText = availabilityRequestText(selected);
   return { ...caseRecord, status: "Availability Requested", availability: "Availability Check Requested", vehicle: { ...caseRecord.vehicle, availability: "Availability Check Requested" }, updatedAt: createdAt,
-    messages: [...caseRecord.messages, { id: `${caseRecord.id}-availability-customer-${createdAt}`, sender: "Customer", text: "Please check whether this vehicle is still available and confirm the current price, mileage, and VIN evidence.", createdAt, delivery: "Recorded" }, { id: `${caseRecord.id}-availability-ai-${createdAt}`, sender: "NK AI", text: "I prepared a Thai verification request for the NK sourcing team. No seller message has been sent from this preview. The case will remain unverified until a real response is recorded.", createdAt, delivery: "Prepared - not sent" }],
+    translationHistory: [...(caseRecord.translationHistory || []), { id: `${caseRecord.id}-translation-${createdAt}`, originalText, sourceLanguage: selected, translatedText: thaiSellerRequest(), translationLanguage: "th", purpose: "buyer_to_seller", status: "Prepared - not sent", createdAt }],
+    messages: [...caseRecord.messages, { id: `${caseRecord.id}-availability-customer-${createdAt}`, sender: "Customer", text: originalText, createdAt, delivery: "Recorded" }, { id: `${caseRecord.id}-availability-ai-${createdAt}`, sender: "NK AI", text: selected === "zh-CN" ? "已为 NK 团队准备泰语核实请求。此预览尚未向卖家发送消息，在记录真实回复前，车辆仍为未核实状态。" : selected === "th" ? "เตรียมข้อความภาษาไทยให้ทีม NK แล้ว แต่ระบบตัวอย่างนี้ยังไม่ได้ส่งหาผู้ขาย รถจะยังไม่ถูกยืนยันจนกว่าจะบันทึกคำตอบจริง" : "I prepared a Thai verification request for the NK sourcing team. No seller message has been sent from this preview. The case will remain unverified until a real response is recorded.", createdAt, delivery: "Prepared - not sent" }],
     timeline: [...caseRecord.timeline, { id: `${caseRecord.id}-availability-${createdAt}`, title: "Availability check requested", detail: "Seller inquiry prepared; awaiting an authorized send and real seller response.", createdAt }],
   };
 }
 
-export function requestInspection(caseRecord, now = new Date()) {
+export function requestInspection(caseRecord, now = new Date(), language = "en") {
   if (!caseRecord.inspectionQuote || caseRecord.inspectionQuote.status === "Requested - Awaiting Provider") return caseRecord;
   const createdAt = safeTime(now);
   return { ...caseRecord, status: "Inspection Requested", updatedAt: createdAt, inspectionQuote: { ...caseRecord.inspectionQuote, status: "Requested - Awaiting Provider", requestedAt: createdAt },
-    messages: [...caseRecord.messages, { id: `${caseRecord.id}-inspection-${createdAt}`, sender: "System", text: `Inspection requested at the configured preview price of ${formatCustomerUsd(caseRecord.inspectionQuote.totalThb)}. No provider is assigned or booked yet.`, createdAt, delivery: "Recorded" }],
+    messages: [...caseRecord.messages, { id: `${caseRecord.id}-inspection-${createdAt}`, sender: "System", text: normalizeLanguage(language) === "zh-CN" ? `已按配置的预览价格 ${formatCustomerUsd(caseRecord.inspectionQuote.totalThb)} 申请验车。目前尚未指派或预约服务商。` : normalizeLanguage(language) === "th" ? `ส่งคำขอตรวจสภาพตามราคาตัวอย่าง ${formatCustomerUsd(caseRecord.inspectionQuote.totalThb)} แล้ว แต่ยังไม่ได้มอบหมายหรือจองผู้ให้บริการ` : `Inspection requested at the configured preview price of ${formatCustomerUsd(caseRecord.inspectionQuote.totalThb)}. No provider is assigned or booked yet.`, createdAt, delivery: "Recorded" }],
     timeline: [...caseRecord.timeline, { id: `${caseRecord.id}-inspection-${createdAt}`, title: "Inspection requested", detail: "Waiting for an approved provider to accept the job.", createdAt }],
   };
 }
 
-export function buildGroundedAssistantReply(caseRecord, question) {
+export function buildGroundedAssistantReply(caseRecord, question, language = "en") {
   const text = String(question || "").toLowerCase();
+  const selected = normalizeLanguage(language);
   const vehicle = caseRecord.vehicle;
+  if (selected !== "en") {
+    if (/available|availability|still there|seller|还在|可售|ผู้ขาย|ยังอยู่/.test(text)) return selected === "zh-CN" ? `车辆可售状态尚未确认。当前案件状态为“${caseRecord.availability}”。我不会猜测或把车辆描述为可售。` : `ยังไม่ได้ยืนยันว่ารถยังอยู่ สถานะปัจจุบันคือ “${caseRecord.availability}” ระบบจะไม่คาดเดาหรือแสดงว่ารถยังอยู่`;
+    if (/price|cost|fee|total|commission|价格|费用|最低|ราคา|ค่าใช้จ่าย/.test(text)) {
+      const pricing = calculatePricing({ vehiclePriceThb: caseRecord.actualVehiclePurchasePriceThb ?? vehicle.observedPriceThb, platformTransactionRate: caseRecord.platformTransactionRate, buyingServiceRate: caseRecord.buyingServiceRate, inspectionTravelThb: caseRecord.inspectionQuote?.totalThb ?? null, domesticTransportThb: caseRecord.domesticTransportThb, repairModificationThb: caseRecord.repairModificationThb, exportShippingThb: caseRecord.exportShippingThb, otherAgreedThb: caseRecord.otherAgreedThb });
+      const feeText = `${translate(selected, "platformTransactionFee")} ${formatCustomerUsd(pricing.platformTransactionAmountThb)} + ${translate(selected, "buyingServiceFee")} ${formatCustomerUsd(pricing.buyingServiceAmountThb)}`;
+      return selected === "zh-CN" ? `当前已知小计为 ${formatCustomerUsd(pricing.knownSubtotalThb)}，其中包含 ${feeText}。${pricing.pendingCount} 项费用仍待确认，未计入小计。最终费用按实际车辆购买价格重新计算。` : `ยอดย่อยที่ทราบปัจจุบันคือ ${formatCustomerUsd(pricing.knownSubtotalThb)} รวม ${feeText} ยังมีค่าใช้จ่ายรอยืนยัน ${pricing.pendingCount} รายการที่ยังไม่รวม และค่าบริการจะคำนวณใหม่จากราคาซื้อรถจริง`;
+    }
+    if (/inspection|inspect|condition|验车|车况|ตรวจ|สภาพ/.test(text)) return !caseRecord.inspectionQuote ? (selected === "zh-CN" ? "车辆地点尚未匹配配置的验车区域。NK 必须先确认地点，我不会估算费用。" : "ตำแหน่งรถยังไม่ตรงกับเขตตรวจสภาพที่กำหนด NK ต้องยืนยันตำแหน่งก่อน ระบบจะไม่ประมาณค่าใช้จ่าย") : (selected === "zh-CN" ? `验车及出行预览费用为 ${formatCustomerUsd(caseRecord.inspectionQuote.totalThb)}，区域：${caseRecord.inspectionQuote.region}。状态：${caseRecord.inspectionQuote.status}。` : `ค่าตรวจสภาพและเดินทางตัวอย่างคือ ${formatCustomerUsd(caseRecord.inspectionQuote.totalThb)} สำหรับ ${caseRecord.inspectionQuote.region} สถานะ: ${caseRecord.inspectionQuote.status}`);
+    if (/mileage|engine|transmission|drive|spec|model|year|里程|发动机|规格|เลขไมล์|เครื่องยนต์|สเป็ก/.test(text)) return selected === "zh-CN" ? `${vehicle.title}：${vehicle.engine || "发动机待确认"}，${vehicle.transmission}，${vehicle.drive}，${vehicle.body}，${vehicle.mileageKm === null ? "里程待确认" : `${vehicle.mileageKm.toLocaleString("en-US")} km`}。这些信息仍需核实。` : `${vehicle.title}: ${vehicle.engine || "เครื่องยนต์รอตรวจสอบ"}, ${vehicle.transmission}, ${vehicle.drive}, ${vehicle.body}, ${vehicle.mileageKm === null ? "เลขไมล์รอตรวจสอบ" : `${vehicle.mileageKm.toLocaleString("en-US")} km`} ข้อมูลเหล่านี้ยังต้องตรวจสอบ`;
+    return selected === "zh-CN" ? "可售状态、当前价格、VIN 和车况必须在购买前核实。我只会根据案件中的信息回答。" : "ต้องยืนยันสถานะรถ ราคาปัจจุบัน VIN และสภาพรถก่อนซื้อ ระบบจะตอบจากข้อมูลในเคสเท่านั้น";
+  }
   if (/available|availability|still there|seller/.test(text)) return caseRecord.availability === "Verified Available" ? "This case has a recorded Verified Available status. Open the case timeline for the verification time and evidence." : `Availability is not confirmed. The current case state is “${caseRecord.availability}”. I will not guess or present the vehicle as available.`;
   if (/price|cost|fee|total|commission/.test(text)) {
-    const pricing = calculatePricing({ vehiclePriceThb: vehicle.observedPriceThb, commissionRate: caseRecord.commissionRate, inspectionTravelThb: caseRecord.inspectionQuote?.totalThb ?? null, domesticTransportThb: caseRecord.domesticTransportThb, repairModificationThb: caseRecord.repairModificationThb, exportShippingThb: caseRecord.exportShippingThb, otherAgreedThb: caseRecord.otherAgreedThb });
-    return `The known subtotal is ${formatCustomerUsd(pricing.knownSubtotalThb)}, including a ${pricing.commissionRate}% NK service fee applied only to the observed vehicle price. ${pricing.pendingCount} cost line${pricing.pendingCount === 1 ? " is" : "s are"} still pending and excluded from that subtotal. The preview uses THB ${CUSTOMER_FX_THB_PER_USD.toFixed(2)} per USD; an approved quote sets the final USD price.`;
+    const pricing = calculatePricing({ vehiclePriceThb: caseRecord.actualVehiclePurchasePriceThb ?? vehicle.observedPriceThb, platformTransactionRate: caseRecord.platformTransactionRate, buyingServiceRate: caseRecord.buyingServiceRate, inspectionTravelThb: caseRecord.inspectionQuote?.totalThb ?? null, domesticTransportThb: caseRecord.domesticTransportThb, repairModificationThb: caseRecord.repairModificationThb, exportShippingThb: caseRecord.exportShippingThb, otherAgreedThb: caseRecord.otherAgreedThb });
+    return `The known subtotal is ${formatCustomerUsd(pricing.knownSubtotalThb)}, including ${translate("en", "platformTransactionFee")} ${formatCustomerUsd(pricing.platformTransactionAmountThb)} and ${translate("en", "buyingServiceFee")} ${formatCustomerUsd(pricing.buyingServiceAmountThb)}. ${pricing.pendingCount} cost line${pricing.pendingCount === 1 ? " is" : "s are"} pending and excluded. NK service amounts recalculate from the actual vehicle purchase price.`;
   }
   if (/inspection|inspect|condition/.test(text)) return !caseRecord.inspectionQuote ? "The vehicle location does not match a configured inspection zone yet. NK must confirm the location before quoting; I will not estimate the fee." : `The configured inspection and travel preview is ${formatCustomerUsd(caseRecord.inspectionQuote.totalThb)} for ${caseRecord.inspectionQuote.region}. Current status: ${caseRecord.inspectionQuote.status}.`;
   if (/mileage|engine|transmission|drive|spec|model|year/.test(text)) return `${vehicle.title}: ${vehicle.engine || "engine unknown"}, ${vehicle.transmission}, ${vehicle.drive}, ${vehicle.body}, ${vehicle.mileageKm === null ? "mileage needs review" : `${vehicle.mileageKm.toLocaleString("en-US")} km`}. These are normalized from the available ${vehicle.demo ? "labeled demo evidence" : "captured listing evidence"} and remain subject to verification.`;
   return `${vehicle.summary} Availability, current price, VIN, and condition must be verified before purchase. Ask me about specifications, pricing, availability, or inspection and I will answer only from this case.`;
 }
 
-export function addCaseQuestion(caseRecord, question, now = new Date()) {
+export function addCaseQuestion(caseRecord, question, now = new Date(), language = "en") {
   const createdAt = safeTime(now); const trimmed = String(question || "").trim().slice(0, 1000); if (!trimmed) return caseRecord;
-  return { ...caseRecord, updatedAt: createdAt, messages: [...caseRecord.messages, { id: `${caseRecord.id}-q-${createdAt}`, sender: "Customer", text: trimmed, createdAt, delivery: "Recorded" }, { id: `${caseRecord.id}-a-${createdAt}`, sender: "NK AI", text: buildGroundedAssistantReply(caseRecord, trimmed), createdAt, delivery: "Local preview" }] };
+  const selected = normalizeLanguage(language);
+  const needsSellerTranslation = /available|availability|still there|price|lowest|还在|可售|最低|价格|ยังอยู่|ราคา/.test(trimmed.toLowerCase());
+  const translation = needsSellerTranslation ? { id: `${caseRecord.id}-translation-${createdAt}`, originalText: trimmed, sourceLanguage: selected, translatedText: thaiSellerRequest(), translationLanguage: "th", purpose: "buyer_to_seller", status: "Prepared - not sent", createdAt } : null;
+  return { ...caseRecord, updatedAt: createdAt, translationHistory: translation ? [...(caseRecord.translationHistory || []), translation] : (caseRecord.translationHistory || []), messages: [...caseRecord.messages, { id: `${caseRecord.id}-q-${createdAt}`, sender: "Customer", text: trimmed, createdAt, delivery: "Recorded" }, { id: `${caseRecord.id}-a-${createdAt}`, sender: "NK AI", text: buildGroundedAssistantReply(caseRecord, trimmed, selected), createdAt, delivery: "Local preview" }] };
 }
 
 export function presentCustomerListing(source) {

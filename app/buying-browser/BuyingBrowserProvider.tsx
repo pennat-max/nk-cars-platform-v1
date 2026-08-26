@@ -2,8 +2,10 @@
 
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { addCaseQuestion, createVehicleCase, initialBuyingBrowserState, requestAvailability, requestInspection } from "./domain.mjs";
+import { normalizeLanguage } from "./i18n.mjs";
+import { loadPricingSettings } from "./pricing-settings";
 import { clearPreviewMedia, hydratePreviewMedia, persistPreviewMedia, stateForLocalStorage } from "./preview-media";
-import type { BuyingBrowserState, CustomerIdentity, CustomerListing, GeneralMessage, SourceAdapterStatus, SourceCapture, VehicleCase } from "./types";
+import type { BuyingBrowserState, CustomerIdentity, CustomerLanguage, CustomerListing, GeneralMessage, SourceAdapterStatus, SourceCapture, VehicleCase } from "./types";
 
 type BuyingBrowserContextValue = {
   customer: CustomerIdentity;
@@ -11,6 +13,8 @@ type BuyingBrowserContextValue = {
   state: BuyingBrowserState;
   listings: CustomerListing[];
   hydrated: boolean;
+  language: CustomerLanguage;
+  setLanguage: (language: CustomerLanguage) => void;
   isSaved: (listingId: string) => boolean;
   toggleSaved: (listingId: string) => void;
   saveAsCase: (listing: CustomerListing, action?: "availability" | "inspection", sourceCapture?: SourceCapture) => string;
@@ -58,20 +62,30 @@ export function BuyingBrowserProvider({
 }) {
   const [state, setState] = useState<BuyingBrowserState>(() => withSeedCases(initialBuyingBrowserState(), seedCases));
   const [hydrated, setHydrated] = useState(false);
+  const [language, setLanguageState] = useState<CustomerLanguage>("en");
   const storageKey = useMemo(() => `nk-cars-buying-browser-v1:${customer.id}`, [customer.id]);
+  const languageStorageKey = useMemo(() => `nk-cars-language:${customer.id}`, [customer.id]);
 
   useEffect(() => {
     let cancelled = false;
     async function hydrate() {
       let nextState: BuyingBrowserState | null = null;
       try {
+        setLanguageState(normalizeLanguage(window.localStorage.getItem(languageStorageKey)) as CustomerLanguage);
         const raw = window.localStorage.getItem(storageKey);
         if (raw) {
           const parsed: unknown = JSON.parse(raw);
           if (validStoredState(parsed)) nextState = withSeedCases(await hydratePreviewMedia(storageKey, {
             ...parsed,
             sourceCaptures: Array.isArray(parsed.sourceCaptures) ? parsed.sourceCaptures : [],
-            cases: parsed.cases.map((record) => ({ ...record, sourceCaptureId: record.sourceCaptureId || null })),
+            cases: parsed.cases.map((record) => ({
+              ...record,
+              sourceCaptureId: record.sourceCaptureId || null,
+              actualVehiclePurchasePriceThb: record.actualVehiclePurchasePriceThb ?? null,
+              platformTransactionRate: record.platformTransactionRate ?? 6,
+              buyingServiceRate: record.buyingServiceRate ?? 4,
+              translationHistory: Array.isArray(record.translationHistory) ? record.translationHistory : [],
+            })),
           }), seedCases);
         }
       } catch {
@@ -85,7 +99,11 @@ export function BuyingBrowserProvider({
     }
     void hydrate();
     return () => { cancelled = true; };
-  }, [seedCases, storageKey]);
+  }, [languageStorageKey, seedCases, storageKey]);
+
+  useEffect(() => {
+    document.documentElement.lang = language;
+  }, [language]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -117,8 +135,8 @@ export function BuyingBrowserProvider({
   function saveAsCase(listing: CustomerListing, action?: "availability" | "inspection", explicitSourceCapture?: SourceCapture) {
     const existing = state.cases.find((item) => item.listingId === listing.id);
     const sourceCapture = explicitSourceCapture || state.sourceCaptures.find((item) => item.listingId === listing.id);
-    const { caseRecord } = createVehicleCase(listing, state.cases, customer.id, new Date(), sourceCapture?.id || null);
-    const nextRecord = action === "availability" ? requestAvailability(caseRecord) : action === "inspection" ? requestInspection(caseRecord) : caseRecord;
+    const { caseRecord } = createVehicleCase(listing, state.cases, customer.id, new Date(), sourceCapture?.id || null, loadPricingSettings());
+    const nextRecord = action === "availability" ? requestAvailability(caseRecord, new Date(), language) : action === "inspection" ? requestInspection(caseRecord, new Date(), language) : caseRecord;
     setState((current) => ({
       ...current,
       savedListingIds: current.savedListingIds.includes(listing.id) ? current.savedListingIds : [listing.id, ...current.savedListingIds],
@@ -134,15 +152,15 @@ export function BuyingBrowserProvider({
   }
 
   function requestCaseAvailability(caseId: string) {
-    updateCase(caseId, (record) => requestAvailability(record));
+    updateCase(caseId, (record) => requestAvailability(record, new Date(), language));
   }
 
   function requestCaseInspection(caseId: string) {
-    updateCase(caseId, (record) => requestInspection(record));
+    updateCase(caseId, (record) => requestInspection(record, new Date(), language));
   }
 
   function askCaseQuestion(caseId: string, question: string) {
-    updateCase(caseId, (record) => addCaseQuestion(record, question));
+    updateCase(caseId, (record) => addCaseQuestion(record, question, new Date(), language));
   }
 
   function addImportedListing(listing: CustomerListing, sourceCapture?: SourceCapture) {
@@ -165,9 +183,11 @@ export function BuyingBrowserProvider({
       const haystack = `${listing.title} ${listing.engine} ${listing.transmission} ${listing.drive} ${listing.body} ${listing.generalLocation}`.toLowerCase();
       return words.some((word) => haystack.includes(word));
     }).slice(0, 5);
-    const reply = matches.length
-      ? `I found ${matches.length} labeled demo result${matches.length === 1 ? "" : "s"} matching parts of your request. Review the vehicles below and keep hard requirements in the filters. Live source search is not connected yet.`
-      : "No current demo result matches enough of that request. I recorded the requirement in local preview history. A real source search will require an authorized source session.";
+    const reply = language === "zh-CN"
+      ? (matches.length ? `找到 ${matches.length} 个与部分需求匹配的当前结果。请查看车辆，并在筛选器中保留硬性条件。实时来源搜索尚未连接。` : "当前结果没有足够匹配的车辆。需求已记录在本地预览历史中；真实来源搜索需要授权会话。")
+      : language === "th"
+        ? (matches.length ? `พบรถปัจจุบัน ${matches.length} คันที่ตรงกับบางส่วนของคำขอ โปรดตรวจสอบรถและคงเงื่อนไขสำคัญไว้ในตัวกรอง การค้นหาแหล่งจริงยังไม่ได้เชื่อมต่อ` : "ยังไม่พบรถปัจจุบันที่ตรงกับคำขอเพียงพอ ระบบบันทึกความต้องการไว้ในประวัติตัวอย่างแล้ว การค้นหาแหล่งจริงต้องใช้เซสชันที่ได้รับอนุญาต")
+        : (matches.length ? `I found ${matches.length} current result${matches.length === 1 ? "" : "s"} matching parts of your request. Review the vehicles below and keep hard requirements in the filters. Live source search is not connected yet.` : "No current result matches enough of that request. I recorded the requirement in local preview history. A real source search will require an authorized source session.");
     const messages: GeneralMessage[] = [
       { id: `find-customer-${now}`, sender: "Customer", text, createdAt: now },
       { id: `find-ai-${now}`, sender: "NK AI", text: reply, createdAt: now },
@@ -180,12 +200,20 @@ export function BuyingBrowserProvider({
     setState(initialBuyingBrowserState());
   }
 
+  function setLanguage(nextLanguage: CustomerLanguage) {
+    const normalized = normalizeLanguage(nextLanguage) as CustomerLanguage;
+    setLanguageState(normalized);
+    try { window.localStorage.setItem(languageStorageKey, normalized); } catch { /* Language still applies for this session. */ }
+  }
+
   const value: BuyingBrowserContextValue = {
     customer,
     sourceStatus,
     state,
     listings,
     hydrated,
+    language,
+    setLanguage,
     isSaved,
     toggleSaved,
     saveAsCase,

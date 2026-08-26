@@ -7,6 +7,27 @@ export type AvailabilityState =
 
 export type TranslationState = "Normalized" | "Translation Pending" | "Need Review";
 
+export type CustomerLanguage = "en" | "zh-CN" | "th";
+export type SourceLanguage = CustomerLanguage | "unknown";
+
+export type SourceTextEvidence = {
+  originalText: string;
+  sourceLanguage: SourceLanguage;
+  normalizedText: string;
+  translationLanguage: CustomerLanguage;
+};
+
+export type TranslationTrace = {
+  id: string;
+  originalText: string;
+  sourceLanguage: CustomerLanguage;
+  translatedText: string | null;
+  translationLanguage: CustomerLanguage;
+  purpose: "buyer_to_seller" | "seller_to_buyer";
+  status: "Prepared - not sent" | "Recorded" | "Needs Human Review";
+  createdAt: string;
+};
+
 export type CustomerListing = {
   id: string;
   adapterId: string;
@@ -90,6 +111,7 @@ export type SourceCapture = {
     | "manual_evidence";
   importStatus: "imported" | "partial" | "evidence_only";
   capturedAt: string;
+  textEvidence?: SourceTextEvidence;
 };
 
 export type VehicleCase = {
@@ -103,26 +125,31 @@ export type VehicleCase = {
   status: "Saved" | "Availability Requested" | "Inspection Requested";
   availability: AvailabilityState;
   vehicle: CustomerListing;
-  commissionRate: number;
+  actualVehiclePurchasePriceThb: number | null;
+  platformTransactionRate: number;
+  buyingServiceRate: number;
   inspectionQuote: InspectionQuote | null;
   domesticTransportThb: number | null;
   repairModificationThb: number | null;
   exportShippingThb: number | null;
   otherAgreedThb: number | null;
+  translationHistory: TranslationTrace[];
   messages: CaseMessage[];
   timeline: CaseTimelineItem[];
 };
 
 export type PricingLine = {
   key: string;
-  label: string;
   amountThb: number | null;
   status: "Known" | "Pending";
 };
 
 export type PricingBreakdown = {
-  commissionRate: number;
-  commissionAmountThb: number | null;
+  platformTransactionRate: number;
+  buyingServiceRate: number;
+  platformTransactionAmountThb: number | null;
+  buyingServiceAmountThb: number | null;
+  totalNkFeeAmountThb: number | null;
   knownSubtotalThb: number;
   pendingCount: number;
   lines: PricingLine[];

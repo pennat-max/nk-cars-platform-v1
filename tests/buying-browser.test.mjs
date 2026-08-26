@@ -15,6 +15,7 @@ import {
   requestAvailability,
   requestInspection,
 } from "../app/buying-browser/domain.mjs";
+import { detectSourceLanguage, localizeAvailability, localizeListingSummary, normalizeLanguage, translate } from "../app/buying-browser/i18n.mjs";
 
 const source = {
   id: "listing-1",
@@ -66,12 +67,36 @@ test("browse filtering preserves explicit vehicle criteria", () => {
   assert.deepEqual(filterListings([customer, second], { ...DEFAULT_FILTERS, body: "Double Cab", sort: "price-low" }).map((item) => item.id), ["listing-1"]);
 });
 
-test("pricing applies commission only to vehicle purchase price", () => {
-  const result = calculatePricing({ vehiclePriceThb: 900000, commissionRate: 10, inspectionTravelThb: 3500, domesticTransportThb: 10000, repairModificationThb: 20000, exportShippingThb: 50000, otherAgreedThb: null });
-  assert.equal(result.commissionAmountThb, 90000);
-  assert.equal(result.knownSubtotalThb, 1_073_500);
+test("pricing splits NK fees into configurable 6% and 4% vehicle-price components", () => {
+  const result = calculatePricing({ vehiclePriceThb: 500000, platformTransactionRate: 6, buyingServiceRate: 4, inspectionTravelThb: 3500, domesticTransportThb: 10000, repairModificationThb: 20000, exportShippingThb: 50000, otherAgreedThb: null });
+  assert.equal(result.platformTransactionAmountThb, 30000);
+  assert.equal(result.buyingServiceAmountThb, 20000);
+  assert.equal(result.totalNkFeeAmountThb, 50000);
+  assert.equal(result.knownSubtotalThb, 633_500);
   assert.equal(result.pendingCount, 1);
   assert.equal(result.lines.find((line) => line.key === "other")?.status, "Pending");
+  assert.equal(result.lines.find((line) => line.key === "inspection")?.amountThb, 3500);
+  assert.ok(result.lines.every((line) => !("label" in line)), "pricing engine returns structured keys, not customer labels or percentages");
+
+  const configured = calculatePricing({ vehiclePriceThb: 500000, platformTransactionRate: 7, buyingServiceRate: 3, inspectionTravelThb: 100000, domesticTransportThb: null, repairModificationThb: null, exportShippingThb: null, otherAgreedThb: null });
+  assert.equal(configured.platformTransactionAmountThb, 35000);
+  assert.equal(configured.buyingServiceAmountThb, 15000);
+  assert.equal(configured.lines.find((line) => line.key === "inspection")?.amountThb, 100000, "pass-through cost is not marked up");
+});
+
+test("localization changes presentation without mutating authoritative listing data", () => {
+  const listing = presentCustomerListing(source);
+  const before = structuredClone(listing);
+  assert.equal(normalizeLanguage("unsupported"), "en");
+  assert.equal(translate("en", "vehiclePrice"), "Vehicle Price");
+  assert.equal(translate("zh-CN", "vehiclePrice"), "车辆价格");
+  assert.equal(translate("th", "vehiclePrice"), "ราคารถ");
+  assert.equal(localizeAvailability("Availability Not Yet Confirmed", "zh-CN"), "可售状态尚未确认");
+  assert.equal(detectSourceLanguage("รถสวย ไมล์น้อย"), "th");
+  assert.equal(detectSourceLanguage("车辆状态很好"), "zh-CN");
+  assert.match(localizeListingSummary(listing, "zh-CN"), /Toyota Hilux Revo/);
+  assert.match(localizeListingSummary(listing, "th"), /Toyota Hilux Revo/);
+  assert.deepEqual(listing, before);
 });
 
 test("customer USD display uses one deterministic preview FX rate", () => {
@@ -93,6 +118,8 @@ test("Vehicle Case deduplicates save and records honest pending workflows", () =
   assert.equal(created.caseRecord.id, "NK-CASE-2026-001245");
   assert.equal(created.caseRecord.sourceCaptureId, null);
   assert.equal(created.caseRecord.availability, "Availability Not Yet Confirmed");
+  assert.equal(created.caseRecord.platformTransactionRate, 6);
+  assert.equal(created.caseRecord.buyingServiceRate, 4);
   const duplicate = createVehicleCase(listing, [created.caseRecord], "customer-1", "2026-08-23T10:01:00.000Z");
   assert.equal(duplicate.created, false);
   assert.equal(duplicate.caseRecord.id, created.caseRecord.id);
@@ -107,6 +134,19 @@ test("Vehicle Case deduplicates save and records honest pending workflows", () =
   assert.match(answered.messages.at(-1).text, /not confirmed|requested/i);
 });
 
+test("Chinese buyer question preserves original text and prepares a Thai seller translation without sending", () => {
+  const listing = presentCustomerListing(source);
+  const created = createVehicleCase(listing, [], "customer-1", "2026-08-23T10:00:00.000Z").caseRecord;
+  const question = "这辆车还在吗？最低价格是多少？";
+  const answered = addCaseQuestion(created, question, "2026-08-23T10:04:00.000Z", "zh-CN");
+  assert.equal(answered.messages.at(-2).text, question);
+  assert.match(answered.messages.at(-1).text, /尚未确认/);
+  assert.equal(answered.translationHistory.at(-1).originalText, question);
+  assert.equal(answered.translationHistory.at(-1).sourceLanguage, "zh-CN");
+  assert.equal(answered.translationHistory.at(-1).translationLanguage, "th");
+  assert.equal(answered.translationHistory.at(-1).status, "Prepared - not sent");
+});
+
 test("external Facebook handoff captures the source internally and links it to a customer-safe case", () => {
   const listing = { ...presentCustomerListing(source), demo: false };
   const capture = createExternalSourceCapture(listing, {
@@ -115,10 +155,13 @@ test("external Facebook handoff captures the source internally and links it to a
     sourcePlatform: "Facebook Marketplace",
     captureMethod: "external_share_link",
     importStatus: "partial",
+    textEvidence: { originalText: "รถสวย ไมล์ 42,000", sourceLanguage: "th", normalizedText: "Vehicle evidence normalized for review.", translationLanguage: "en" },
   }, "2026-08-24T01:00:00.000Z");
   const created = createVehicleCase(listing, [], "customer-1", "2026-08-24T01:01:00.000Z", capture.id);
   assert.equal(capture.listingId, listing.id);
   assert.equal(capture.canonicalUrl, "https://www.facebook.com/marketplace/item/1716607786274590/");
+  assert.equal(capture.textEvidence.originalText, "รถสวย ไมล์ 42,000");
+  assert.equal(capture.textEvidence.translationLanguage, "en");
   assert.equal(created.caseRecord.sourceCaptureId, capture.id);
   assert.match(created.caseRecord.timeline[0].detail, /source link captured internally/i);
   assert.doesNotMatch(JSON.stringify(created.caseRecord.vehicle), /facebook\.com|1716607786274590/i);
@@ -185,7 +228,7 @@ test("renders additive Buying Browser routes without customer source leakage", a
       assert.match(textHtml, /1 of 6/i);
       assert.match(html, /aria-label="Next photo"/i);
       assert.match(html, /Preview FX: THB 35\.00 = USD 1/i);
-      const actionLabels = ["Save Vehicle", "Ask NK AI", "Check Availability", "Request Inspection", "Buy Through NK"];
+      const actionLabels = ["Save to NK", "Ask NK AI", "Check Availability", "Request Inspection", "Buy Through NK"];
       const actionPositions = actionLabels.map((label) => html.indexOf(label));
       assert.ok(actionPositions.every((position) => position >= 0), "all vehicle actions render");
       assert.deepEqual(actionPositions, [...actionPositions].sort((a, b) => a - b), "vehicle actions render in the approved order");
@@ -241,6 +284,17 @@ test("renders captured and demo source records only in the owner view", async ()
   assert.match(textHtml, /Review all 19 captured images/i);
   assert.match(html, /Mileage conflict: 35,000 vs 36,000 km/i);
   assert.match(html, /Preview \/ not an auth boundary/i);
+  assert.match(html, /NK fee settings/i);
+  assert.match(html, /Platform &amp; Transaction component/i);
+});
+
+test("customer pricing component renders amount-only NK fee labels and inclusions", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const component = await readFile(new URL("../app/buying-browser/components/PricingBreakdown.tsx", import.meta.url), "utf8");
+  assert.match(component, /platformTransactionFee/);
+  assert.match(component, /buyingServiceFee/);
+  assert.match(component, /whatsIncluded/);
+  assert.doesNotMatch(component, /commissionRate|% service fee|10%/i);
 });
 
 test("browser capture evidence contains ten real listings and 167 local images", async () => {

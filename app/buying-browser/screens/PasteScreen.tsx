@@ -8,6 +8,8 @@ import { useBuyingBrowser } from "../BuyingBrowserProvider";
 import { createExternalSourceCapture } from "../domain.mjs";
 import { nativeCaptureMethod } from "../native-bridge";
 import { formatMileage, formatUsdFromThb } from "../format";
+import { useI18n } from "../use-i18n";
+import { detectSourceLanguage } from "../i18n.mjs";
 import type { CustomerListing, SourceCapture } from "../types";
 
 type ImportPayload = {
@@ -121,6 +123,7 @@ async function compressImage(file: File): Promise<EvidencePhoto> {
 
 export default function PasteScreen({ autoCapture = false }: { autoCapture?: boolean }) {
   const { addImportedListing, saveAsCase, hydrated } = useBuyingBrowser();
+  const { language, t, listingSummary } = useI18n();
   const [url, setUrl] = useState("");
   const [listingText, setListingText] = useState("");
   const [busy, setBusy] = useState(false);
@@ -181,7 +184,7 @@ export default function PasteScreen({ autoCapture = false }: { autoCapture?: boo
       if (!response.ok || !["imported", "partial"].includes(payload.status || "")) { setMessage(payload.message || "This listing could not be read automatically. Continue with screenshots/photos or listing text."); return; }
       const listing = buildImportedListing(payload, sourceUrl);
       const canonicalUrl = facebookSourceCaptureUrl(payload.canonical_url || "") || sourceUrl;
-      const sourceCapture = createExternalSourceCapture(listing, { submittedUrl: sourceUrl, canonicalUrl, sourcePlatform: "Facebook Marketplace", captureMethod: createCaseAutomatically ? captureMethod : "external_share_link", importStatus: payload.status === "imported" ? "imported" : "partial" });
+      const sourceCapture = createExternalSourceCapture(listing, { submittedUrl: sourceUrl, canonicalUrl, sourcePlatform: "Facebook Marketplace", captureMethod: createCaseAutomatically ? captureMethod : "external_share_link", importStatus: payload.status === "imported" ? "imported" : "partial", ...(payload.description ? { textEvidence: { originalText: payload.description, sourceLanguage: detectSourceLanguage(payload.description), normalizedText: listing.summary, translationLanguage: "en" } } : {}) });
       addImportedListing(listing, sourceCapture); setResult(listing); setResultCapture(sourceCapture);
       if (createCaseAutomatically) {
         const id = saveAsCase(listing, undefined, sourceCapture);
@@ -218,7 +221,7 @@ export default function PasteScreen({ autoCapture = false }: { autoCapture?: boo
       const ref = validExternalUrl ? referenceFromUrl(validExternalUrl) : `UPLOAD-${Date.now()}`;
       const listing: CustomerListing = { id:`imported-${ref.toLowerCase()}`,adapterId:"uploaded-evidence",sourceReference:ref,title:[values.year,values.brand,values.model,values.grade].filter(Boolean).join(" ") || "Vehicle from uploaded evidence",summary:values.customerDescriptionEn || "Uploaded evidence saved for manual specification review.",brand:values.brand || "Need Review",model:values.model || "Need Review",year:numeric(values.year),grade:values.grade || "Need Review",engine:values.engine || values.engineCapacity || "Need Review",transmission:values.transmission === "AT" || values.transmission === "MT" ? values.transmission : "Unknown",drive:values.drive === "2WD" || values.drive === "4WD" ? values.drive : "Unknown",body:values.body || values.cabType || "Need Review",mileageKm:numeric(values.mileage),color:values.color || "Need Review",observedPriceThb:numeric(values.sourcePrice),observedAt:new Date().toISOString(),generalLocation:broadLocation(values.location),imageUrls:photos.map((photo) => photo.dataUrl),availability:"Availability Not Yet Confirmed",translationState:values.brand && values.model ? "Normalized" : "Need Review",evidenceLabels:[`${photos.length} uploaded image${photos.length === 1 ? "" : "s"}`,listingText.trim() ? "Pasted listing text" : "No listing text", "NK AI structured extraction"],demo:false };
       const facebookUrl = facebookSourceCaptureUrl(validExternalUrl);
-      const sourceCapture = facebookUrl ? createExternalSourceCapture(listing, { submittedUrl: facebookUrl, canonicalUrl: facebookUrl, sourcePlatform: "Facebook Marketplace", captureMethod: "manual_evidence", importStatus: "evidence_only" }) : undefined;
+      const sourceCapture = facebookUrl ? createExternalSourceCapture(listing, { submittedUrl: facebookUrl, canonicalUrl: facebookUrl, sourcePlatform: "Facebook Marketplace", captureMethod: "manual_evidence", importStatus: "evidence_only", ...(listingText.trim() ? { textEvidence: { originalText: listingText.trim(), sourceLanguage: "unknown", normalizedText: listing.summary, translationLanguage: language } } : {}) }) : undefined;
       addImportedListing(listing, sourceCapture); setResult(listing); setMessage("NK AI analyzed the uploaded evidence as one vehicle. Review unknown or low-confidence facts before verification.");
     } catch { setAiError("NK AI could not be reached. You can still save an evidence case for manual review."); }
     finally { setAiBusy(false); }
@@ -228,7 +231,7 @@ export default function PasteScreen({ autoCapture = false }: { autoCapture?: boo
     const ref = validExternalUrl ? referenceFromUrl(validExternalUrl) : `UPLOAD-${Date.now()}`;
     const listing: CustomerListing = { id:`imported-${ref.toLowerCase()}`,adapterId:"manual-evidence",sourceReference:ref,title:"Vehicle evidence awaiting review",summary:"Customer-supplied screenshots/photos and listing text were preserved in this local preview case. Vehicle facts still need manual or AI review.",brand:"Need Review",model:"Need Review",year:null,grade:"Need Review",engine:"Need Review",transmission:"Unknown",drive:"Unknown",body:"Need Review",mileageKm:null,color:"Need Review",observedPriceThb:null,observedAt:new Date().toISOString(),generalLocation:"Thailand",imageUrls:photos.map((photo) => photo.dataUrl),availability:"Availability Not Yet Confirmed",translationState:"Need Review",evidenceLabels:[`${photos.length} uploaded image${photos.length === 1 ? "" : "s"}`,listingText.trim() ? "Pasted listing text" : "Details pending"],demo:false };
     const facebookUrl = facebookSourceCaptureUrl(validExternalUrl);
-    const sourceCapture = facebookUrl ? createExternalSourceCapture(listing, { submittedUrl: facebookUrl, canonicalUrl: facebookUrl, sourcePlatform: "Facebook Marketplace", captureMethod: "manual_evidence", importStatus: "evidence_only" }) : undefined;
+    const sourceCapture = facebookUrl ? createExternalSourceCapture(listing, { submittedUrl: facebookUrl, canonicalUrl: facebookUrl, sourcePlatform: "Facebook Marketplace", captureMethod: "manual_evidence", importStatus: "evidence_only", ...(listingText.trim() ? { textEvidence: { originalText: listingText.trim(), sourceLanguage: "unknown", normalizedText: listing.summary, translationLanguage: language } } : {}) }) : undefined;
     addImportedListing(listing, sourceCapture); setResult(listing); setMessage("Evidence case prepared. Specifications, source price, and availability remain unconfirmed.");
   }
 
@@ -248,7 +251,7 @@ export default function PasteScreen({ autoCapture = false }: { autoCapture?: boo
         {message && <div className={result ? "bb-import-message success" : "bb-import-message"}><span>{result ? <CheckCircle2 size={19} /> : <AlertCircle size={19} />}</span><p>{message}</p>{validExternalUrl && !result && <a href={validExternalUrl} target="_blank" rel="noreferrer">Open source listing<ExternalLink size={15} /></a>}</div>}
       </section>
 
-      {result && <section className="bb-import-preview"><div className="bb-import-cover">{result.imageUrls[0] ? <img src={result.imageUrls[0]} alt={result.title} /> : <div className="bb-photo-placeholder"><Camera size={27} /><span>Vehicle photo pending</span></div>}{rawResult?.images?.length && <span>{rawResult.images.length}{rawResult.expected_image_count ? ` of ${rawResult.expected_image_count}` : ""} accessible image{rawResult.images.length === 1 ? "" : "s"}</span>}</div><div><p className="bb-kicker">Customer-safe imported preview</p><h2>{result.title}</h2><strong>{formatUsdFromThb(result.observedPriceThb)}</strong><p>{result.summary}</p><dl><div><dt>Transmission</dt><dd>{result.transmission}</dd></div><div><dt>Drive</dt><dd>{result.drive}</dd></div><div><dt>Body</dt><dd>{result.body}</dd></div><div><dt>Mileage</dt><dd>{formatMileage(result.mileageKm)}</dd></div></dl><button className="bb-button primary" onClick={openCase}><FolderPlus size={18} />Save as Vehicle Case</button></div></section>}
+      {result && <section className="bb-import-preview"><div className="bb-import-cover">{result.imageUrls[0] ? <img src={result.imageUrls[0]} alt={result.title} /> : <div className="bb-photo-placeholder"><Camera size={27} /><span>Vehicle photo pending</span></div>}{rawResult?.images?.length && <span>{rawResult.images.length}{rawResult.expected_image_count ? ` of ${rawResult.expected_image_count}` : ""} accessible image{rawResult.images.length === 1 ? "" : "s"}</span>}</div><div><p className="bb-kicker">Customer-safe imported preview</p><h2>{result.title}</h2><strong>{formatUsdFromThb(result.observedPriceThb)}</strong><p>{listingSummary(result)}</p><dl><div><dt>{t("transmission")}</dt><dd>{result.transmission}</dd></div><div><dt>{t("drive")}</dt><dd>{result.drive}</dd></div><div><dt>{t("bodyCab")}</dt><dd>{result.body}</dd></div><div><dt>{t("mileage")}</dt><dd>{formatMileage(result.mileageKm)}</dd></div></dl><button className="bb-button primary" onClick={openCase}><FolderPlus size={18} />{t("saveToNk")}</button></div></section>}
 
       <section className="bb-fallback-tool">
         <div className="bb-section-heading"><div><p className="bb-kicker">Working fallback</p><h2>Upload Screenshots / Photos</h2><p>Select up to 30 images from one vehicle. They are analyzed together, not as unrelated vehicles.</p></div><span><Camera size={20} /></span></div>
