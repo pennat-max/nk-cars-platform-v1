@@ -601,3 +601,34 @@ Started Milestone 1: Next.js shell and visual parity.
 ### Next Recommended Milestone
 
 - `BB-V1D-01 - Durable Review And Cases`: persist publication decisions, saved vehicles, Vehicle Cases, timeline, and conversation history under approved customer identity/RLS while retaining the current customer-safe DTO and private-source boundary.
+
+## 2026-08-26 - Bangkok Metro And Customer Navigation Simplification
+
+### Completed
+
+- Changed the default Browse scope from All Thailand to Bangkok Metro: Bangkok, Nonthaburi, Pathum Thani, Samut Prakan, Samut Sakhon, and Nakhon Pathom.
+- Kept Nearby Provinces and All Thailand available in the full filter sheet. Direct links to out-of-area vehicles continue to work.
+- Corrected the current result status from the ambiguous `10 selected` label to `NK Selection`; the default view now truthfully shows six matching vehicles.
+- Simplified mobile navigation to Browse, Saved, My Cases, Messages, and Account. Inspection remains accessible from My Cases and its existing route/workflow was preserved.
+- Added a photo-level Save heart on Vehicle detail and moved Check Availability plus Ask NK AI above the location/specification sections. Check Availability is marked as the recommended first step.
+- Replaced customer-facing technical normalization labels with translated vehicle details, translated-from-Thai/needs-review state, listing facts, and source-photo count.
+- Expanded the deterministic Bangkok Metro inspection zone to Samut Sakhon and Nakhon Pathom without changing the configured fee amounts.
+
+### Verification
+
+- `git diff --check`: passed.
+- TypeScript `--noEmit`: passed.
+- ESLint: passed with 0 errors and 13 existing `<img>` optimization warnings.
+- `npm.cmd test`: passed, including build and 36/36 Node tests.
+- iPhone viewport 390 x 844: Browse, Vehicle detail, Chinese labels, bottom navigation, and Vehicle Case availability transition passed with no horizontal page overflow.
+- Check Availability created/opened a deduplicated Vehicle Case and recorded `Availability Check Requested`; no real seller message was sent.
+
+### Current Limits
+
+- The six default-area vehicles are reviewed static snapshots, not a live synchronized feed.
+- Inspection/travel amounts remain configured preview rules. No provider was assigned or booked.
+- Customer state remains browser-local until the durable identity/case milestone is approved and connected.
+
+### Next Recommended Milestone
+
+- `BB-V1D-01 - Durable Review And Cases` remains next. Preserve the Bangkok Metro defaults and clarified customer action hierarchy while adding tenant-scoped persistence.

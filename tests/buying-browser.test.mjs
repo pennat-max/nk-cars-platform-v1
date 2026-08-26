@@ -63,8 +63,20 @@ test("browse filtering preserves explicit vehicle criteria", () => {
   const second = { ...customer, id: "listing-2", brand: "Ford", model: "Ranger", title: "2020 Ford Ranger", year: 2020, transmission: "MT", drive: "2WD", body: "Extended Cab", observedPriceThb: 600000, mileageKm: 90000, generalLocation: "Rayong" };
   const matches = filterListings([customer, second], { ...DEFAULT_FILTERS, query: "Revo", yearFrom: "2021", priceMax: "950000", mileageMax: "50000", drive: "4WD", location: "Bangkok" });
   assert.deepEqual(matches.map((item) => item.id), ["listing-1"]);
-  assert.deepEqual(filterListings([customer, second], { ...DEFAULT_FILTERS, transmission: "MT" }).map((item) => item.id), ["listing-2"]);
+  assert.deepEqual(filterListings([customer, second], { ...DEFAULT_FILTERS, transmission: "MT", location: "All Thailand" }).map((item) => item.id), ["listing-2"]);
   assert.deepEqual(filterListings([customer, second], { ...DEFAULT_FILTERS, body: "Double Cab", sort: "price-low" }).map((item) => item.id), ["listing-1"]);
+});
+
+test("browse defaults to Bangkok Metro and groups the approved nearby operating area", () => {
+  const bangkok = presentCustomerListing(source);
+  const nonthaburi = { ...bangkok, id: "listing-nonthaburi", generalLocation: "Nonthaburi" };
+  const samutSakhon = { ...bangkok, id: "listing-samut-sakhon", generalLocation: "Samut Sakhon" };
+  const chonBuri = { ...bangkok, id: "listing-chon-buri", generalLocation: "Chon Buri" };
+  const rayong = { ...bangkok, id: "listing-rayong", generalLocation: "Rayong" };
+  assert.equal(DEFAULT_FILTERS.location, "Bangkok Metro");
+  assert.deepEqual(filterListings([bangkok, nonthaburi, samutSakhon, chonBuri, rayong]).map((item) => item.id), ["listing-1", "listing-nonthaburi", "listing-samut-sakhon"]);
+  assert.deepEqual(filterListings([bangkok, nonthaburi, samutSakhon, chonBuri, rayong], { ...DEFAULT_FILTERS, location: "Nearby Provinces" }).map((item) => item.id), ["listing-chon-buri"]);
+  assert.equal(filterListings([bangkok, nonthaburi, samutSakhon, chonBuri, rayong], { ...DEFAULT_FILTERS, location: "All Thailand" }).length, 5);
 });
 
 test("pricing splits NK fees into configurable 6% and 4% vehicle-price components", () => {
@@ -108,6 +120,7 @@ test("customer USD display uses one deterministic preview FX rate", () => {
 
 test("inspection quote uses deterministic configured location zones", () => {
   assert.deepEqual(inspectionQuoteForLocation("Bangkok, Thailand"), { region: "Bangkok Metro", baseFeeThb: 2900, travelFeeThb: 600, totalThb: 3500, status: "Quote Ready" });
+  assert.deepEqual(inspectionQuoteForLocation("Nakhon Pathom, Thailand"), { region: "Bangkok Metro", baseFeeThb: 2900, travelFeeThb: 600, totalThb: 3500, status: "Quote Ready" });
   assert.equal(inspectionQuoteForLocation("Unknown province"), null);
 });
 
@@ -199,7 +212,9 @@ test("renders additive Buying Browser routes without customer source leakage", a
     if (route === "/buy") {
       assert.match(html, /data-browse-marketplace-v2/i);
       assert.match(html, /data-vehicle-card-v2/i);
-      assert.match(html, /10 selected/i);
+      assert.match(textHtml, /<b>6<\/b> vehicles/i);
+      assert.match(html, /NK Selection/i);
+      assert.doesNotMatch(html, /10 selected/i);
       assert.match(html, /USD 21,686/i);
       assert.doesNotMatch(html, /data-real-source-launch/i);
     }
@@ -207,7 +222,9 @@ test("renders additive Buying Browser routes without customer source leakage", a
       assert.match(html, /data-browse-marketplace-v2/i);
       assert.match(html, /data-vehicle-card-v2/i);
       assert.match(html, /2020 Toyota Hilux Revo Rocco 2\.4 AT/i);
-      assert.match(html, /10 selected/i);
+      assert.match(textHtml, /<b>6<\/b> vehicles/i);
+      assert.match(html, /Bangkok Metro/i);
+      assert.doesNotMatch(html, /10 selected/i);
       assert.doesNotMatch(html, /Explore customer-safe vehicle results|Demo market results|Primary Buying Browser actions/i);
     }
     if (route === "/buy/browser") {
@@ -229,7 +246,7 @@ test("renders additive Buying Browser routes without customer source leakage", a
       assert.match(html, /aria-label="Next photo"/i);
       assert.match(html, /aria-label="Open photo 1 fullscreen"/i);
       assert.match(html, /Preview FX: THB 35\.00 = USD 1/i);
-      const actionLabels = ["Save to NK", "Ask NK AI", "Check Availability", "Request Inspection", "Buy Through NK"];
+      const actionLabels = ["Save to NK", "Check Availability", "Ask NK AI", "Request Inspection", "Buy Through NK"];
       const actionPositions = actionLabels.map((label) => html.indexOf(label));
       assert.ok(actionPositions.every((position) => position >= 0), "all vehicle actions render");
       assert.deepEqual(actionPositions, [...actionPositions].sort((a, b) => a - b), "vehicle actions render in the approved order");

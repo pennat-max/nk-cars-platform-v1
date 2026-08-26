@@ -113,7 +113,11 @@ Primary actions:
 - Request Inspection
 
 Suggested customer navigation:
-**Browse | Saved/My Vehicles | My Cases | Inspections | Messages/Account**
+**Browse | Saved | My Cases | Messages | Account**
+
+V1 Browse defaults to **Bangkok Metro** to reduce inspection/travel time and cost. The operating group currently includes Bangkok, Nonthaburi, Pathum Thani, Samut Prakan, Samut Sakhon, and Nakhon Pathom. Nearby provinces and All Thailand remain available through filters; they are not the default customer view.
+
+Inspection remains a first-class Vehicle Case workflow but is no longer a separate primary mobile navigation destination. Customers access inspection status and requests from My Cases. Vehicle detail presents Check Availability as the recommended first step, keeps Ask NK AI beside it, and keeps Save as a familiar photo-level heart action.
 
 Customer location/destination country is separate from Search Location. Do not use the overseas customer's physical location as the Thai Marketplace search area.
 
@@ -238,6 +242,9 @@ Latest confirmed checkpoint from Codex:
 - Current preview Vehicle Cases are browser-local, not durable production records.
 - Current branch: `codex/buying-browser-rebuild`.
 - Checkpoint latest pushed implementation commit before this documentation update: `e1b4cacc57bdd914c09c671be908f32e817e7a8f`.
+- Bangkok Metro is now the default Browse scope. Six of the current ten reviewed records are in the default operating area; direct links and All Thailand filtering still retain access to the remaining records.
+- Mobile navigation is now Browse, Saved, My Cases, Messages, and Account. Inspection remains available inside My Cases.
+- Vehicle detail now surfaces Check Availability and Ask NK AI before specifications, uses a photo-level Save control, and replaces customer-facing technical normalization labels with translated vehicle language.
 
 ## 13. Next implementation priority
 

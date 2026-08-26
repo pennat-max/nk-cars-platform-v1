@@ -17,7 +17,7 @@ export default async function BuyingBrowserRoute({ view, sourceId, caseId }: { v
     : { id: "preview-james-mwangi", displayName: "James Mwangi", email: null, country: "Kenya", destinationPort: "Mombasa", isPreview: true };
   const [sourceStatus, result] = await Promise.all([
     customerMarketplaceAdapter.getStatus(),
-    customerMarketplaceAdapter.search({ customerId: customer.id, searchArea: "Thailand", filters: { ...DEFAULT_FILTERS }, limit: 50 }),
+    customerMarketplaceAdapter.search({ customerId: customer.id, searchArea: "Thailand", filters: { ...DEFAULT_FILTERS, location: "All Thailand" }, limit: 50 }),
   ]);
   return <BuyingBrowserApp view={view} sourceId={sourceId} caseId={caseId} customer={customer} sourceStatus={sourceStatus} listings={result.results} seedCases={[createCapturedPocCase(customer.id)]} />;
 }

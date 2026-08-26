@@ -10,7 +10,8 @@ import { useI18n } from "../use-i18n";
 import type { BrowseFilters } from "../types";
 import ListingCard from "../components/ListingCard";
 
-const locations = ["All Thailand", "Bangkok", "Chon Buri", "Rayong", "Ayutthaya", "Chiang Mai", "Khon Kaen", "Nakhon Ratchasima"];
+const metroLocations = ["Bangkok Metro", "Bangkok", "Nonthaburi", "Pathum Thani", "Samut Prakan", "Samut Sakhon", "Nakhon Pathom"];
+const locations = [...metroLocations, "Nearby Provinces", "All Thailand", "Chon Buri", "Ayutthaya", "Rayong", "Chiang Mai", "Khon Kaen", "Nakhon Ratchasima"];
 const yearOptions = ["", "2014", "2018", "2019", "2020", "2021", "2022", "2023", "2024", "2025"];
 
 export default function BrowseScreen({ savedOnly = false }: { savedOnly?: boolean }) {
@@ -21,9 +22,16 @@ export default function BrowseScreen({ savedOnly = false }: { savedOnly?: boolea
   const sourceListings = savedOnly ? listings.filter((item) => state.savedListingIds.includes(item.id)) : listings;
   const domainFilters = useMemo(() => ({ ...filters, priceMin: customerUsdInputToThb(filters.priceMin), priceMax: customerUsdInputToThb(filters.priceMax) }), [filters]);
   const visibleListings = useMemo(() => filterListings(sourceListings, domainFilters), [domainFilters, sourceListings]);
-  const activeFilterCount = [filters.location !== "All Thailand", filters.yearFrom, filters.yearTo, filters.priceMin, filters.priceMax, filters.mileageMax, filters.transmission !== "Any", filters.drive !== "Any", filters.body !== "Any"].filter(Boolean).length;
+  const activeFilterCount = [filters.location !== DEFAULT_FILTERS.location, filters.yearFrom, filters.yearTo, filters.priceMin, filters.priceMax, filters.mileageMax, filters.transmission !== "Any", filters.drive !== "Any", filters.body !== "Any"].filter(Boolean).length;
   const capturedCount = listings.filter((item) => !item.demo).length;
-  const sourceLabel = sourceStatus.live ? "Live" : capturedCount ? `${capturedCount} selected` : "Demo";
+  const sourceLabel = sourceStatus.live ? "Live" : capturedCount ? "NK Selection" : "Demo";
+
+  function locationLabel(location: string) {
+    if (location === "Bangkok Metro") return t("bangkokMetro");
+    if (location === "Nearby Provinces") return t("nearbyProvinces");
+    if (location === "All Thailand") return t("allThailand");
+    return location;
+  }
 
   function setFilter<Key extends keyof BrowseFilters>(key: Key, value: BrowseFilters[Key]) {
     setFilters((current) => ({ ...current, [key]: value }));
@@ -45,8 +53,7 @@ export default function BrowseScreen({ savedOnly = false }: { savedOnly?: boolea
         </div>
 
         <div className="bb-quick-filters">
-          <button className={filters.location === "All Thailand" ? "active" : ""} onClick={() => setFilter("location", "All Thailand")}><MapPin size={14} />{t("thailand")}</button>
-          {locations.slice(1, 5).map((location) => <button key={location} className={filters.location === location ? "active" : ""} onClick={() => setFilter("location", location)}>{location}</button>)}
+          {metroLocations.filter((location) => location !== "Pathum Thani" && location !== "Nakhon Pathom").map((location, index) => <button key={location} className={filters.location === location ? "active" : ""} onClick={() => setFilter("location", location)}>{index === 0 && <MapPin size={14} />}{locationLabel(location)}</button>)}
         </div>
 
         {!savedOnly && <div className="bb-marketplace-meta">
@@ -61,7 +68,7 @@ export default function BrowseScreen({ savedOnly = false }: { savedOnly?: boolea
         <section className="bb-filter-sheet" role="dialog" aria-modal="true" aria-label="Vehicle filters">
           <header><div><p className="bb-kicker">{t("vehicleCriteria")}</p><h2>{t("filters")}</h2></div><button onClick={() => setFilterOpen(false)} aria-label="Close filters"><X size={21} /></button></header>
           <div className="bb-filter-form">
-            <label><span>{t("location")}</span><select value={filters.location} onChange={(event) => setFilter("location", event.target.value)}>{locations.map((location) => <option key={location}>{location}</option>)}</select></label>
+            <label><span>{t("location")}</span><select value={filters.location} onChange={(event) => setFilter("location", event.target.value)}>{locations.map((location) => <option key={location} value={location}>{locationLabel(location)}</option>)}</select></label>
             <div className="bb-field-pair"><label><span>{t("yearFrom")}</span><select value={filters.yearFrom} onChange={(event) => setFilter("yearFrom", event.target.value)}>{yearOptions.map((year) => <option key={year || "from-any"} value={year}>{year || t("any")}</option>)}</select></label><label><span>{t("yearTo")}</span><select value={filters.yearTo} onChange={(event) => setFilter("yearTo", event.target.value)}>{yearOptions.map((year) => <option key={year || "to-any"} value={year}>{year || t("any")}</option>)}</select></label></div>
             <div className="bb-field-pair"><label><span>{t("minPrice")}</span><input inputMode="numeric" value={filters.priceMin} onChange={(event) => setFilter("priceMin", event.target.value.replace(/\D/g, ""))} placeholder={t("any")} /></label><label><span>{t("maxPrice")}</span><input inputMode="numeric" value={filters.priceMax} onChange={(event) => setFilter("priceMax", event.target.value.replace(/\D/g, ""))} placeholder={t("any")} /></label></div>
             <p className="bb-filter-fx">{customerFxDisclosure()}</p>

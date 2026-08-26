@@ -24,6 +24,10 @@ const dictionaries = {
     inspectionNetwork: "Inspection network", conversationHistory: "Conversation history", account: "Account", sendQuestion: "Send question",
     askPlaceholder: "Ask about this vehicle, price, or inspection", sourceVehicle: "Source Vehicle", availability: "Availability", translation: "Translation",
     messagesTitle: "Messages", inspectionTitle: "Inspections", buy: "Buy", thailand: "Thailand", searchArea: "Search area",
+    bangkokMetro: "Bangkok Metro", nearbyProvinces: "Nearby provinces", allThailand: "All Thailand",
+    translatedVehicleDetails: "Translated vehicle details", translatedFromThai: "Translated from Thai", needsReview: "Needs review",
+    originalFactsPreserved: "Original listing facts are preserved separately. Unknown details still require NK verification.", listingFacts: "Listing facts", sourcePhotos: "{count} source photos",
+    recommendedFirstStep: "Recommended first step", inspectionInsideCase: "Managed inside your Vehicle Case", continueExistingCase: "Continue in your existing Vehicle Case", createCaseNoCommitment: "Start a Vehicle Case with no purchase commitment",
   },
   "zh-CN": {
     language: "语言", english: "English", chinese: "简体中文", thai: "ไทย",
@@ -48,6 +52,10 @@ const dictionaries = {
     inspectionNetwork: "验车服务", conversationHistory: "对话记录", account: "账户", sendQuestion: "发送问题",
     askPlaceholder: "询问车辆、价格或验车信息", sourceVehicle: "来源车辆", availability: "可售状态", translation: "翻译",
     messagesTitle: "消息", inspectionTitle: "验车", buy: "购买", thailand: "泰国", searchArea: "搜索区域",
+    bangkokMetro: "曼谷及周边地区", nearbyProvinces: "邻近府", allThailand: "全泰国",
+    translatedVehicleDetails: "已翻译的车辆信息", translatedFromThai: "从泰语翻译", needsReview: "需要审核",
+    originalFactsPreserved: "原始车源信息会单独保留。未知信息仍需 NK 核实。", listingFacts: "车源信息", sourcePhotos: "{count} 张车源照片",
+    recommendedFirstStep: "建议的第一步", inspectionInsideCase: "在车辆案件中管理", continueExistingCase: "继续现有车辆案件", createCaseNoCommitment: "创建车辆案件，无购买承诺",
   },
   th: {
     language: "ภาษา", english: "English", chinese: "简体中文", thai: "ไทย",
@@ -72,6 +80,10 @@ const dictionaries = {
     inspectionNetwork: "เครือข่ายตรวจสภาพ", conversationHistory: "ประวัติการสนทนา", account: "บัญชี", sendQuestion: "ส่งคำถาม",
     askPlaceholder: "ถามเกี่ยวกับรถ ราคา หรือการตรวจสภาพ", sourceVehicle: "รถจากแหล่งภายนอก", availability: "สถานะรถ", translation: "การแปล",
     messagesTitle: "ข้อความ", inspectionTitle: "ตรวจสภาพ", buy: "ซื้อ", thailand: "ประเทศไทย", searchArea: "พื้นที่ค้นหา",
+    bangkokMetro: "กรุงเทพและปริมณฑล", nearbyProvinces: "จังหวัดใกล้เคียง", allThailand: "ทั่วประเทศไทย",
+    translatedVehicleDetails: "ข้อมูลรถที่แปลแล้ว", translatedFromThai: "แปลจากภาษาไทย", needsReview: "ต้องตรวจสอบ",
+    originalFactsPreserved: "ระบบเก็บข้อมูลต้นฉบับแยกไว้ รายละเอียดที่ยังไม่ทราบต้องให้ NK ตรวจสอบ", listingFacts: "ข้อมูลจากประกาศ", sourcePhotos: "รูปจากแหล่งข้อมูล {count} รูป",
+    recommendedFirstStep: "ขั้นตอนแรกที่แนะนำ", inspectionInsideCase: "จัดการภายใน Vehicle Case", continueExistingCase: "ดำเนินการต่อใน Vehicle Case เดิม", createCaseNoCommitment: "เริ่ม Vehicle Case โดยยังไม่ผูกมัดการซื้อ",
   },
 };
 

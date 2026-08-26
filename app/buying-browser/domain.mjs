@@ -4,6 +4,19 @@ export const DEFAULT_PLATFORM_TRANSACTION_RATE = 6;
 export const DEFAULT_BUYING_SERVICE_RATE = 4;
 export const DEFAULT_TOTAL_NK_FEE_TARGET = 10;
 export const CUSTOMER_FX_THB_PER_USD = 35;
+export const BANGKOK_METRO_LOCATIONS = Object.freeze([
+  "Bangkok",
+  "Nonthaburi",
+  "Pathum Thani",
+  "Samut Prakan",
+  "Samut Sakhon",
+  "Nakhon Pathom",
+]);
+export const NEARBY_BANGKOK_LOCATIONS = Object.freeze([
+  "Ayutthaya",
+  "Chachoengsao",
+  "Chon Buri",
+]);
 
 export function formatCustomerUsd(value) {
   if (value === null || value === undefined) return "Pending";
@@ -18,7 +31,7 @@ export function customerUsdToThb(value) {
 /** @type {import("./types").BrowseFilters} */
 export const DEFAULT_FILTERS = Object.freeze({
   query: "",
-  location: "All Thailand",
+  location: "Bangkok Metro",
   yearFrom: "",
   yearTo: "",
   priceMin: "",
@@ -31,8 +44,8 @@ export const DEFAULT_FILTERS = Object.freeze({
 });
 
 const INSPECTION_REGIONS = [
-  { name: "Bangkok Metro", locations: ["Bangkok", "Nonthaburi", "Pathum Thani", "Samut Prakan"], base: 2900, travel: 600 },
-  { name: "Central Thailand", locations: ["Ayutthaya", "Nakhon Pathom", "Saraburi", "Suphan Buri"], base: 2900, travel: 1200 },
+  { name: "Bangkok Metro", locations: BANGKOK_METRO_LOCATIONS, base: 2900, travel: 600 },
+  { name: "Central Thailand", locations: ["Ayutthaya", "Chachoengsao", "Saraburi", "Suphan Buri"], base: 2900, travel: 1200 },
   { name: "Eastern Thailand", locations: ["Chon Buri", "Rayong", "Pattaya", "Chanthaburi"], base: 2900, travel: 1600 },
   { name: "Northern Thailand", locations: ["Chiang Mai", "Chiang Rai", "Phitsanulok", "Lampang"], base: 2900, travel: 3100 },
   { name: "Northeastern Thailand", locations: ["Khon Kaen", "Nakhon Ratchasima", "Udon Thani", "Ubon Ratchathani"], base: 2900, travel: 3100 },
@@ -65,7 +78,14 @@ export function filterListings(listings, filters = DEFAULT_FILTERS) {
   const results = listings.filter((listing) => {
     const haystack = [listing.title, listing.brand, listing.model, listing.grade, listing.engine, listing.body, listing.color, listing.generalLocation].filter(Boolean).join(" ").toLowerCase();
     if (query && !query.split(/\s+/).every((part) => haystack.includes(part))) return false;
-    if (filters.location && filters.location !== "All Thailand" && listing.generalLocation !== filters.location) return false;
+    if (filters.location && filters.location !== "All Thailand") {
+      const allowedLocations = filters.location === "Bangkok Metro"
+        ? BANGKOK_METRO_LOCATIONS
+        : filters.location === "Nearby Provinces"
+          ? NEARBY_BANGKOK_LOCATIONS
+          : null;
+      if (allowedLocations ? !allowedLocations.includes(listing.generalLocation) : listing.generalLocation !== filters.location) return false;
+    }
     if (yearFrom !== null && (listing.year === null || listing.year < yearFrom)) return false;
     if (yearTo !== null && (listing.year === null || listing.year > yearTo)) return false;
     if (priceMin !== null && (listing.observedPriceThb === null || listing.observedPriceThb < priceMin)) return false;

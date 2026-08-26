@@ -118,3 +118,15 @@ Target recovery objective:
 **New machine/QNAP -> clone GitHub -> restore secrets -> restore database/storage -> install/build -> re-authenticate source sessions -> resume service.**
 
 Facebook/source passwords and session cookies must not be committed to GitHub.
+
+## 2026-08-26 - Bangkok Metro V1 operating focus
+
+Status: APPROVED AND IMPLEMENTED IN PREVIEW
+
+Decision:
+- Customer Browse defaults to Bangkok Metro to reduce inspection/travel time and cost.
+- Bangkok Metro includes Bangkok, Nonthaburi, Pathum Thani, Samut Prakan, Samut Sakhon, and Nakhon Pathom.
+- Nearby provinces and All Thailand remain available as non-default filters. Out-of-area records are not deleted and direct Vehicle links remain valid.
+- Primary mobile navigation is Browse, Saved, My Cases, Messages, and Account.
+- Inspection is managed inside Vehicle Cases rather than occupying a primary navigation slot.
+- Vehicle detail presents Check Availability as the recommended first step, Ask NK AI as the adjacent assistance action, and Save as a photo-level heart control.
