@@ -15,6 +15,8 @@ Implementation status: The Owner-approved cross-platform Buying Browser directio
 
 Web companion status: `/buy/browser` provides a browser-style NK shell on iPhone, Android, and Windows web browsers. It opens the real Facebook Marketplace in Facebook's own tab/app, accepts the selected listing link, and forwards explicit NK actions into the existing Vehicle Case flow. It does not embed, proxy, inspect, or control Facebook and must not be described as a native in-app Facebook browser.
 
+Vercel delivery status: the Owner registered `nkautotrade.com` in the `nkautotrade` Vercel team. The application now has a separate `nk-cars-platform-v1` Vercel project and a tested Next.js preview path. This does not replace `.openai/hosting.json`, the existing ChatGPT Site, QNAP storage, or the QNAP adapter boundary. `NEXT_PUBLIC_SITE_URL` controls canonical/social metadata for each runtime.
+
 ## 1. Current product
 
 NK Cars is being rebuilt as an **AI Vehicle Buying Browser / Buying Platform for Thailand**.

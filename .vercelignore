@@ -1,0 +1,6 @@
+.migration-private/
+.wrangler/
+dist/
+marketplace-connector/.profiles/
+native/
+deploy/

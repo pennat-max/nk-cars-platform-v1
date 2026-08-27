@@ -174,3 +174,15 @@ Infrastructure boundary:
 - `codex/app` owns the application contracts and customer/Owner behavior.
 - `codex/qnap-infrastructure` owns stable ingress, service deployment, secrets, backup/restore, monitoring, and storage operations.
 - Production traffic cutover still requires Owner approval and a verified authentication/workspace migration.
+
+## 2026-08-27 - nkautotrade.com Vercel delivery path
+
+Status: APPROVED FOR OWNER SETUP AND STAGED ACTIVATION
+
+Decision:
+- `nkautotrade.com` is the intended stable customer-facing NK Cars domain.
+- The Vercel project is separate from and must not overwrite the existing ChatGPT Site.
+- Vercel may serve the customer web application while QNAP remains the authoritative inventory/media target behind authenticated application APIs.
+- QNAP PostgreSQL and internal media must not be exposed directly through the public domain.
+- Preview/build/mobile verification must pass before the domain is assigned to a production deployment.
+- ChatGPT identity/D1 workspace behavior is not assumed to exist on Vercel; unsupported authenticated operations must fail safely until the approved workspace adapter is connected.

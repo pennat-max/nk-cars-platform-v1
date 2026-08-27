@@ -1096,3 +1096,29 @@ Approve and configure the production identity boundary and stable tunnel, then a
 ### Next Recommended Step
 
 QNAP infrastructure implements the documented endpoints and runs the contract against the existing 20-vehicle/368-media dataset. The application can then perform a live Owner/customer separation test without changing production identity or D1 workspace storage.
+
+## 2026-08-27 - Vercel Project And Custom-Domain Preview Foundation
+
+### Completed
+
+- Authenticated the Owner's Vercel CLI through Vercel's device authorization flow without collecting or storing a password.
+- Confirmed `nkautotrade.com` is registered with Vercel nameservers under team `nkautotrade`.
+- Created and linked the separate Vercel project `nk-cars-platform-v1`.
+- Added a Vercel-specific Next.js build command while preserving the existing Vinext/ChatGPT Sites build and `.openai/hosting.json`.
+- Added a bounded Vercel upload ignore list for private migration evidence, browser profiles, native projects, deployment artifacts, and generated Cloudflare output.
+- Made canonical/Open Graph metadata configurable through `NEXT_PUBLIC_SITE_URL` with the current ChatGPT Site retained as the default.
+- Deployed and verified a Vercel Preview at `https://nk-cars-platform-v1-oywvjmu8z-nkautotrade.vercel.app/buy`.
+
+### Verification
+
+- Vercel remote Next.js build: passed; 29 static/dynamic application routes generated.
+- Mobile 390 x 844 Browse verification: passed; six Bangkok Metro listings rendered and no browser console errors were recorded.
+- Existing Vinext/ChatGPT Sites build: passed.
+- Application tests: 55/55 passed.
+- Lint: 0 errors and 13 existing `<img>` optimization warnings.
+- `git diff --check`: passed.
+
+### Current Limitation
+
+- Vercel does not provide the ChatGPT Site identity headers or D1 binding. Anonymous Browse and device-local fallback work, but signed-in workspace cutover requires the approved QNAP/PostgreSQL identity and workspace adapter.
+- The Vercel production domain is not recorded as active until the tested commit is pushed and a production deployment/domain assignment succeeds.
