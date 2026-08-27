@@ -1218,3 +1218,11 @@ The repository now contains the maximum technically achievable V1 application. R
 - QNAP must implement the identity/workspace endpoints in `docs/QNAP_APP_REQUIREMENTS.md`.
 - Owner-controlled production identity URLs, cookie policy, secrets, and role assignments are not configured; Vercel remains Guest/device-local by design.
 - No D1 workspace data was migrated and no production authentication/security environment variable was changed.
+
+### Production delivery verification
+
+- Deployed tested application commit `3184cda` to the existing Vercel project as deployment `dpl_Ac8B4VBmQQ2Y7Lx68ZPV15jtk979`; the ChatGPT Site and QNAP deployment were not modified.
+- `https://nkautotrade.com/` returned HTTP 307 to `/buy`; `/buy` and `/buy/account` returned HTTP 200.
+- Unconfigured identity sign-in returned HTTP 503 and a spoofed ChatGPT identity header could not write the Vercel workspace (HTTP 401).
+- Mobile 390 x 844 production Account verification passed with no horizontal overflow, broken images, seeded customer workspace, broken ChatGPT sign-in link, or browser console error observed.
+- Vercel deployment error-log scan returned no errors.
