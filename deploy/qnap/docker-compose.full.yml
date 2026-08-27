@@ -34,6 +34,7 @@ services:
       NK_DB_USER: nk_cars_app
       NK_DB_PASSWORD: "${NK_CARS_APP_DB_PASSWORD}"
       NK_INTERNAL_API_TOKEN: "${NK_INTERNAL_API_TOKEN:?Set NK_INTERNAL_API_TOKEN in the QNAP-only env file}"
+      NK_HERMES_WORKER_TOKEN: "${NK_HERMES_WORKER_TOKEN:-}"
       TZ: Asia/Bangkok
     depends_on:
       nk-cars-postgres:

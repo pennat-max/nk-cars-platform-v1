@@ -35,9 +35,14 @@ NK_CARS_BACKUP_ROOT=/share/CACHEDEV6_DATA/nk-cars/backups
 NK_CARS_DB_ADMIN_PASSWORD=<random-secret>
 NK_CARS_APP_DB_PASSWORD=<different-random-secret>
 NK_INTERNAL_API_TOKEN=<random-token-at-least-32-characters>
+NK_HERMES_WORKER_TOKEN=<different-random-token-at-least-32-characters-when-worker-is-enabled>
 ```
 
 ห้ามใช้รหัส QNAP เป็นรหัสฐานข้อมูลหรือ API token และห้าม commit ไฟล์ environment
+
+`NK_HERMES_WORKER_TOKEN` ต้องต่างจาก `NK_INTERNAL_API_TOKEN` และปล่อยว่างได้จนกว่าจะติดตั้ง Hermes worker จริง การปล่อยว่างจะปิด worker endpoints แบบ fail-closed แต่ยังอนุญาตให้ Data API เก็บกฎ Owner ได้
+
+สำหรับ PostgreSQL volume เดิม ให้ใช้ `sh deploy/qnap/deploy-full.sh <git-commit-sha>` จาก root ของ release สคริปต์จะรัน migration `020_sourcing_automation.sql` แบบ idempotent ก่อนเริ่ม Data API รุ่นใหม่
 
 ## Import และตรวจข้อมูล
 

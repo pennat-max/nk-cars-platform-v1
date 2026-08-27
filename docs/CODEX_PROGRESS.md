@@ -1227,6 +1227,38 @@ The repository now contains the maximum technically achievable V1 application. R
 - Mobile 390 x 844 production Account verification passed with no horizontal overflow, broken images, seeded customer workspace, broken ChatGPT sign-in link, or browser console error observed.
 - Vercel deployment error-log scan returned no errors.
 
+## 2026-08-27 - QNAP sourcing control backend and Hermes worker contract
+
+### Completed
+
+- Added the production Data API implementation for Owner sourcing snapshots, rule create/update with optimistic revision, and idempotent Run Now/Pause/Resume command creation.
+- Added PostgreSQL sourcing rule, append-only rule audit, command queue, append-only command event, and runtime-state tables with least-privilege grants and `ON DELETE RESTRICT` history protection.
+- Added private Hermes worker claim/heartbeat/complete endpoints with a credential distinct from the Owner/admin token and `FOR UPDATE SKIP LOCKED` single-consumer command claiming.
+- Added an allowlisted `/v1/*` HTTPS ingress through the QNAP app container. It forwards only public listings and Owner sourcing endpoints to the private Data API; worker endpoints and PostgreSQL remain unreachable through it.
+- Added an idempotent existing-volume migration path and `deploy/qnap/deploy-full.sh` health-gated deployment script.
+- Audited the live QNAP runtime: PostgreSQL/Data API/app containers are present and private as designed; Hermes is running as `gateway run` with persistent QNAP storage but is not connected to the worker API.
+
+### Tests/checks
+
+- Full `npm.cmd test`: production build and 68/68 tests passed.
+- TypeScript `--noEmit`: passed.
+- ESLint: 0 errors and 13 pre-existing `<img>` optimization warnings.
+- `git diff --check`: passed with line-ending notices only.
+- Targeted service tests cover rule constraints, Owner role enforcement, admin/worker token separation, disabled-worker fail-closed behavior, ingress allowlisting, append-only schema, and existing-volume migration.
+
+### Owner / external blockers
+
+- Production Owner identity is not active, so the real Owner route remains protected and the anonymous preview remains non-mutating.
+- QNAP has only temporary Quick Tunnel URLs; no stable authenticated HTTPS Data API hostname is configured for Vercel.
+- The QNAP-only `NK_HERMES_WORKER_TOKEN` has not been provisioned. It is intentionally not generated or stored in Git/chat without Owner-controlled secret authorization.
+- Hermes currently reports free-provider rate-limit failures and a cron permission warning. A functioning provider and compliant browser profile/session are required before it can search Marketplace.
+- The Hermes worker/candidate-ingestion adapter is not yet installed, and no real candidate has reached `NEEDS_REVIEW` through this new queue.
+- QNAP administrator/database/internal API credentials exposed during prior setup/diagnostics must be rotated before production activation; no values were added to source files.
+
+### Next recommended milestone
+
+`QNAP-V1-04 - Authenticated Sourcing Staging Run`: deploy this tested backend on QNAP, provision the separate worker secret through a secure Owner-controlled channel, configure stable ingress and Owner identity, then connect one Hermes/browser worker and verify one real Toyota pickup becomes a review-only candidate. Do not deploy production sourcing or enable seller messaging.
+
 ## 2026-08-27 - Owner sourcing automation and Hermes control
 
 ### Completed

@@ -251,3 +251,14 @@ Decision:
 - Preview input changes are temporary page state only. The preview receives no internal inventory, seller, customer, source, session, or Hermes runtime data.
 - Save, Run Now, Pause, and Resume remain disabled in preview mode, and the authenticated Owner API remains the only mutation boundary.
 - `/buy/owner` and `/buy/owner/sourcing` remain protected and must not be opened anonymously merely to simplify early review.
+
+## 2026-08-27 - Sourcing command security and audit boundary
+
+Status: IMPLEMENTED IN SOURCE; LIVE ACTIVATION PENDING
+
+Decision:
+- Owner rule mutations use optimistic revisions and append-only PostgreSQL audit events; rules and audit history cannot be physically deleted by the application role.
+- Run Now, Pause, and Resume are persisted as idempotent commands with immutable rule snapshots and append-only lifecycle events.
+- Owner/admin traffic and Hermes worker traffic use distinct bearer credentials. An absent worker credential disables worker endpoints instead of falling back to the admin credential.
+- Public ingress is restricted to an explicit Data API allowlist through the QNAP web container. PostgreSQL, raw Data API ports, worker endpoints, tokens, browser sessions, and internal evidence remain private.
+- Activation requires production Owner identity, stable authenticated HTTPS ingress, a separately provisioned worker secret, a compliant authenticated browser profile, and a functioning Hermes inference provider. No success state may be simulated while any dependency is absent.

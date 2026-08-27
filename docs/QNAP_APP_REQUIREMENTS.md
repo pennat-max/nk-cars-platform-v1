@@ -205,7 +205,7 @@ The application revalidates all returned workspace and Owner Case data, recomput
 
 ## Owner sourcing automation and Hermes control
 
-The application provides an Owner-only mobile menu at `/buy/owner/sourcing`. QNAP/Hermes remains disabled until these endpoints are implemented behind the existing internal bearer-token boundary.
+The application provides an Owner-only mobile menu at `/buy/owner/sourcing`. The repository includes the Data API implementation and PostgreSQL migration; QNAP/Hermes remains disabled until that release is deployed and the identity, ingress, and worker credentials are activated.
 
 Required endpoints:
 
@@ -215,6 +215,8 @@ Required endpoints:
 - `POST /v1/admin/sourcing/commands`
 
 Every endpoint must verify `NK_INTERNAL_API_TOKEN`, then independently require the trusted actor to have the `OWNER` role. Browser-supplied actor headers are never trusted directly.
+
+The QNAP web container may expose only the documented admin/public paths through the bounded `/v1/*` ingress proxy. It must proxy to the private `http://nk-cars-data:3001` origin, enforce the same bearer token, forward only allowlisted actor headers, and never expose worker endpoints or PostgreSQL.
 
 Snapshot response:
 
@@ -267,3 +269,11 @@ Hermes execution rules:
 - Never auto-publish, confirm availability, send seller messages, reserve a vehicle, or make a financial commitment from this scheduler.
 - `pause` prevents new jobs and allows the current atomic capture step to finish safely. `resume` re-enables scheduling but does not bypass `login_required`.
 - Persist run/rule/profile status, counts, safe error codes, actor, timestamps, and audit events without tokens, cookies, seller PII, or raw stack traces.
+
+Worker endpoints, available only on the private Data API network:
+
+- `POST /v1/worker/sourcing/commands/claim`
+- `POST /v1/worker/sourcing/commands/:commandId/heartbeat`
+- `POST /v1/worker/sourcing/commands/:commandId/complete`
+
+Workers authenticate with a distinct `NK_HERMES_WORKER_TOKEN` and a bounded `X-NK-Worker-Id`. The worker token must never equal `NK_INTERNAL_API_TOKEN`, must never be routed through public ingress, and may remain unset while the worker is disabled. Claim uses PostgreSQL `FOR UPDATE SKIP LOCKED` so one command is processed once. Completion accepts only safe deterministic states (`ready`, `paused`, `login_required`, or `error`) and safe error codes; it cannot mark publication, availability, seller contact, payment, or purchase.

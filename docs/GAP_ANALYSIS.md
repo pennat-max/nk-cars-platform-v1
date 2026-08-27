@@ -541,6 +541,30 @@ No additional V1 customer feature should be invented to hide these blockers. V2-
 
 The smallest next cross-team milestone is `QNAP-V1-03 - Identity/Workspace Contract Implementation And Staging Cutover`. It is infrastructure-owned; the application side is ready for contract testing.
 
+## Owner sourcing operational gap update - 2026-08-27
+
+### Closed in application source
+
+- PostgreSQL sourcing rules, revisions, immutable rule audit, idempotent command queue, immutable command events, runtime heartbeat, and Bangkok-day processed counts.
+- Owner-only admin endpoints for status, rule create/update, and Run Now/Pause/Resume commands.
+- Private Hermes worker claim/heartbeat/complete contract with a distinct credential and single-consumer database locking.
+- Bounded QNAP web ingress allowlist for public listings and Owner sourcing controls without exposing PostgreSQL, raw Data API ports, worker endpoints, or internal media.
+- Existing-volume migration and full-stack deployment script; fresh and existing QNAP databases use the same idempotent schema.
+
+### Still blocked before real automation
+
+- **Owner identity:** no production Owner session exists on `nkautotrade.com`; anonymous mutation remains correctly blocked.
+- **Stable ingress:** current QNAP Quick Tunnel hostnames are temporary. A stable authenticated HTTPS hostname/service route is required before Vercel production configuration.
+- **Worker authorization:** a distinct QNAP-only worker secret must be provisioned through an approved secret channel and must not be copied into Git or chat.
+- **Hermes execution:** the running Hermes gateway is not connected to the private Data API worker contract. Its current free inference provider has returned HTTP 429, and cron/browser-profile readiness is not proven.
+- **Source session:** no verified Facebook Marketplace browser session/profile is available to the worker. Login, MFA, CAPTCHA, checkpoints, and rate limits must stop the run rather than be bypassed.
+- **Candidate ingestion:** the worker must still normalize/deduplicate captured evidence into `NEEDS_REVIEW` inventory and persist permitted media before end-to-end sourcing can pass.
+- **Credential rotation:** QNAP credentials/tokens visible during administrative diagnostics must be rotated before production activation. No values belong in repository documentation.
+
+### V1 status and smallest next milestone
+
+This remains V1 operational activation work. V2-V5 scope is unchanged. The smallest next milestone is `QNAP-V1-04 - Authenticated Sourcing Staging Run`: deploy the tested Data API/migration, activate a stable authenticated ingress and Owner session, provision the separate worker secret, connect one Hermes worker/browser profile, and prove one Toyota pickup candidate reaches `NEEDS_REVIEW` without publication or seller messaging.
+
 ## QNAP Primary Inventory Application Update - 2026-08-27
 
 - QNAP is now the primary application inventory/media runtime contract; Google is an opt-in migration bridge and repository data is the fail-safe snapshot.
