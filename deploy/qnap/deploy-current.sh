@@ -1,8 +1,14 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/bin/sh
+set -eu
 
 release_tag="${1:-}"
-if [[ ! "${release_tag}" =~ ^[0-9a-f]{7,40}$ ]]; then
+case "${release_tag}" in
+  ''|*[!0-9a-f]*)
+    echo "Usage: $0 <git-commit-sha>" >&2
+    exit 2
+    ;;
+esac
+if [ "${#release_tag}" -lt 7 ] || [ "${#release_tag}" -gt 40 ]; then
   echo "Usage: $0 <git-commit-sha>" >&2
   exit 2
 fi
@@ -22,12 +28,12 @@ export NK_CARS_HOST_PORT="${host_port}"
 
 for attempt in $(seq 1 30); do
   health="$("${docker_bin}" inspect tony-nk-cars-current --format '{{.State.Health.Status}}' 2>/dev/null || true)"
-  if [[ "${health}" == "healthy" ]]; then
+  if [ "${health}" = "healthy" ]; then
     curl --fail --silent --show-error --max-time 15 "http://${bind_ip}:${host_port}/buy" >/dev/null
     echo "NK Cars current release ${release_tag} is healthy at http://${bind_ip}:${host_port}/buy"
     exit 0
   fi
-  if [[ "${health}" == "unhealthy" ]]; then
+  if [ "${health}" = "unhealthy" ]; then
     "${docker_bin}" logs --tail 100 tony-nk-cars-current >&2 || true
     exit 1
   fi
