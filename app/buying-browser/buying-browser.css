@@ -46,7 +46,7 @@
 @media(max-width:800px){.bb-owner-case-layout{grid-template-columns:1fr}.bb-owner-case-layout>aside{max-height:none;display:grid;grid-template-columns:1fr 1fr}.bb-owner-case-editor>header{grid-template-columns:78px minmax(0,1fr)}.bb-owner-case-editor>header>.bb-vehicle-photo{width:78px;height:65px}.bb-owner-case-editor>header>.bb-status-chip{grid-column:1/-1;width:max-content}.bb-owner-case-fields{grid-template-columns:1fr}.bb-owner-case-fields label.wide{grid-column:auto}.bb-owner-case-readiness{align-items:stretch;flex-direction:column}.bb-owner-case-readiness .bb-button{width:100%}}
 @media(max-width:480px){.bb-owner-case-layout>aside{grid-template-columns:1fr}.bb-owner-case-editor>header{grid-template-columns:68px minmax(0,1fr);gap:8px}.bb-owner-case-editor>header>.bb-vehicle-photo{width:68px;height:58px}.bb-owner-case-editor>header h3{font-size:13px}.bb-owner-case-fields{padding:10px}.bb-owner-case-queue{padding:11px}}
 
-.bb-filter-fx{margin:-5px 0 0;color:var(--bb-muted);font-size:9px;line-height:1.45}.bb-gallery-stage{position:relative;min-width:0}.bb-gallery-track{display:flex;max-width:100%;overflow-x:auto;scroll-snap-type:x mandatory;scroll-behavior:smooth;overscroll-behavior-x:contain;touch-action:pan-x pinch-zoom;background:#e4e7e9;border-radius:8px;scrollbar-width:none}.bb-gallery-track::-webkit-scrollbar{display:none}.bb-gallery-slide{flex:0 0 100%;min-width:0;aspect-ratio:4/3;scroll-snap-align:start;scroll-snap-stop:always;overflow:hidden}.bb-gallery-slide .bb-vehicle-photo{width:100%;height:100%;object-fit:cover}.bb-gallery-counter{position:absolute;left:50%;bottom:9px;transform:translateX(-50%);z-index:2;min-width:54px;padding:5px 8px;border-radius:5px;background:rgba(18,33,45,.88);color:#fff;text-align:center;font-size:9px;font-weight:900}.bb-gallery-arrow{position:absolute;top:50%;z-index:2;width:38px;height:38px;transform:translateY(-50%);display:grid;place-items:center;border:1px solid rgba(18,33,45,.18);border-radius:50%;background:rgba(255,255,255,.94);color:var(--bb-navy);box-shadow:0 2px 8px rgba(18,33,45,.16)}.bb-gallery-arrow.previous{left:9px}.bb-gallery-arrow.next{right:9px}.bb-gallery-arrow:disabled{opacity:0;pointer-events:none}
+.bb-filter-fx{margin:-5px 0 0;color:var(--bb-muted);font-size:9px;line-height:1.45}.bb-price-caption-short{display:none}.bb-gallery-stage{position:relative;min-width:0}.bb-gallery-track{display:flex;max-width:100%;overflow-x:auto;scroll-snap-type:x mandatory;scroll-behavior:smooth;overscroll-behavior-x:contain;touch-action:pan-x pinch-zoom;background:#e4e7e9;border-radius:8px;scrollbar-width:none}.bb-gallery-track::-webkit-scrollbar{display:none}.bb-gallery-slide{flex:0 0 100%;min-width:0;aspect-ratio:4/3;scroll-snap-align:start;scroll-snap-stop:always;overflow:hidden}.bb-gallery-slide .bb-vehicle-photo{width:100%;height:100%;object-fit:cover}.bb-gallery-counter{position:absolute;left:50%;bottom:9px;transform:translateX(-50%);z-index:2;min-width:54px;padding:5px 8px;border-radius:5px;background:rgba(18,33,45,.88);color:#fff;text-align:center;font-size:9px;font-weight:900}.bb-gallery-arrow{position:absolute;top:50%;z-index:2;width:38px;height:38px;transform:translateY(-50%);display:grid;place-items:center;border:1px solid rgba(18,33,45,.18);border-radius:50%;background:rgba(255,255,255,.94);color:var(--bb-navy);box-shadow:0 2px 8px rgba(18,33,45,.16)}.bb-gallery-arrow.previous{left:9px}.bb-gallery-arrow.next{right:9px}.bb-gallery-arrow:disabled{opacity:0;pointer-events:none}
 @media(max-width:720px){.bb-gallery-track{border-radius:6px}.bb-gallery-arrow{width:34px;height:34px}.bb-gallery-counter{bottom:7px}}
 
 /* Fullscreen vehicle gallery */
@@ -83,34 +83,71 @@
 
 /* Marketplace-style customer pass: keep browse/detail lighter on phones. */
 @media(max-width:720px){
+  .bb-header{height:52px}
+  .bb-header-inner{padding:0 13px;gap:8px}
+  .bb-brand>span{width:28px;height:28px;border-radius:6px;font-size:12px}
+  .bb-brand b{font-size:17px}
+  .bb-market-location{gap:5px;padding-left:7px;border-left:0}
+  .bb-market-location b{max-width:112px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px}
+  .bb-language-selector{height:30px;margin-left:auto;border:0;background:transparent;padding:0 2px}
+  .bb-language-selector select{width:40px;max-width:40px;font-size:10px}
+  .bb-account-button{display:none}
+  .bb-main{padding:10px 10px 30px;background:#f4f6f6}
+  .bb-bottom-nav{min-height:62px;padding-top:4px}
+  .bb-bottom-nav a{min-height:49px}
+  .view-vehicle .bb-bottom-nav{display:none}
+  .view-vehicle .bb-main{padding-bottom:30px}
+
+  .view-browse .bb-marketplace-toolbar{margin:0 0 8px}
+  .bb-market-search-row{grid-template-columns:minmax(0,1fr) 40px 40px;gap:5px}
+  .bb-market-search-row .bb-search-field,.bb-market-search-row .bb-filter-button,.bb-sort-button{height:40px;border-color:#e1e5e8;border-radius:8px;box-shadow:none}
+  .bb-market-search-row .bb-search-field{padding:0 10px}
+  .bb-market-search-row .bb-filter-button,.bb-sort-button{width:40px}
+  .bb-marketplace-toolbar .bb-quick-filters{padding:7px 0 5px;gap:6px}
+  .bb-marketplace-toolbar .bb-quick-filters button{height:29px;border-color:#d9dee2;border-radius:999px;background:#fff;padding:0 10px;font-size:10px;color:#59656f}
+  .bb-marketplace-toolbar .bb-quick-filters button.active{background:#17212b;border-color:#17212b;color:#fff}
+  .bb-marketplace-title-row{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin:8px 1px 6px}
+  .bb-marketplace-title-row h2{margin:0;font-size:22px;line-height:1.05;font-weight:850;color:var(--bb-ink)}
+  .bb-marketplace-title-row p{margin:4px 0 0;color:#68737d;font-size:11px}
+  .bb-marketplace-title-row>span{flex:0 0 auto;border:1px solid #e0d1b2;background:#fff8ea;color:#8a5b12;border-radius:999px;padding:5px 8px;font-size:9px;font-weight:850}
+  .bb-marketplace-meta{min-height:0;margin:0 1px 8px;color:#707a83;font-size:9px}
+  .bb-marketplace-meta>div{display:none}
+  .bb-marketplace-meta nav{gap:6px}
+  .bb-marketplace-meta nav a{height:27px;border-radius:999px;padding:0 8px;border-color:#dce1e4;background:#fff;font-size:9px}
+
   .bb-listing-grid{gap:10px;padding-bottom:10px}
-  .bb-listing-card{border-radius:8px}
-  .bb-listing-image{aspect-ratio:1.16}
-  .bb-listing-copy{padding:10px 9px 11px}
-  .bb-listing-copy>strong{font-size:18px;line-height:1.1}
-  .bb-listing-copy h2{font-size:13px;line-height:1.25;margin:6px 0 5px;font-weight:850}
+  .bb-listing-card{border:0;border-radius:8px;box-shadow:none;background:#fff}
+  .bb-listing-image{aspect-ratio:1.12;border-radius:8px 8px 0 0}
+  .bb-listing-copy{padding:8px 7px 9px}
+  .bb-listing-copy>strong{font-size:17px;line-height:1.08;font-weight:900}
+  .bb-listing-copy h2{font-size:13px;line-height:1.2;margin:5px 0 4px;font-weight:820}
   .bb-listing-copy>p{display:none}
-  .bb-listing-copy footer{border-top:0;margin-top:0;padding-top:0;gap:3px;font-size:11px}
-  .bb-demo-flag{left:8px;top:8px;border-radius:5px;padding:4px 6px;font-size:7px}
-  .bb-save-icon{right:8px;top:8px;width:36px;height:36px}
-  .bb-marketplace-meta{font-size:11px}
-  .bb-marketplace-meta nav a{font-size:9px}
+  .bb-listing-copy footer{display:flex;align-items:center;border-top:0;margin-top:0;padding-top:0;gap:5px;font-size:10px;color:#64707a}
+  .bb-listing-copy footer span{gap:3px}
+  .bb-listing-copy footer svg{width:12px;height:12px}
+  .bb-demo-flag{left:7px;top:7px;border-radius:5px;background:rgba(17,33,44,.72);padding:3px 5px;font-size:7px}
+  .bb-save-icon{right:7px;top:7px;width:34px;height:34px}
 
   .bb-back-link{margin-bottom:9px;font-size:12px}
+  .bb-status-row{display:none}
   .bb-gallery-track{border-radius:8px}
-  .bb-gallery-slide{aspect-ratio:1.22}
+  .bb-gallery-slide{aspect-ratio:1.08}
   .bb-gallery-counter{border-radius:999px;font-size:10px}
-  .bb-vehicle-summary h1{font-size:27px;line-height:1.12;margin:12px 0 5px}
-  .bb-grade{font-size:14px}
-  .bb-vehicle-price{font-size:32px;line-height:1.05;margin-top:14px}
-  .bb-price-caption{font-size:11px;line-height:1.45;margin:6px 0 12px}
-  .bb-detail-primary-actions{grid-template-columns:1fr;gap:9px}
-  .bb-detail-primary-actions button{min-height:54px;border-radius:10px;justify-content:center;text-align:center}
-  .bb-detail-primary-actions button b{font-size:15px}
-  .bb-detail-primary-actions button small{font-size:10px}
-  .bb-detail-location{margin-top:15px;padding:11px 0}
-  .bb-honesty-note{font-size:11px}
-  .bb-section-heading h2{font-size:22px}
+  .bb-vehicle-summary h1{font-size:25px;line-height:1.1;margin:11px 0 5px}
+  .bb-grade{font-size:13px;color:#5f6b75}
+  .bb-vehicle-price{font-size:31px;line-height:1.05;margin-top:12px}
+  .bb-price-caption{max-width:340px;font-size:11px;line-height:1.38;margin:6px 0 11px}
+  .bb-price-caption-short{display:inline}
+  .bb-price-caption-full{display:none}
+  .bb-detail-primary-actions{grid-template-columns:1fr 1fr;gap:7px}
+  .bb-detail-primary-actions button{min-height:48px;border-radius:8px;justify-content:center;text-align:center}
+  .bb-detail-primary-actions button.primary{grid-column:1/-1}
+  .bb-detail-primary-actions button b{font-size:14px}
+  .bb-detail-primary-actions button small{font-size:9px}
+  .bb-detail-location{margin-top:12px;padding:10px 0}
+  .bb-honesty-note{font-size:10px;line-height:1.45}
+  .bb-section-heading h2{font-size:20px}
+  .bb-section-heading .bb-kicker,.bb-section-heading span{display:none}
   .bb-spec-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;border:0;background:transparent;overflow:visible}
   .bb-spec-grid>div,.bb-spec-grid>div:nth-child(2n),.bb-spec-grid>div:nth-child(3),.bb-spec-grid>div:nth-child(-n+3),.bb-spec-grid>div:nth-last-child(-n+2){border:1px solid var(--bb-line)}
   .bb-spec-grid>div{border-radius:8px;background:#fff;padding:10px 9px;min-height:58px}

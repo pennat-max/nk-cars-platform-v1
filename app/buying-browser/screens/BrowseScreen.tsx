@@ -16,7 +16,7 @@ const yearOptions = ["", "2014", "2018", "2019", "2020", "2021", "2022", "2023",
 
 export default function BrowseScreen({ savedOnly = false }: { savedOnly?: boolean }) {
   const { listings, state, sourceStatus } = useBuyingBrowser();
-  const { t } = useI18n();
+  const { language, t } = useI18n();
   const [filters, setFilters] = useState<BrowseFilters>({ ...DEFAULT_FILTERS });
   const [filterOpen, setFilterOpen] = useState(false);
   const sourceListings = savedOnly ? listings.filter((item) => state.savedListingIds.includes(item.id)) : listings;
@@ -37,6 +37,10 @@ export default function BrowseScreen({ savedOnly = false }: { savedOnly?: boolea
     setFilters((current) => ({ ...current, [key]: value }));
   }
 
+  const marketplaceHeading = language === "zh-CN" ? "为你推荐" : language === "th" ? "รถที่เหมาะกับคุณ" : "Vehicles for you";
+  const priceStatus = language === "zh-CN" ? "价格待核实" : language === "th" ? "ราคายังไม่ยืนยัน" : "Price not verified";
+  const reviewedVehiclesLabel = language === "zh-CN" ? `${visibleListings.length} 台已审核车辆` : language === "th" ? `รถที่ตรวจแล้ว ${visibleListings.length} คัน` : `${visibleListings.length} reviewed vehicles`;
+
   return (
     <>
       {savedOnly && <section className="bb-page-heading bb-browse-heading">
@@ -55,6 +59,8 @@ export default function BrowseScreen({ savedOnly = false }: { savedOnly?: boolea
         <div className="bb-quick-filters">
           {metroLocations.filter((location) => location !== "Pathum Thani" && location !== "Nakhon Pathom").map((location, index) => <button key={location} className={filters.location === location ? "active" : ""} onClick={() => setFilter("location", location)}>{index === 0 && <MapPin size={14} />}{locationLabel(location)}</button>)}
         </div>
+
+        {!savedOnly && <div className="bb-marketplace-title-row"><div><h2>{marketplaceHeading}</h2><p>{reviewedVehiclesLabel}</p></div><span>{priceStatus}</span></div>}
 
         {!savedOnly && <div className="bb-marketplace-meta">
           <div><b>{visibleListings.length}</b> {t("vehicles")} <span className={sourceStatus.live || capturedCount ? "live" : "demo"} role="status">{sourceLabel}</span></div>

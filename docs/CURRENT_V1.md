@@ -351,7 +351,7 @@ Public entry behavior: `https://nkautotrade.com/` redirects directly to `/buy`. 
 
 Owner visual review route: `/preview/marketplace-style` is an isolated, noindex visual preview for a lighter Marketplace-style mobile Browse/Detail direction. It does not mutate workspace data and does not activate real messaging, payment, QNAP, Hermes, or production sourcing behavior.
 
-Customer mobile visual direction: the active `/buy` Browse and Vehicle Detail screens now use the Owner-approved Marketplace-style density pass: image-first cards, larger price/type hierarchy, reduced card metadata, shorter source-price disclosure, a full-width Check Availability action, and compact three-column mobile specs. The underlying Vehicle Case, pricing, inspection, localization, source adapter, and safety boundaries remain unchanged.
+Customer mobile visual direction: the active `/buy` Browse and Vehicle Detail screens now use the Owner-approved Marketplace-style density pass and have been tightened to match the reviewed `/preview/marketplace-style` direction more closely: image-first two-column cards, “Vehicles for you” heading, lighter filters/actions, shorter mobile source-price copy, top-level Check Availability / Ask NK AI / Request Inspection actions, no bottom-navigation overlap on vehicle detail, and compact three-column mobile specs. The underlying Vehicle Case, pricing, inspection, localization, source adapter, and safety boundaries remain unchanged.
 
 Identity/workspace activation checkpoint:
 - The application now supports a provider-neutral QNAP identity gateway without collecting passwords in NK forms.

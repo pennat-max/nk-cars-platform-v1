@@ -303,3 +303,14 @@ Decision:
 - Apply the Marketplace-style visual direction to the active `/buy` Browse and Vehicle Detail customer screens.
 - Keep the change visual and content-density focused: larger price/type hierarchy, less card metadata, full-width mobile Check Availability, shorter source-price disclosure, and compact mobile specification tiles.
 - Do not change Vehicle Case business rules, pricing math, inspection workflow, localization data ownership, source adapter boundaries, QNAP/Hermes activation, payments, seller messaging, or production data behavior as part of this pass.
+
+## 2026-08-27 - Active `/buy` aligned closer to Marketplace-style preview
+
+Status: APPROVED AND IMPLEMENTED
+
+Decision:
+- Tighten the active customer Browse and Vehicle Detail mobile UI to better match the reviewed `/preview/marketplace-style` reference.
+- Browse keeps real filters, save state, Paste Link, Ask NK AI, and customer-safe listings, but presents them with lighter controls, a `Vehicles for you` heading, image-first cards, and a simple price-verification pill.
+- Vehicle Detail keeps the verified NK workflow and full desktop pricing disclosure, but mobile shows the shorter source-price explanation and brings Check Availability, Ask NK AI, and Request Inspection into the first action group.
+- Hide bottom navigation only on mobile Vehicle Detail to avoid covering primary actions.
+- No QNAP/Hermes activation, seller messaging, payment, purchase, publication, pricing math, or customer/internal data-boundary change is authorized by this visual alignment.

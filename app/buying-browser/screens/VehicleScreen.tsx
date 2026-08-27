@@ -11,7 +11,7 @@ import VehiclePhoto from "../components/VehiclePhoto";
 
 export default function VehicleScreen({ sourceId }: { sourceId?: string }) {
   const { listings, isSaved, toggleSaved, saveAsCase, findCaseByListing } = useBuyingBrowser();
-  const { t, listingSummary, availabilityLabel } = useI18n();
+  const { language, t, listingSummary, availabilityLabel } = useI18n();
   const listing = listings.find((item) => item.id === sourceId);
   const [imageIndex, setImageIndex] = useState(0);
   const [fullscreenOpen, setFullscreenOpen] = useState(false);
@@ -59,6 +59,7 @@ export default function VehicleScreen({ sourceId }: { sourceId?: string }) {
 
   if (!listing) return <section className="bb-empty-state"><h1>{t("vehicleNotFound")}</h1><p>{t("vehicleNotFoundText")}</p><Link className="bb-button primary" href="/buy"><ArrowLeft size={17} />{t("backToBrowse")}</Link></section>;
   const existingCase = findCaseByListing(listing.id);
+  const mobilePriceCaption = language === "zh-CN" ? "车源报价估算。NK 会在报价前核实。" : language === "th" ? "ราคาประเมินจากประกาศต้นทาง NK จะตรวจสอบก่อนออกใบเสนอราคา" : "Estimated from source listing. NK will verify before quote.";
 
   function showPhoto(index: number) {
     const nextIndex = Math.min(Math.max(index, 0), listing!.imageUrls.length - 1);
@@ -110,10 +111,11 @@ export default function VehicleScreen({ sourceId }: { sourceId?: string }) {
           <h1>{listing.title}</h1>
           <p className="bb-grade">{listing.grade} · {listing.color}</p>
           <strong className="bb-vehicle-price">{formatUsdFromThb(listing.observedPriceThb)}</strong>
-          <p className="bb-price-caption">{t("observedPriceCaption", { date: formatDateTime(listing.observedAt), fx: customerFxDisclosure() })}</p>
+          <p className="bb-price-caption"><span className="bb-price-caption-short">{mobilePriceCaption}</span><span className="bb-price-caption-full">{t("observedPriceCaption", { date: formatDateTime(listing.observedAt), fx: customerFxDisclosure() })}</span></p>
           <div className="bb-detail-primary-actions">
             <button className="primary" onClick={() => openCase("availability")}><Gauge size={19} /><span><b>{t("checkAvailability")}</b><small>{t("recommendedFirstStep")}</small></span></button>
             <button onClick={() => openCase()}><Bot size={19} /><span><b>{t("askNkAi")}</b></span></button>
+            <button onClick={() => openCase("inspection")}><ClipboardCheck size={19} /><span><b>{t("requestInspection")}</b></span></button>
           </div>
           <div className="bb-detail-location"><MapPin size={17} /><div><small>{t("generalVehicleLocation")}</small><b>{listing.generalLocation}, {t("thailand")}</b></div></div>
           <p className="bb-honesty-note"><ShieldCheck size={16} />{t("sourceVehicleDisclosure")}</p>
