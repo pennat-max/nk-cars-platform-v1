@@ -4,7 +4,7 @@ import test from "node:test";
 const platformTitle = /<title>NK Cars Platform V1<\/title>/i;
 const shellMarkup = /class="app-shell"/i;
 
-test("renders platform shell metadata", async () => {
+test("redirects the public root to Buying Browser", async () => {
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
   workerUrl.searchParams.set("test", `${process.pid}-${Date.now()}`);
   const { default: worker } = await import(workerUrl.href);
@@ -24,14 +24,8 @@ test("renders platform shell metadata", async () => {
     },
   );
 
-  assert.equal(response.status, 200);
-  assert.match(
-    response.headers.get("content-type") ?? "",
-    /^text\/html\b/i,
-  );
-  const html = await response.text();
-  assert.match(html, platformTitle);
-  assert.match(html, shellMarkup);
+  assert.ok([307, 308].includes(response.status), `unexpected redirect status ${response.status}`);
+  assert.equal(new URL(response.headers.get("location"), "http://localhost").pathname, "/buy");
 });
 
 test("renders production rebuild route shell entry points", async () => {

@@ -198,3 +198,12 @@ Decision:
 - Customer records continue to exclude seller identity/contact, source URL, internal notes, source cost/margin, storage identifiers, and full registration details.
 - The repository fallback now contains 20 reviewed vehicles, including 16 in the Bangkok Metro operating group.
 - QNAP publication-state synchronization remains an infrastructure handoff and must not be represented as complete until the QNAP Data API serves the updated states and customer-safe media.
+
+## 2026-08-27 - Short public entry URL
+
+Status: APPROVED
+
+Decision:
+- `https://nkautotrade.com/` is the single customer entry link and opens Buying Browser directly.
+- The root redirects to `/buy`; existing deep links under `/buy/...` remain unchanged and valid.
+- The legacy platform screen is not deleted and remains available through its existing internal route components as rollback/reference code.

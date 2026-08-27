@@ -1179,3 +1179,9 @@ The repository now contains the maximum technically achievable V1 application. R
 - Production `/buy`, a real vehicle-detail route, and sync-status endpoint returned HTTP 200.
 - Mobile 390 x 844 production check: 16 Bangkok Metro records, no broken images, no horizontal overflow, English/Chinese/Thai switching passed, and no browser console errors.
 - Vercel production error-log scan for the deployment hour returned no errors.
+
+## 2026-08-27 - Short production entry URL
+
+- Changed only the public root entry so `https://nkautotrade.com/` redirects to Buying Browser at `/buy`.
+- Preserved all existing vehicle, Vehicle Case, quotation, PI, Owner, and API routes.
+- Added redirect regression coverage and retained the previous platform implementation as rollback/reference code.

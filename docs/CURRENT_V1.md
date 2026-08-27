@@ -335,3 +335,5 @@ The maximum technically achievable Buying Browser V1 application scope is comple
 - Mobile verification at 390 x 844 passed for all core routes, all three languages, galleries, images, and horizontal layout.
 
 Remaining items are activation blockers rather than unfinished application behavior: production identity/workspace persistence, approved legal issuer/payment instructions, authorized seller messaging/reply ingestion, inspection-provider booking, and stable authenticated QNAP Data API/media ingress. These must not be faked or activated without the required Owner/external inputs.
+
+Public entry behavior: `https://nkautotrade.com/` redirects directly to `/buy`. Existing `/buy/...` routes remain stable for vehicle, Case, PI, and shared links.

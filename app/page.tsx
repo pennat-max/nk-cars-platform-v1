@@ -1,5 +1,5 @@
-import NKPlatform from "./components/NKPlatform";
+import { redirect } from "next/navigation";
 
 export default function Home() {
-  return <NKPlatform />;
+  redirect("/buy");
 }
