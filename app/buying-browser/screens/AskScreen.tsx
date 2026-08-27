@@ -29,7 +29,7 @@ export default function AskScreen() {
 
   return (
     <>
-      <section className="bb-page-heading"><div><p className="bb-kicker">Grounded vehicle search</p><h1>{t("askNkAi")}</h1></div></section>
+      <section className="bb-page-heading"><div><p className="bb-kicker">{t("groundedVehicleSearch")}</p><h1>{t("askNkAi")}</h1></div></section>
       <section className="bb-ai-search-tool">
         <header><span><Bot size={25} /></span><div><h2>{t("nkAiAssistant")}</h2></div></header>
         <div className="bb-ai-search-thread">{state.generalMessages.slice(-6).map((message) => <article key={message.id} className={message.sender === "Customer" ? "customer" : "assistant"}><b>{message.sender}</b><p>{message.text}</p><time>{formatDateTime(message.createdAt)}</time></article>)}</div>
@@ -37,7 +37,7 @@ export default function AskScreen() {
         <form onSubmit={submit}><textarea value={question} onChange={(event) => setQuestion(event.target.value)} placeholder={prompts[0]} aria-label={t("askNkAi")} /><button className="bb-button primary" type="submit"><Send size={18} />{t("askNkAi")}</button></form>
         <p className="bb-ai-boundary"><Info size={14} />{t(sourceStatus.live ? "inventoryGroundingLive" : "inventoryGroundingFallback")}</p>
       </section>
-      {lastSearch && <section className="bb-ai-results"><div className="bb-section-heading"><div><p className="bb-kicker">Customer-safe matches</p><h2>{matches.length ? `${matches.length} result${matches.length === 1 ? "" : "s"}` : "No current approved match"}</h2></div><Link href="/buy"><Search size={17} />Use full filters</Link></div>{matches.length ? <div className="bb-listing-grid">{matches.slice(0, 5).map((listing) => <ListingCard key={listing.id} listing={listing} />)}</div> : <div className="bb-empty-inline"><p>No approved staged vehicle matches this request. The request was recorded locally and no result was invented.</p></div>}</section>}
+      {lastSearch && <section className="bb-ai-results"><div className="bb-section-heading"><div><p className="bb-kicker">{t("customerSafeMatches")}</p><h2>{matches.length ? t("resultCount", { count: matches.length }) : t("noApprovedMatch")}</h2></div><Link href="/buy"><Search size={17} />{t("useFullFilters")}</Link></div>{matches.length ? <div className="bb-listing-grid">{matches.slice(0, 5).map((listing) => <ListingCard key={listing.id} listing={listing} />)}</div> : <div className="bb-empty-inline"><p>{t("noApprovedMatchText")}</p></div>}</section>}
     </>
   );
 }

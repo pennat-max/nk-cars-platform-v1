@@ -164,24 +164,24 @@ export default function PasteScreen({ autoCapture = false }: { autoCapture?: boo
   async function pasteSourceLink() {
     try {
       const sharedUrl = extractFacebookUrl(await navigator.clipboard.readText());
-      if (!sharedUrl) { setMessage("The clipboard does not contain a Facebook vehicle link."); return; }
+      if (!sharedUrl) { setMessage(t("clipboardNoFacebookLink")); return; }
       changeUrl(sharedUrl);
-      setMessage("Facebook link pasted. Import it when ready.");
+      setMessage(t("facebookLinkPasted"));
     } catch {
-      setMessage("Clipboard access is unavailable. Paste the Facebook link into the field manually.");
+      setMessage(t("clipboardPasteManual"));
     }
   }
 
   async function importSourceLink(sourceUrl: string, createCaseAutomatically = false, captureMethod: SourceCapture["captureMethod"] = "external_share_link") {
-    if (!sourceUrl) { setMessage("Paste a complete HTTPS vehicle link."); return; }
+    if (!sourceUrl) { setMessage(t("completeHttpsLink")); return; }
     const host = new URL(sourceUrl).hostname.toLowerCase();
-    if (!isFacebookHost(host)) { setMessage("This source does not have a connected importer yet. The link is preserved in this form; add screenshots/photos or listing text below."); return; }
+    if (!isFacebookHost(host)) { setMessage(t("noConnectedImporter")); return; }
     setBusy(true); setMessage(""); setResult(null);
     try {
       const response = await fetch("/api/marketplace-import", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ url: sourceUrl }) });
       const payload = await response.json() as ImportPayload;
       setRawResult(payload);
-      if (!response.ok || !["imported", "partial"].includes(payload.status || "")) { setMessage(payload.message || "This listing could not be read automatically. Continue with screenshots/photos or listing text."); return; }
+      if (!response.ok || !["imported", "partial"].includes(payload.status || "")) { setMessage(t("listingUnreadable")); return; }
       const listing = buildImportedListing(payload, sourceUrl);
       const canonicalUrl = facebookSourceCaptureUrl(payload.canonical_url || "") || sourceUrl;
       const sourceCapture = createExternalSourceCapture(listing, { submittedUrl: sourceUrl, canonicalUrl, sourcePlatform: "Facebook Marketplace", captureMethod: createCaseAutomatically ? captureMethod : "external_share_link", importStatus: payload.status === "imported" ? "imported" : "partial", ...(payload.description ? { textEvidence: { originalText: payload.description, sourceLanguage: detectSourceLanguage(payload.description), normalizedText: listing.summary, translationLanguage: "en" } } : {}) });
@@ -191,8 +191,8 @@ export default function PasteScreen({ autoCapture = false }: { autoCapture?: boo
         window.location.replace(`/buy/cases/${encodeURIComponent(id)}?captured=share`);
         return;
       }
-      setMessage(payload.status === "partial" ? "Only part of the listing was accessible. Review the facts and add screenshots/photos for missing evidence." : "Accessible listing evidence imported. Availability is still not confirmed.");
-    } catch { setMessage("The source could not be reached from this session. Continue with screenshots/photos or listing text."); }
+      setMessage(t(payload.status === "partial" ? "partialImport" : "accessibleImported"));
+    } catch { setMessage(t("sourceUnreachable")); }
     finally { setBusy(false); }
   }
 
@@ -206,7 +206,7 @@ export default function PasteScreen({ autoCapture = false }: { autoCapture?: boo
     if (!files.length) return;
     setBusy(true);
     try { const next = await Promise.all(files.map(compressImage)); setPhotos((current) => [...current, ...next].slice(0, 30)); }
-    catch { setMessage("One or more selected images could not be prepared. Try another photo or screenshot."); }
+    catch { setMessage(t("imagePrepFailed")); }
     finally { setBusy(false); event.target.value = ""; }
   }
 
@@ -216,14 +216,14 @@ export default function PasteScreen({ autoCapture = false }: { autoCapture?: boo
     try {
       const response = await fetch("/api/vehicle-extract", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ images: photos.map((photo) => photo.dataUrl), listingText, sourceUrl: validExternalUrl }) });
       const payload = await response.json() as { fields?: Record<string, { value?: string; status?: string }>; error?: string };
-      if (!response.ok || !payload.fields) { setAiError(response.status === 503 ? "NK AI is not connected in this preview. You can still save an evidence case for manual review." : "NK AI could not analyze this evidence. You can still save it for manual review."); return; }
+      if (!response.ok || !payload.fields) { setAiError(t(response.status === 503 ? "aiNotConnected" : "aiAnalyzeFailed")); return; }
       const values = Object.fromEntries(Object.entries(payload.fields).map(([key, field]) => [key, field.value === "Unknown" ? "" : field.value || ""]));
       const ref = validExternalUrl ? referenceFromUrl(validExternalUrl) : `UPLOAD-${Date.now()}`;
       const listing: CustomerListing = { id:`imported-${ref.toLowerCase()}`,adapterId:"uploaded-evidence",sourceReference:ref,title:[values.year,values.brand,values.model,values.grade].filter(Boolean).join(" ") || "Vehicle from uploaded evidence",summary:values.customerDescriptionEn || "Uploaded evidence saved for manual specification review.",brand:values.brand || "Need Review",model:values.model || "Need Review",year:numeric(values.year),grade:values.grade || "Need Review",engine:values.engine || values.engineCapacity || "Need Review",transmission:values.transmission === "AT" || values.transmission === "MT" ? values.transmission : "Unknown",drive:values.drive === "2WD" || values.drive === "4WD" ? values.drive : "Unknown",body:values.body || values.cabType || "Need Review",mileageKm:numeric(values.mileage),color:values.color || "Need Review",observedPriceThb:numeric(values.sourcePrice),observedAt:new Date().toISOString(),generalLocation:broadLocation(values.location),imageUrls:photos.map((photo) => photo.dataUrl),availability:"Availability Not Yet Confirmed",translationState:values.brand && values.model ? "Normalized" : "Need Review",evidenceLabels:[`${photos.length} uploaded image${photos.length === 1 ? "" : "s"}`,listingText.trim() ? "Pasted listing text" : "No listing text", "NK AI structured extraction"],demo:false };
       const facebookUrl = facebookSourceCaptureUrl(validExternalUrl);
       const sourceCapture = facebookUrl ? createExternalSourceCapture(listing, { submittedUrl: facebookUrl, canonicalUrl: facebookUrl, sourcePlatform: "Facebook Marketplace", captureMethod: "manual_evidence", importStatus: "evidence_only", ...(listingText.trim() ? { textEvidence: { originalText: listingText.trim(), sourceLanguage: "unknown", normalizedText: listing.summary, translationLanguage: language } } : {}) }) : undefined;
-      addImportedListing(listing, sourceCapture); setResult(listing); setMessage("NK AI analyzed the uploaded evidence as one vehicle. Review unknown or low-confidence facts before verification.");
-    } catch { setAiError("NK AI could not be reached. You can still save an evidence case for manual review."); }
+      addImportedListing(listing, sourceCapture); setResult(listing); setMessage(t("aiAnalyzed"));
+    } catch { setAiError(t("aiUnreachable")); }
     finally { setAiBusy(false); }
   }
 
@@ -232,37 +232,37 @@ export default function PasteScreen({ autoCapture = false }: { autoCapture?: boo
     const listing: CustomerListing = { id:`imported-${ref.toLowerCase()}`,adapterId:"manual-evidence",sourceReference:ref,title:"Vehicle evidence awaiting review",summary:"Customer-supplied screenshots/photos and listing text were preserved in this local preview case. Vehicle facts still need manual or AI review.",brand:"Need Review",model:"Need Review",year:null,grade:"Need Review",engine:"Need Review",transmission:"Unknown",drive:"Unknown",body:"Need Review",mileageKm:null,color:"Need Review",observedPriceThb:null,observedAt:new Date().toISOString(),generalLocation:"Thailand",imageUrls:photos.map((photo) => photo.dataUrl),availability:"Availability Not Yet Confirmed",translationState:"Need Review",evidenceLabels:[`${photos.length} uploaded image${photos.length === 1 ? "" : "s"}`,listingText.trim() ? "Pasted listing text" : "Details pending"],demo:false };
     const facebookUrl = facebookSourceCaptureUrl(validExternalUrl);
     const sourceCapture = facebookUrl ? createExternalSourceCapture(listing, { submittedUrl: facebookUrl, canonicalUrl: facebookUrl, sourcePlatform: "Facebook Marketplace", captureMethod: "manual_evidence", importStatus: "evidence_only", ...(listingText.trim() ? { textEvidence: { originalText: listingText.trim(), sourceLanguage: "unknown", normalizedText: listing.summary, translationLanguage: language } } : {}) }) : undefined;
-    addImportedListing(listing, sourceCapture); setResult(listing); setMessage("Evidence case prepared. Specifications, source price, and availability remain unconfirmed.");
+    addImportedListing(listing, sourceCapture); setResult(listing); setMessage(t("evidencePrepared"));
   }
 
   function openCase() { if (!result) return; const id = saveAsCase(result, undefined, resultCapture || undefined); window.location.assign(`/buy/cases/${encodeURIComponent(id)}`); }
 
   return (
     <>
-      <section className="bb-page-heading"><div><p className="bb-kicker">{autoCapture ? "Save to NK Cars" : "Last-resort link fallback"}</p><h1>{autoCapture ? "Creating your Vehicle Case" : "Paste a Facebook Vehicle Link"}</h1><p>{autoCapture ? "NK is importing the vehicle you shared and will open its case automatically." : "Use this only when Save to NK Cars is unavailable on your device."}</p></div></section>
+      <section className="bb-page-heading"><div><p className="bb-kicker">{t(autoCapture ? "saveToNkCars" : "lastResortFallback")}</p><h1>{t(autoCapture ? "creatingVehicleCase" : "pasteFacebookVehicleLink")}</h1><p>{t(autoCapture ? "importingSharedVehicle" : "fallbackOnlyNotice")}</p></div></section>
       <section className="bb-facebook-handoff" data-facebook-external-handoff>
-        <div><span><Globe2 size={21} /></span><div><b>Browse in Facebook Marketplace</b><p>Facebook opens outside NK and keeps your login, MFA, and session under Facebook control.</p></div></div>
-        <a className="bb-button primary" href="https://www.facebook.com/marketplace/" target="_blank" rel="noreferrer">Open Facebook Marketplace<ExternalLink size={16} /></a>
-        <ol><li>Browse and select a real vehicle</li><li>Use Share or Copy Link</li><li>Return here and paste the link</li></ol>
+        <div><span><Globe2 size={21} /></span><div><b>{t("browseInFacebook")}</b><p>{t("facebookLoginControl")}</p></div></div>
+        <a className="bb-button primary" href="https://www.facebook.com/marketplace/" target="_blank" rel="noreferrer">{t("openFacebookMarketplace")}<ExternalLink size={16} /></a>
+        <ol><li>{t("stepBrowseSelect")}</li><li>{t("stepShareCopy")}</li><li>{t("stepReturnPaste")}</li></ol>
       </section>
       <section className="bb-paste-tool">
-        <form onSubmit={importLink}><label><Link2 size={20} /><input value={url} onChange={(event) => changeUrl(event.target.value)} placeholder="https://www.facebook.com/marketplace/item/..." inputMode="url" aria-label="Vehicle listing URL" /></label><button className="bb-button secondary bb-paste-clipboard" type="button" onClick={pasteSourceLink}><ClipboardPaste size={17} />Paste</button><button className="bb-button primary" disabled={busy || !url.trim()} type="submit">{busy ? <LoaderCircle className="spin" size={18} /> : <Bot size={18} />}Import & Analyze</button></form>
-        <div className="bb-source-safety"><ShieldCheck size={16} /><p>NK stores the selected listing link and accessible evidence only. NK does not collect Facebook passwords, copy session cookies, or bypass MFA/CAPTCHA.</p></div>
-        {message && <div className={result ? "bb-import-message success" : "bb-import-message"}><span>{result ? <CheckCircle2 size={19} /> : <AlertCircle size={19} />}</span><p>{message}</p>{validExternalUrl && !result && <a href={validExternalUrl} target="_blank" rel="noreferrer">Open source listing<ExternalLink size={15} /></a>}</div>}
+        <form onSubmit={importLink}><label><Link2 size={20} /><input value={url} onChange={(event) => changeUrl(event.target.value)} placeholder="https://www.facebook.com/marketplace/item/..." inputMode="url" aria-label={t("vehicleListingUrl")} /></label><button className="bb-button secondary bb-paste-clipboard" type="button" onClick={pasteSourceLink}><ClipboardPaste size={17} />{t("pasteAction")}</button><button className="bb-button primary" disabled={busy || !url.trim()} type="submit">{busy ? <LoaderCircle className="spin" size={18} /> : <Bot size={18} />}{t("importAnalyze")}</button></form>
+        <div className="bb-source-safety"><ShieldCheck size={16} /><p>{t("sourceSafety")}</p></div>
+        {message && <div className={result ? "bb-import-message success" : "bb-import-message"}><span>{result ? <CheckCircle2 size={19} /> : <AlertCircle size={19} />}</span><p>{message}</p>{validExternalUrl && !result && <a href={validExternalUrl} target="_blank" rel="noreferrer">{t("openSourceListing")}<ExternalLink size={15} /></a>}</div>}
       </section>
 
-      {result && <section className="bb-import-preview"><div className="bb-import-cover">{result.imageUrls[0] ? <img src={result.imageUrls[0]} alt={result.title} /> : <div className="bb-photo-placeholder"><Camera size={27} /><span>Vehicle photo pending</span></div>}{rawResult?.images?.length && <span>{rawResult.images.length}{rawResult.expected_image_count ? ` of ${rawResult.expected_image_count}` : ""} accessible image{rawResult.images.length === 1 ? "" : "s"}</span>}</div><div><p className="bb-kicker">Customer-safe imported preview</p><h2>{result.title}</h2><strong>{formatUsdFromThb(result.observedPriceThb)}</strong><p>{listingSummary(result)}</p><dl><div><dt>{t("transmission")}</dt><dd>{result.transmission}</dd></div><div><dt>{t("drive")}</dt><dd>{result.drive}</dd></div><div><dt>{t("bodyCab")}</dt><dd>{result.body}</dd></div><div><dt>{t("mileage")}</dt><dd>{formatMileage(result.mileageKm)}</dd></div></dl><button className="bb-button primary" onClick={openCase}><FolderPlus size={18} />{t("saveToNk")}</button></div></section>}
+      {result && <section className="bb-import-preview"><div className="bb-import-cover">{result.imageUrls[0] ? <img src={result.imageUrls[0]} alt={result.title} /> : <div className="bb-photo-placeholder"><Camera size={27} /><span>{t("vehiclePhotoPending")}</span></div>}{rawResult?.images?.length && <span>{t("accessibleImages", { count: rawResult.images.length })}</span>}</div><div><p className="bb-kicker">{t("importedPreview")}</p><h2>{result.title}</h2><strong>{formatUsdFromThb(result.observedPriceThb)}</strong><p>{listingSummary(result)}</p><dl><div><dt>{t("transmission")}</dt><dd>{result.transmission}</dd></div><div><dt>{t("drive")}</dt><dd>{result.drive}</dd></div><div><dt>{t("bodyCab")}</dt><dd>{result.body}</dd></div><div><dt>{t("mileage")}</dt><dd>{formatMileage(result.mileageKm)}</dd></div></dl><button className="bb-button primary" onClick={openCase}><FolderPlus size={18} />{t("saveToNk")}</button></div></section>}
 
       <section className="bb-fallback-tool">
-        <div className="bb-section-heading"><div><p className="bb-kicker">Working fallback</p><h2>Upload Screenshots / Photos</h2><p>Select up to 30 images from one vehicle. They are analyzed together, not as unrelated vehicles.</p></div><span><Camera size={20} /></span></div>
-        <label className="bb-photo-drop"><input type="file" accept="image/*" multiple onChange={choosePhotos} /><ImagePlus size={27} /><b>{photos.length ? "Add more images" : "Choose screenshots / photos"}</b><small>{photos.length}/30 selected · iPhone and Android compatible</small></label>
+        <div className="bb-section-heading"><div><p className="bb-kicker">{t("workingFallback")}</p><h2>{t("uploadScreenshotsPhotos")}</h2><p>{t("uploadThirty")}</p></div><span><Camera size={20} /></span></div>
+        <label className="bb-photo-drop"><input type="file" accept="image/*" multiple onChange={choosePhotos} /><ImagePlus size={27} /><b>{t(photos.length ? "addMoreImages" : "choosePhotos")}</b><small>{t("selectedCount", { count: photos.length })}</small></label>
         {photos.length > 0 && <div className="bb-evidence-photos">{photos.map((photo, index) => <figure key={`${photo.name}-${index}`}><img src={photo.dataUrl} alt={`Uploaded evidence ${index + 1}`} /><button onClick={() => setPhotos((current) => current.filter((_, itemIndex) => itemIndex !== index))} aria-label={`Remove image ${index + 1}`}><X size={15} /></button><span>{index + 1}</span></figure>)}</div>}
-        <label className="bb-listing-text"><span><FileText size={17} />Listing text</span><textarea value={listingText} onChange={(event) => setListingText(event.target.value)} placeholder="Paste the vehicle title, description, price, mileage, and specifications here." /></label>
+        <label className="bb-listing-text"><span><FileText size={17} />{t("listingTextLabel")}</span><textarea value={listingText} onChange={(event) => setListingText(event.target.value)} placeholder={t("listingTextPlaceholder")} /></label>
         {aiError && <div className="bb-import-message"><AlertCircle size={18} /><p>{aiError}</p></div>}
-        <div className="bb-fallback-actions"><button className="bb-button secondary" disabled={!photos.length && !listingText.trim()} onClick={saveEvidenceOnly}><Upload size={17} />Save for manual review</button><button className="bb-button primary" disabled={aiBusy || (!photos.length && !listingText.trim())} onClick={analyzeEvidence}>{aiBusy ? <LoaderCircle className="spin" size={18} /> : <Bot size={18} />}Analyze with NK AI</button></div>
+        <div className="bb-fallback-actions"><button className="bb-button secondary" disabled={!photos.length && !listingText.trim()} onClick={saveEvidenceOnly}><Upload size={17} />{t("saveManualReview")}</button><button className="bb-button primary" disabled={aiBusy || (!photos.length && !listingText.trim())} onClick={analyzeEvidence}>{aiBusy ? <LoaderCircle className="spin" size={18} /> : <Bot size={18} />}{t("analyzeNkAi")}</button></div>
       </section>
-      <p className="bb-honesty-note"><ShieldCheck size={16} />Uploaded evidence remains in this local preview only. Production needs private durable media storage, visibility controls, retention policy, and authenticated case ownership.</p>
-      <Link className="bb-back-link" href="/buy">Back to Browse Vehicles</Link>
+      <p className="bb-honesty-note"><ShieldCheck size={16} />{t("localEvidenceNotice")}</p>
+      <Link className="bb-back-link" href="/buy">{t("backBrowseVehicles")}</Link>
     </>
   );
 }

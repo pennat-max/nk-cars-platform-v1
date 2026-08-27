@@ -616,6 +616,10 @@ test("localization changes presentation without mutating authoritative listing d
   assert.match(translate("en", "inventoryGroundingLive"), /QNAP storage/);
   assert.match(translate("zh-CN", "inventoryGroundingLive"), /QNAP/);
   assert.match(translate("th", "inventoryGroundingLive"), /QNAP/);
+  for (const key of ["customerWorkspace", "currentFacts", "travelZone", "noConversations", "accountIntro", "vehicleNotFound", "observedPriceCaption", "groundedVehicleSearch", "browseRealMarketplace"]) {
+    assert.notEqual(translate("zh-CN", key), key);
+    assert.notEqual(translate("th", key), key);
+  }
   assert.equal(localizeAvailability("Availability Not Yet Confirmed", "zh-CN"), "可售状态尚未确认");
   assert.equal(detectSourceLanguage("รถสวย ไมล์น้อย"), "th");
   assert.equal(detectSourceLanguage("车辆状态很好"), "zh-CN");
@@ -871,7 +875,7 @@ test("vehicle gallery provides an accessible swipeable fullscreen viewer", async
   assert.match(component, /data-fullscreen-viewer/);
   assert.match(component, /role="dialog"/);
   assert.match(component, /aria-modal="true"/);
-  assert.match(component, /Close fullscreen gallery/);
+  assert.match(component, /closeGallery/);
   assert.match(component, /event\.key === "Escape"/);
   assert.match(styles, /\.bb-photo-viewer\{[^}]*position:fixed/);
   assert.match(styles, /height:100dvh/);

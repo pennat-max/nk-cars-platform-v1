@@ -16,9 +16,9 @@ export default function ListingCard({ listing }: { listing: CustomerListing }) {
     <article className="bb-listing-card" data-listing-id={listing.id} data-vehicle-card-v2>
       <Link className="bb-listing-image" href={`/buy/vehicle/${encodeURIComponent(listing.id)}`}>
         <VehiclePhoto listing={listing} />
-        <span className={listing.demo ? "bb-demo-flag" : "bb-demo-flag captured"}>{listing.demo ? "Demo" : "NK Selection"}</span>
+        <span className={listing.demo ? "bb-demo-flag" : "bb-demo-flag captured"}>{listing.demo ? "Demo" : t("nkSelection")}</span>
       </Link>
-      <button className={saved ? "bb-save-icon saved" : "bb-save-icon"} onClick={() => toggleSaved(listing.id)} aria-label={saved ? `Remove ${listing.title} from saved vehicles` : `Save ${listing.title}`} title={saved ? "Remove saved vehicle" : "Save vehicle"}><Heart size={19} fill={saved ? "currentColor" : "none"} /></button>
+      <button className={saved ? "bb-save-icon saved" : "bb-save-icon"} onClick={() => toggleSaved(listing.id)} aria-label={saved ? t("removeSaved", { vehicle: listing.title }) : `${t("saveVehicle")}: ${listing.title}`} title={saved ? t("removeSavedVehicle") : t("saveVehicle")}><Heart size={19} fill={saved ? "currentColor" : "none"} /></button>
       <Link className="bb-listing-copy" href={`/buy/vehicle/${encodeURIComponent(listing.id)}`}>
         <strong>{formatUsdFromThb(listing.observedPriceThb)}</strong>
         <h2>{listing.year ?? `${t("year")} ${t("pending")}`} {listing.brand} {listing.model}</h2>

@@ -1144,3 +1144,29 @@ QNAP infrastructure implements the documented endpoints and runs the contract ag
 
 - QNAP infrastructure must import the approved publication states/media mapping and expose the authenticated Data API before QNAP can be reported synchronized.
 - V1 operational activation still requires approved customer identity, legal issuer/payment instructions, seller availability messaging, and inspection-provider setup. No integration was faked or activated.
+
+## 2026-08-27 - Buying Browser V1 application completion
+
+### Completed
+
+- Completed English, Simplified Chinese, and Thai localization for the core customer V1 routes: vehicle detail/gallery, Vehicle Cases, inspections, Messages, Account, Paste/Share fallback, browser companion, and NK AI search.
+- Preserved one authoritative vehicle/Case/pricing record while translating presentation labels and normalized customer text.
+- Fixed the mobile Messages conversation grid so long titles and translated previews cannot widen the page.
+- Reverified all 20 reviewed listings, 135 customer images, customer/internal redaction boundaries, deterministic pricing, quotation/PI controls, QNAP adapters, and repository fail-safe behavior.
+
+### Verification
+
+- TypeScript `--noEmit`: passed.
+- `npm.cmd test`: production build and 55/55 tests passed.
+- Lint: passed with 0 errors and 13 existing `<img>` optimization warnings.
+- `git diff --check`: passed.
+- Mobile 390 x 844: English, Simplified Chinese, and Thai passed with no broken images or horizontal overflow across Browse, vehicle detail/gallery, Cases, inspections, Messages, Account, Paste, and browser companion.
+
+### Owner / external blockers
+
+- Production identity and durable customer workspace for Vercel/QNAP are not configured.
+- Approved issuer/tax/address/payment instructions and Finance actual-funds policy are not supplied; PI remains non-payment and payment/purchase remain disabled.
+- No authorized seller messaging/reply channel or inspection-provider booking integration exists.
+- QNAP must implement the stable authenticated customer/Owner inventory and media endpoints and synchronize the second publication batch.
+
+The repository now contains the maximum technically achievable V1 application. Remaining work is controlled production/operations activation, not a simulated integration.

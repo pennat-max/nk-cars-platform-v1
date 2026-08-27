@@ -498,6 +498,26 @@ BB-V1D is blocked on approved production project/configuration and must not depl
 
 `QNAP-V1-02 - Identity And Workspace Adapter`: select an Owner-approved identity boundary, implement the PostgreSQL workspace API with the existing revision/audit rules, import a complete D1 export into a staging namespace, and prove customer/Owner isolation before changing any production URL.
 
+## Buying Browser V1 completion update - 2026-08-27
+
+### Application-complete scope
+
+- 20 reviewed customer-safe listings and 135 public images, with Bangkok Metro as the default operating scope.
+- Search/filter/sort, multilingual Browse/detail/gallery, Save, Vehicle Case, NK AI, availability, inspection, Messages, Account, Paste/Share fallback, quotation, acceptance, gated PI, Owner verification, and customer/internal DTO boundaries.
+- Deterministic 6% + 4% NK pricing with pass-through expenses excluded from the percentage base.
+- QNAP-first inventory/media adapters with verified repository fallback and explicit non-live status.
+- English, Simplified Chinese, and Thai rendering across the core customer V1 routes without changing authoritative structured data.
+
+### Remaining V1 activation blockers
+
+- **Owner/external identity:** choose and configure production customer/Owner authentication plus durable workspace storage for Vercel/QNAP.
+- **Owner legal/commercial:** provide approved issuer identity, tax/address details, bank/payment instructions, and Finance confirmation policy before a PI can become a real payment instruction.
+- **External seller operations:** approve a seller messaging channel and reply/evidence ingestion; availability remains unconfirmed until then.
+- **External inspection operations:** approve providers, rates, assignment, appointments, checklist/evidence handling, and service authorization.
+- **Infrastructure:** implement stable authenticated QNAP customer/Owner inventory and media endpoints, import the second approved publication batch, monitor them, and prove backup/restore.
+
+No additional V1 customer feature should be invented to hide these blockers. V2-V5 remain future scope as classified above.
+
 ## QNAP Primary Inventory Application Update - 2026-08-27
 
 - QNAP is now the primary application inventory/media runtime contract; Google is an opt-in migration bridge and repository data is the fail-safe snapshot.

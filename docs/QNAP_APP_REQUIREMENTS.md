@@ -78,3 +78,10 @@ The application rebuilds every item into a strict Owner DTO. Unknown database fi
 ## Current Application Fallback
 
 If QNAP is missing or unavailable, Browse uses the verified repository snapshot and reports non-live/fallback status. Google migration fallback runs only when `NK_ENABLE_GOOGLE_STAGING_FALLBACK=true` is explicitly configured.
+
+## Reviewed publication batch - 2026-08-27
+
+- The application fallback contains 20 Owner-reviewed customer records and 135 customer-visible images.
+- QNAP currently requires an infrastructure-owned import/update for the second ten publication states and their reviewed customer media mapping.
+- The QNAP public endpoint must not report synchronization complete until all 20 records are returned with the same unresolved facts, publication states, cover ordering, and customer/internal visibility boundaries.
+- Owner approval for Browse does not confirm current availability, price, condition, or unresolved specifications.
