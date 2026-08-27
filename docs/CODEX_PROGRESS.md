@@ -1250,3 +1250,11 @@ The repository now contains the maximum technically achievable V1 application. R
 - ESLint: passed with 0 errors and 13 existing `<img>` optimization warnings.
 - Google and Apple local gateway requests returned HTTP 303 with the exact allowlisted provider and protected `https://nkautotrade.com/buy/account` return URL; an unknown provider returned HTTP 400.
 - Mobile 390 x 844 Account verification: both localized provider actions rendered, with no horizontal overflow, broken images, or browser console errors.
+
+### Production delivery verification
+
+- Deployed application commit `3d9ebaa` to the existing Vercel project as `dpl_5CTTNr462ygkUWbJHw8jX25FFos7`; the ChatGPT Site and QNAP deployment were not modified.
+- `https://nkautotrade.com/` returned HTTP 307 to `/buy`; `/buy/account` returned HTTP 200.
+- Google sign-in returned HTTP 503 while the gateway is unconfigured, an unknown provider returned HTTP 400, and the production Account remained honestly fail-closed with no provider buttons.
+- Mobile 390 x 844 production Account verification passed with no horizontal overflow, broken images, or browser console errors.
+- Vercel deployment error-log scan returned no errors.
