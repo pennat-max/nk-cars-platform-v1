@@ -1,6 +1,6 @@
 # NK Cars Gap Analysis
 
-Status: Buying Browser includes a private Google Sheets + Drive staging contract with twenty vehicles: ten Owner-reviewed vehicles and 64 approved media items plus ten Needs Review vehicles and 137 private evidence items. The server adapter, customer-safe media proxy, repository fallback, swipe galleries, deterministic split NK fees, English/Simplified Chinese/Thai presentation, fail-closed Owner route, and private raw-evidence build boundary are implemented; runtime Google credentials, durable identity/cases, production translation, and mobile native runtime validation remain.
+Status: Buying Browser now treats QNAP PostgreSQL and QNAP media storage as the primary V1 inventory contract. The migrated review dataset contains twenty vehicles and 368 media records; ten vehicles are Owner-approved and ten require review. The strict customer DTO, authenticated server adapter, media-proxy contract, repository fallback, swipe galleries, deterministic split NK fees, English/Simplified Chinese/Thai presentation, fail-closed Owner route, and private raw-evidence boundary are implemented. Stable QNAP API ingress, the Owner inventory endpoint, durable identity/workspace migration, production translation, and mobile native runtime validation remain.
 Date: 2026-08-26
 Branch: `codex/buying-browser-rebuild`
 
@@ -151,8 +151,9 @@ The approved Buying Browser V1 preview acceptance criteria are complete. The fol
 
 ## Technical Blockers
 
-- The private Google staging data is populated, but the application runtime has no `GOOGLE_SERVICE_ACCOUNT_JSON`. Live sync requires an approved Google Cloud service account with Viewer access to the staging root and the JSON stored only in the hosting secret manager.
-- The 167 raw source-evidence images are preserved under repository-private evidence storage and are excluded from the public Site build. Google Drive remains the private operational copy; authenticated private object storage, retention, backup, and restore policy remain future production work.
+- QNAP inventory/media data is populated, but the approved app runtime still needs a stable authenticated HTTPS Data API URL and server-side token before live synchronization can replace the verified repository fallback.
+- QNAP infrastructure still needs the authenticated Owner inventory endpoint and customer media endpoint defined in `docs/QNAP_APP_REQUIREMENTS.md`; PostgreSQL and internal media must remain private.
+- Google credentials are no longer a runtime blocker. Google Sheets/Drive are an optional migration bridge only and remain disabled unless `NK_ENABLE_GOOGLE_STAGING_FALLBACK=true` is explicitly configured.
 - ChatGPT customer identity and D1-backed account-isolated Buying Browser workspaces are connected for saved vehicles, Vehicle Cases, and conversation history. Organization membership, normalized operational tables, private blob storage, backup/restore, and broader role-based authorization remain incomplete.
 - Web iframe embedding remains blocked by Facebook's `X-Frame-Options: DENY`. Native top-level browser adapters are now the approved experiment; runtime support must be reported per platform and external Share/Copy Link retained wherever blocked.
 - A remote customer-specific source session, if later activated, requires an approved encrypted session-storage design and manual user authentication.
@@ -496,3 +497,11 @@ BB-V1D is blocked on approved production project/configuration and must not depl
 ### Smallest Safe Next Milestone
 
 `QNAP-V1-02 - Identity And Workspace Adapter`: select an Owner-approved identity boundary, implement the PostgreSQL workspace API with the existing revision/audit rules, import a complete D1 export into a staging namespace, and prove customer/Owner isolation before changing any production URL.
+
+## QNAP Primary Inventory Application Update - 2026-08-27
+
+- QNAP is now the primary application inventory/media runtime contract; Google is an opt-in migration bridge and repository data is the fail-safe snapshot.
+- Customer sync-status, Account, Ask NK AI, and Owner source-status presentation no longer describe Google as authoritative.
+- The QNAP parser now creates a strict allowlisted customer DTO and discards unknown/internal fields rather than returning the upstream object.
+- Remaining infrastructure gap: provide stable authenticated HTTPS access to the customer inventory endpoint and an Owner-only internal inventory endpoint without exposing PostgreSQL or internal media publicly.
+- Remaining cutover gap: ChatGPT identity and D1 Vehicle Case/workspace data have not moved to QNAP. This storage decision does not authorize an identity or production URL cutover.

@@ -1,18 +1,30 @@
 import type { CustomerListing, SourceAdapterStatus } from "../types";
+import { normalizeCustomerImageContentType, readBoundedResponseBytes } from "./google-staging-parser.mjs";
 import { parseQnapInventoryPayload } from "./qnap-inventory-parser.mjs";
+
+const MAX_MEDIA_BYTES = 12 * 1024 * 1024;
 
 type QnapInventoryResponse = {
   observedAt?: unknown;
   listings?: unknown;
 };
 
-export async function getQnapInventorySnapshot(): Promise<{ listings: CustomerListing[]; observedAt: string } | null> {
+export function qnapInventoryConfigured() {
+  return Boolean(process.env.NK_QNAP_DATA_API_URL && process.env.NK_INTERNAL_API_TOKEN);
+}
+
+function qnapConfig() {
   const baseUrl = process.env.NK_QNAP_DATA_API_URL?.replace(/\/$/, "");
   const token = process.env.NK_INTERNAL_API_TOKEN;
-  if (!baseUrl || !token) return null;
+  return baseUrl && token ? { baseUrl, token } : null;
+}
 
-  const response = await fetch(`${baseUrl}/v1/public/listings`, {
-    headers: { authorization: `Bearer ${token}` },
+export async function getQnapInventorySnapshot(): Promise<{ listings: CustomerListing[]; observedAt: string } | null> {
+  const config = qnapConfig();
+  if (!config) return null;
+
+  const response = await fetch(`${config.baseUrl}/v1/public/listings`, {
+    headers: { authorization: `Bearer ${config.token}` },
     cache: "no-store",
     signal: AbortSignal.timeout(5_000),
   });
@@ -21,8 +33,22 @@ export async function getQnapInventorySnapshot(): Promise<{ listings: CustomerLi
   return parseQnapInventoryPayload(payload) as { listings: CustomerListing[]; observedAt: string };
 }
 
+export async function getQnapCustomerMedia(vehicleId: string, mediaId: string) {
+  const config = qnapConfig();
+  if (!config) throw new Error("qnap_inventory_not_configured");
+  const response = await fetch(`${config.baseUrl}/v1/public/media/${encodeURIComponent(vehicleId)}/${encodeURIComponent(mediaId)}`, {
+    headers: { authorization: `Bearer ${config.token}` },
+    cache: "no-store",
+    signal: AbortSignal.timeout(20_000),
+  });
+  const contentType = normalizeCustomerImageContentType(response.headers.get("content-type") || "");
+  if (!response.ok || !contentType) throw new Error("qnap_media_unavailable");
+  const bytes = await readBoundedResponseBytes(response, MAX_MEDIA_BYTES);
+  return { bytes, contentType, etag: response.headers.get("etag") };
+}
+
 export async function getQnapInventoryStatus(): Promise<SourceAdapterStatus | null> {
-  if (!process.env.NK_QNAP_DATA_API_URL || !process.env.NK_INTERNAL_API_TOKEN) return null;
+  if (!qnapInventoryConfigured()) return null;
   try {
     const snapshot = await getQnapInventorySnapshot();
     return snapshot ? {
@@ -40,7 +66,7 @@ export async function getQnapInventoryStatus(): Promise<SourceAdapterStatus | nu
       label: "QNAP PostgreSQL unavailable",
       live: false,
       state: "error",
-      message: "QNAP inventory could not be reached. NK is using the verified repository snapshot.",
+      message: "QNAP inventory could not be reached.",
     };
   }
 }

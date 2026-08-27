@@ -28,6 +28,10 @@ const dictionaries = {
     translatedVehicleDetails: "Translated vehicle details", translatedFromThai: "Translated from Thai", needsReview: "Needs review",
     originalFactsPreserved: "Original listing facts are preserved separately. Unknown details still require NK verification.", listingFacts: "Listing facts", sourcePhotos: "{count} source photos",
     recommendedFirstStep: "Recommended first step", inspectionInsideCase: "Managed inside your Vehicle Case", continueExistingCase: "Continue in your existing Vehicle Case", createCaseNoCommitment: "Start a Vehicle Case with no purchase commitment",
+    inventoryStorage: "NK inventory storage", synchronized: "Synchronized", fallbackActive: "Fallback active",
+    inventoryGroundingLive: "Results use Owner-approved records and customer-safe media from NK's QNAP storage.",
+    inventoryGroundingFallback: "QNAP synchronization is unavailable. Results use the last verified NK snapshot and never invent current availability.",
+    inventoryPrivacy: "Only Owner-approved customer-safe records and media are shown here. Source URLs, seller details, and internal storage references stay private.",
   },
   "zh-CN": {
     language: "语言", english: "English", chinese: "简体中文", thai: "ไทย",
@@ -56,6 +60,10 @@ const dictionaries = {
     translatedVehicleDetails: "已翻译的车辆信息", translatedFromThai: "从泰语翻译", needsReview: "需要审核",
     originalFactsPreserved: "原始车源信息会单独保留。未知信息仍需 NK 核实。", listingFacts: "车源信息", sourcePhotos: "{count} 张车源照片",
     recommendedFirstStep: "建议的第一步", inspectionInsideCase: "在车辆案件中管理", continueExistingCase: "继续现有车辆案件", createCaseNoCommitment: "创建车辆案件，无购买承诺",
+    inventoryStorage: "NK 车辆数据存储", synchronized: "已同步", fallbackActive: "正在使用备用数据",
+    inventoryGroundingLive: "结果来自 NK QNAP 存储中经车主批准的记录和客户可见媒体。",
+    inventoryGroundingFallback: "QNAP 同步当前不可用。结果使用 NK 最近验证的快照，不会虚构当前可售状态。",
+    inventoryPrivacy: "这里只显示经车主批准的客户可见记录和媒体。车源链接、卖家信息和内部存储引用保持私密。",
   },
   th: {
     language: "ภาษา", english: "English", chinese: "简体中文", thai: "ไทย",
@@ -84,6 +92,10 @@ const dictionaries = {
     translatedVehicleDetails: "ข้อมูลรถที่แปลแล้ว", translatedFromThai: "แปลจากภาษาไทย", needsReview: "ต้องตรวจสอบ",
     originalFactsPreserved: "ระบบเก็บข้อมูลต้นฉบับแยกไว้ รายละเอียดที่ยังไม่ทราบต้องให้ NK ตรวจสอบ", listingFacts: "ข้อมูลจากประกาศ", sourcePhotos: "รูปจากแหล่งข้อมูล {count} รูป",
     recommendedFirstStep: "ขั้นตอนแรกที่แนะนำ", inspectionInsideCase: "จัดการภายใน Vehicle Case", continueExistingCase: "ดำเนินการต่อใน Vehicle Case เดิม", createCaseNoCommitment: "เริ่ม Vehicle Case โดยยังไม่ผูกมัดการซื้อ",
+    inventoryStorage: "พื้นที่เก็บข้อมูลรถ NK", synchronized: "ซิงก์แล้ว", fallbackActive: "กำลังใช้ข้อมูลสำรอง",
+    inventoryGroundingLive: "ผลลัพธ์ใช้ข้อมูลที่ Owner อนุมัติและสื่อลูกค้าที่ปลอดภัยจากพื้นที่เก็บข้อมูล QNAP ของ NK",
+    inventoryGroundingFallback: "ขณะนี้ซิงก์ QNAP ไม่ได้ ระบบใช้ snapshot ล่าสุดที่ NK ตรวจสอบแล้วและจะไม่แต่งสถานะรถขึ้นเอง",
+    inventoryPrivacy: "หน้านี้แสดงเฉพาะข้อมูลและสื่อที่ Owner อนุมัติให้ลูกค้าเห็น ลิงก์ต้นทาง ข้อมูลผู้ขาย และตำแหน่งจัดเก็บภายในยังเป็นข้อมูลส่วนตัว",
   },
 };
 

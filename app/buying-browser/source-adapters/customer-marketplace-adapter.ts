@@ -2,8 +2,8 @@ import { DEFAULT_FILTERS, filterListings } from "../domain.mjs";
 import type { SourceAdapterStatus } from "../types";
 import type { BuyingBrowserSourceAdapter, LinkImportCapability, SourceSearchRequest, SourceSearchResponse } from "./contracts";
 import { capturedCustomerListings } from "./captured-customer-data";
-import { getGoogleStagingSnapshot, getGoogleStagingStatus } from "./google-staging";
-import { getQnapInventorySnapshot, getQnapInventoryStatus } from "./qnap-inventory";
+import { getGoogleStagingSnapshot, getGoogleStagingStatus, googleStagingMigrationBridgeEnabled } from "./google-staging";
+import { getQnapInventorySnapshot, getQnapInventoryStatus, qnapInventoryConfigured } from "./qnap-inventory";
 
 function isFacebookHost(hostname: string) {
   const host = hostname.toLowerCase().replace(/^www\./, "");
@@ -11,13 +11,35 @@ function isFacebookHost(hostname: string) {
 }
 
 export class CustomerMarketplaceAdapter implements BuyingBrowserSourceAdapter {
-  readonly id = "google-sheet-drive";
-  readonly label = "Google Sheet + Drive staging";
+  readonly id = "qnap-postgres";
+  readonly label = "NK QNAP inventory";
 
   async getStatus(): Promise<SourceAdapterStatus> {
     const qnapStatus = await getQnapInventoryStatus();
-    if (qnapStatus) return qnapStatus;
-    return getGoogleStagingStatus();
+    if (qnapStatus?.live) return qnapStatus;
+    if (googleStagingMigrationBridgeEnabled()) {
+      const googleStatus = await getGoogleStagingStatus();
+      if (googleStatus.live) {
+        return {
+          adapterId: "google-migration-bridge",
+          label: "Google migration bridge",
+          mode: "fallback",
+          live: false,
+          state: qnapInventoryConfigured() ? "error" : "not_connected",
+          message: "QNAP is not available. NK is temporarily reading the legacy Google staging source while migration is completed.",
+        };
+      }
+    }
+    return {
+      adapterId: "qnap-postgres",
+      label: "NK QNAP inventory",
+      mode: "snapshot",
+      live: false,
+      state: qnapStatus?.state || "not_connected",
+      message: qnapInventoryConfigured()
+        ? "QNAP inventory is unavailable. NK is showing the last verified repository snapshot."
+        : "QNAP inventory is not connected in this runtime. NK is showing the last verified repository snapshot.",
+    };
   }
 
   async search(request: SourceSearchRequest): Promise<SourceSearchResponse> {
@@ -30,7 +52,9 @@ export class CustomerMarketplaceAdapter implements BuyingBrowserSourceAdapter {
         results: filterListings(qnapSnapshot.listings, request.filters || DEFAULT_FILTERS).slice(0, Math.max(1, Math.min(request.limit, 50))),
       };
     }
-    const snapshot = await getGoogleStagingSnapshot().catch(() => null);
+    const snapshot = googleStagingMigrationBridgeEnabled()
+      ? await getGoogleStagingSnapshot().catch(() => null)
+      : null;
     const listings = snapshot?.listings || capturedCustomerListings;
     return {
       adapterId: this.id,

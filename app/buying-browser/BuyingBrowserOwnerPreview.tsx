@@ -110,14 +110,14 @@ export default function BuyingBrowserOwnerPreview({ records, sourceStatus, stora
         </section>
         <section className="bb-owner-kpis">
           <article><Database size={20} /><span><small>Real source captures</small><b>{sourceCaptures.length + capturedRecordCount}</b></span></article>
-          <article><Gauge size={20} /><span><small>Inventory source</small><b>{sourceStatus.live ? "Google Sync" : "Verified Fallback"}</b></span></article>
+          <article><Gauge size={20} /><span><small>Inventory source</small><b>{sourceStatus.live ? "QNAP Sync" : "Verified Fallback"}</b></span></article>
           <article><UserRound size={20} /><span><small>Customer cases</small><b>{initialCaseQueue.length}</b></span></article>
           <article><EyeOff size={20} /><span><small>Customer redaction</small><b>Separate DTO</b></span></article>
         </section>
 
         <OwnerCaseVerificationQueue initialCases={initialCaseQueue} />
 
-        <section className="bb-owner-warning" data-google-staging-status>
+        <section className="bb-owner-warning" data-inventory-source-status>
           <Database size={18} />
           <div>
             <b>{sourceStatus.label}: {sourceStatus.live ? "Synchronized" : "Fallback active"}</b>
@@ -190,7 +190,7 @@ export default function BuyingBrowserOwnerPreview({ records, sourceStatus, stora
                 </div>
                 <div className="bb-owner-source-actions">
                   <a className="bb-button secondary" href={record.sourceUrl} target="_blank" rel="noreferrer">Internal source URL<ExternalLink size={15} /></a>
-                  {record.spreadsheetUrl && <a className="bb-button secondary" href={record.spreadsheetUrl} target="_blank" rel="noreferrer">Google Sheet<ExternalLink size={15} /></a>}
+                  {record.spreadsheetUrl && <a className="bb-button secondary" href={record.spreadsheetUrl} target="_blank" rel="noreferrer">Legacy staging record<ExternalLink size={15} /></a>}
                   {record.evidenceFolderUrl && <a className="bb-button secondary" href={record.evidenceFolderUrl} target="_blank" rel="noreferrer">Evidence folder<ExternalLink size={15} /></a>}
                   {vehicleCase && <Link className="bb-button primary" href={`/buy/cases/${encodeURIComponent(vehicleCase.id)}`}>Open customer case</Link>}
                 </div>

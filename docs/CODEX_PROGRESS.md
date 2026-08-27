@@ -1039,3 +1039,28 @@ Started Milestone 1: Next.js shell and visual parity.
 ### Next Recommended Step
 
 Approve and configure the production identity boundary and stable tunnel, then add a PostgreSQL workspace adapter and perform a verified D1 export/import before any traffic cutover. Until then, use QNAP for the migrated inventory/media review while the existing ChatGPT Site remains the authoritative signed-in workspace.
+
+## 2026-08-27 - QNAP Becomes Primary Inventory/Media Application Source
+
+### Completed
+
+- Changed the application source priority to QNAP PostgreSQL/media first, verified repository snapshot second.
+- Retained Google Sheets/Drive only as an explicit migration bridge controlled by `NK_ENABLE_GOOGLE_STAGING_FALLBACK=true`; it is disabled by default.
+- Updated sync status and customer/Owner UI copy in English, Simplified Chinese, and Thai to describe NK/QNAP storage rather than Google staging.
+- Rebuilt QNAP listing payloads into a strict customer-field allowlist and rejected traversal/non-NK media paths.
+- Preserved Vehicle Case, pricing, inspection, localization, source adapters, and customer/internal redaction behavior.
+- Added `docs/QNAP_APP_REQUIREMENTS.md` as the application-to-infrastructure handoff; no change was made to `codex/qnap-infrastructure`.
+
+### Remaining Blockers
+
+- The Site runtime needs an approved stable authenticated QNAP API URL/token before it can use live QNAP inventory; otherwise it safely uses the repository snapshot.
+- QNAP infrastructure must provide the Owner/internal inventory endpoint before the Owner review queue can read all needs-review records from QNAP.
+- Identity/D1 workspace migration remains separate and incomplete; no production cutover was performed.
+
+### Verification
+
+- Production build and 54/54 tests passed.
+- TypeScript `--noEmit` passed.
+- Lint passed with 0 errors and 13 existing `<img>` optimization warnings.
+- All 10 approved records in the private QNAP migration seed passed the strict customer DTO parser.
+- Mobile 390 x 844 Account view showed QNAP storage/fallback status with no horizontal overflow and no Google-primary copy.

@@ -152,3 +152,25 @@ Decision:
 - Stable vehicle/media identities, original evidence, audit history, privacy classification, and private sharing state must be preserved.
 - Destructive deletion, irreversible migration, public sharing, or breaking schema changes remain subject to the existing Owner-approval rules.
 - A `README` tab is the first Registry tab and documents the runtime tabs, publication rules, safe edit flow, privacy boundary, cache, identity rules, and preserved legacy tabs.
+
+## 2026-08-27 - QNAP replaces Google as V1 inventory/media runtime storage
+
+Status: APPROVED
+
+Decision:
+- QNAP PostgreSQL is the authoritative V1 runtime store for staged vehicle records.
+- QNAP file/media storage is the authoritative V1 runtime store for customer-visible media and internal evidence.
+- This supersedes the earlier decision that Google Sheets + Google Drive are the primary V1 runtime staging layer.
+- Google Sheets + Google Drive are retained only as a controlled migration/import bridge or optional reporting/export surface. The bridge is disabled by default and requires explicit configuration.
+- The verified repository snapshot remains a fail-safe availability fallback; it is not an editable production database and must be labelled non-live.
+
+Application rules:
+- Customer and domain logic continue through source/media adapters and must not depend directly on PostgreSQL columns or QNAP filesystem paths.
+- QNAP API responses are rebuilt into an allowlisted customer DTO. Unknown fields, seller details, source URL, internal notes, and internal media references are discarded.
+- Customer-visible and internal-only media remain physically and logically separated.
+- Vehicle Cases keep historical snapshots; later inventory changes do not silently rewrite Case facts.
+
+Infrastructure boundary:
+- `codex/app` owns the application contracts and customer/Owner behavior.
+- `codex/qnap-infrastructure` owns stable ingress, service deployment, secrets, backup/restore, monitoring, and storage operations.
+- Production traffic cutover still requires Owner approval and a verified authentication/workspace migration.

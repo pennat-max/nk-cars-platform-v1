@@ -1,4 +1,6 @@
-# Google Sheets + Drive Staging Sync
+# Google Sheets + Drive Migration Bridge
+
+Status: legacy import/migration bridge as of 2026-08-27. QNAP PostgreSQL and QNAP media storage are now the approved primary V1 runtime stores. This bridge is disabled by default and must be explicitly enabled with `NK_ENABLE_GOOGLE_STAGING_FALLBACK=true`; it is not a production runtime dependency.
 
 Status: Implemented in code; runtime credential connection pending
 Updated: 2026-08-26

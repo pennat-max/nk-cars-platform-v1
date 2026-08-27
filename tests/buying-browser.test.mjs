@@ -613,6 +613,9 @@ test("localization changes presentation without mutating authoritative listing d
   assert.equal(translate("en", "vehiclePrice"), "Vehicle Price");
   assert.equal(translate("zh-CN", "vehiclePrice"), "车辆价格");
   assert.equal(translate("th", "vehiclePrice"), "ราคารถ");
+  assert.match(translate("en", "inventoryGroundingLive"), /QNAP storage/);
+  assert.match(translate("zh-CN", "inventoryGroundingLive"), /QNAP/);
+  assert.match(translate("th", "inventoryGroundingLive"), /QNAP/);
   assert.equal(localizeAvailability("Availability Not Yet Confirmed", "zh-CN"), "可售状态尚未确认");
   assert.equal(detectSourceLanguage("รถสวย ไมล์น้อย"), "th");
   assert.equal(detectSourceLanguage("车辆状态很好"), "zh-CN");
@@ -788,7 +791,7 @@ test("Buying Browser exposes an installable operating-system share target", asyn
   assert.equal(manifest.share_target.params.url, "url");
 });
 
-test("Google staging API fails closed without a runtime credential", async () => {
+test("QNAP inventory API fails closed to the verified snapshot when runtime access is not configured", async () => {
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
   workerUrl.searchParams.set("test", `google-fallback-${process.pid}-${Date.now()}`);
   const { default: worker } = await import(workerUrl.href);
@@ -798,10 +801,10 @@ test("Google staging API fails closed without a runtime credential", async () =>
   assert.equal(statusResponse.status, 200);
   const status = await statusResponse.json();
   assert.deepEqual(status, {
-    adapter: "google-sheet-drive",
+    adapter: "qnap-postgres",
     state: "not_connected",
     live: false,
-    mode: "fallback",
+    mode: "snapshot",
     approvedVehicles: null,
     approvedMedia: null,
     synchronizedAt: null,
@@ -810,6 +813,8 @@ test("Google staging API fails closed without a runtime credential", async () =>
   assert.doesNotMatch(JSON.stringify(status), /1IXEZTH2|1TVQxbCQ|drive_file|source_url|seller/i);
   const mediaResponse = await worker.fetch(new Request("http://localhost/api/buying-browser/media/vehicle-approved/photo-01"), env, ctx);
   assert.equal(mediaResponse.status, 404);
+  const qnapMediaResponse = await worker.fetch(new Request("http://localhost/api/buying-browser/qnap-media/vehicle-approved/photo-01"), env, ctx);
+  assert.equal(qnapMediaResponse.status, 404);
 });
 
 test("renders captured and demo source records only in the owner view", async () => {
@@ -834,11 +839,11 @@ test("renders captured and demo source records only in the owner view", async ()
   assert.match(html, /data-buying-browser-owner-preview/i);
   assert.match(html, /Siam Pickup Demo/);
   assert.match(html, /NK-POC-2026-0001/);
-  assert.match(html, /Google Sheet/);
+  assert.match(html, /Legacy staging record/);
   assert.match(html, /Eighteen original listing images/);
   assert.match(textHtml, /11 staged \/ 8 fallback demo/i);
-  assert.match(html, /data-google-staging-status/i);
-  assert.match(textHtml, /Google Sheet \+ Drive staging: Fallback active/i);
+  assert.match(html, /data-inventory-source-status/i);
+  assert.match(textHtml, /NK QNAP inventory: Fallback active/i);
   assert.match(html, /NK-FB-2026-0825-01/);
   assert.match(html, /NK-FB-2026-0825-10/);
   assert.match(html, /Vehicle photo pending/i);

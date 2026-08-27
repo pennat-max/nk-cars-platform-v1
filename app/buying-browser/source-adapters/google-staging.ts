@@ -149,6 +149,10 @@ export function googleStagingConfigured() {
   return Boolean(stagingConfig());
 }
 
+export function googleStagingMigrationBridgeEnabled() {
+  return process.env.NK_ENABLE_GOOGLE_STAGING_FALLBACK === "true";
+}
+
 async function fetchGoogleStaging(config: GoogleStagingConfig) {
   const token = await googleAccessToken(config);
   const endpoint = new URL(`https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(config.sheetId)}/values:batchGet`);

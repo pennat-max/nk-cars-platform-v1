@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getDriveMedia } from "../../../../../buying-browser/source-adapters/google-staging";
+import { getDriveMedia, googleStagingMigrationBridgeEnabled } from "../../../../../buying-browser/source-adapters/google-staging";
 
 export const runtime = "nodejs";
 
@@ -12,7 +12,7 @@ export async function GET(
   { params }: { params: Promise<{ vehicleId: string; mediaId: string }> },
 ) {
   const { vehicleId, mediaId } = await params;
-  if (!safeId(vehicleId) || !safeId(mediaId)) {
+  if (!googleStagingMigrationBridgeEnabled() || !safeId(vehicleId) || !safeId(mediaId)) {
     return NextResponse.json({ error: "media_not_found" }, { status: 404, headers: { "Cache-Control": "no-store" } });
   }
 

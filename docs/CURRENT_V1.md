@@ -19,11 +19,11 @@ Web companion status: `/buy/browser` provides a browser-style NK shell on iPhone
 
 NK Cars is being rebuilt as an **AI Vehicle Buying Browser / Buying Platform for Thailand**.
 
-The Owner has approved an additional V1 ingestion/staging direction:
+The Owner has approved the current V1 ingestion/storage direction:
 
-**Marketplace / authorized capture -> AI normalize -> Google Sheets vehicle staging + Google Drive media/evidence staging -> NK App browse/selection -> customer interest -> Vehicle Case -> availability / inspection / pricing / buy workflow.**
+**Marketplace / authorized capture -> AI normalize -> QNAP PostgreSQL vehicle inventory + QNAP media/evidence storage -> NK App browse/selection -> customer interest -> Vehicle Case -> availability / inspection / pricing / buy workflow.**
 
-Google Sheets + Google Drive are the approved V1 staging layer for captured vehicle inventory. They are not intended to become the permanent business-domain database. The architecture must keep a clean adapter boundary so the staging layer can later move to PostgreSQL/QNAP storage without rewriting Vehicle Case, pricing, inspection, or customer workflows.
+QNAP PostgreSQL and QNAP file/media storage are the authoritative V1 runtime storage target for captured vehicle inventory. Google Sheets + Google Drive are retained only as a controlled legacy migration/import bridge and are disabled as a runtime fallback by default. The adapter boundary remains mandatory so Vehicle Case, pricing, inspection, localization, and customer workflows do not depend on a storage vendor.
 
 Primary real-source customer journey:
 
@@ -38,7 +38,7 @@ Primary real-source customer journey:
 -> transparent NK pricing
 -> later Buy Through NK / procurement / export.
 
-Native NK browser/share flows remain valid ways to select/capture a source vehicle, but customer browse does not require a live Facebook feed at runtime when a reviewed Sheet/Drive staged snapshot is available.
+Native NK browser/share flows remain valid ways to select/capture a source vehicle, but customer browse does not require a live Facebook feed at runtime when reviewed QNAP inventory is available.
 
 The old stock-first implementation remains rollback/reference. Demo cards are not proof of real Marketplace browsing.
 
@@ -50,15 +50,15 @@ The intended V1 operational ingestion flow is:
 2. Capture only information/media that the operator is permitted to access and retain.
 3. Preserve source URL/listing reference and capture timestamp internally.
 4. AI extracts/normalizes useful fields such as brand, model, year, grade, engine, transmission, drive, body/cab, mileage, color, location, asking price, condition notes, and confidence/provenance.
-5. Google Drive stores vehicle photos and evidence for the staging workflow.
-6. Google Sheets stores one authoritative staging record per captured vehicle plus customer-safe/internal/audit fields as appropriate.
-7. NK App reads a customer-safe projection of staged vehicle data and media for Browse/NK Selection.
+5. QNAP media storage keeps customer-visible derivatives separate from internal evidence and documents.
+6. QNAP PostgreSQL stores one authoritative inventory record per captured vehicle plus customer-safe/internal/audit fields as appropriate.
+7. NK App reads a strict customer-safe projection through the authenticated internal QNAP Data API for Browse/NK Selection.
 8. When a customer expresses qualified interest, create/activate a Vehicle Case and snapshot the relevant staged vehicle facts into the case.
 9. Vehicle Case then owns the operational customer/deal workflow; later source changes must not silently rewrite historical case facts.
 
-V1 implementation should move from the current one-car manual Sheet/Drive proof-of-concept toward automated per-vehicle staging and synchronization.
+Google staging data remains available only for controlled migration/import validation. Set `NK_ENABLE_GOOGLE_STAGING_FALLBACK=true` explicitly to use that bridge; normal runtime must not require Google credentials.
 
-Do not make the customer app depend directly on arbitrary spreadsheet column positions. Use a stable staging schema / adapter so Sheet/Drive can later be replaced by QNAP PostgreSQL + object/file storage.
+Do not make customer or domain logic depend on PostgreSQL columns or filesystem paths. Use the existing inventory/media adapter and customer DTO boundaries.
 
 ### Suggested V1 staging identity
 
@@ -84,24 +84,24 @@ Minimum staging metadata should include:
 Recommended statuses include:
 `Captured -> AI Processing -> Needs Review -> Approved for Browse -> Availability Check -> Reserved/Sold/Unavailable/Archived`.
 
-## 3. Google Drive media/evidence staging
+## 3. QNAP media/evidence storage
 
-Move beyond the current one-flat-folder POC toward a deterministic per-vehicle structure, for example:
+Use a deterministic per-vehicle structure, for example:
 
-`NK Cars / Vehicle Staging / <NK-STAGING-ID> /`
+`/nk-cars/media/<visibility>/<NK-STAGING-ID>/`
 - `photos/`
 - `evidence/`
 - optional `documents/`
 
 Do not expose internal source/seller evidence directly to customers. Customer-facing media should be served through the NK customer-safe layer according to rights/policy.
 
-Google Drive is V1 staging storage, not the long-term mandatory storage engine. Future target may move to QNAP/NK storage while preserving the same media-reference interface.
+Customer web containers may mount/serve only customer-visible media. Internal evidence remains outside the public mount. Backup, checksum, restore, retention, and access policy are owned by QNAP infrastructure; application code owns visibility classification and customer-safe references.
 
 ## 4. Current customer UX direction
 
 Mobile-first, especially iPhone.
 
-Customer browse may show reviewed staged NK Selections from Sheet/Drive, while real-source selection may also happen via native/source browser adapters.
+Customer browse shows reviewed NK Selections from QNAP when connected, while real-source selection may also happen via native/source browser adapters. A verified repository snapshot remains the availability fallback and is clearly labelled non-live.
 
 Primary actions:
 - Browse Vehicles
@@ -153,10 +153,9 @@ Use adapter boundaries for:
 - Thai vehicle websites
 - auction/partner sources
 - Dealer Portal
-- Google Sheets staging adapter
-- Google Drive media adapter
-- future PostgreSQL/QNAP inventory adapter
-- future QNAP/object media storage adapter
+- QNAP PostgreSQL inventory adapter (primary V1 runtime)
+- QNAP media storage adapter (primary V1 runtime)
+- Google Sheets/Drive migration import bridge (disabled by default)
 
 Source access may use supported APIs, authorized sessions/browser workflows, share/copy-link flows, or other source-appropriate methods. Never fake successful source access.
 
@@ -231,20 +230,20 @@ Vehicle Case
 
 Inspection/travel fees must come from configured deterministic rules/rate tables, not AI estimates.
 
-## 12. Current implementation checkpoint — 2026-08-26
+## 12. Current implementation checkpoint — 2026-08-27
 
 Latest confirmed checkpoint from Codex:
 - Buying Browser web app, search/filters, ten reviewed vehicle snapshots, swipeable six- or seven-photo galleries, USD display, Save to NK, Vehicle Cases, availability/inspection/AI/message flows, Owner source boundary, split pricing, and EN/Chinese/Thai localization are complete locally and pushed.
-- Previous checkpoint tests passed. Current Google staging milestone verification is recorded in `docs/CODEX_PROGRESS.md`.
-- Google staging is now implemented as the primary server adapter with a five-minute request-time cache and repository fallback.
+- Previous Google staging work remains migration history in `docs/CODEX_PROGRESS.md`; current QNAP-primary verification is recorded in the latest entry.
+- QNAP PostgreSQL is the primary server inventory adapter. Google staging is now an explicit migration bridge only; the verified repository snapshot remains fail-safe when QNAP is unavailable.
 - The private `NK Cars Vehicle Staging Registry` contains 20 vehicle rows: 10 approved vehicles plus a second deduplicated batch of 10 vehicles in `Needs Review`.
-- Google Drive now has deterministic per-vehicle `photos/` and `evidence/` folders for all 20 vehicles. Drive contains 64 approved customer images plus 137 private Needs Review evidence images for the second batch.
+- The legacy Google migration source retains deterministic per-vehicle folders for audit/recovery, but customer runtime no longer depends on it by default.
 - `Media.sort_order = 1` is the reviewed customer cover contract. Four approved records that previously opened with interior/bed photos now use deterministic redacted derivatives of their real source covers; original files remain internal evidence.
 - Production public/internal hardening now requires an explicit server-side Owner account allowlist for `/buy/owner`. Raw browser evidence is retained under repository-private evidence storage and is no longer shipped from `public/`; the nine reviewed POC images were moved under the approved customer marketplace asset boundary.
 - The customer DTO uses first-party NK media-proxy URLs and never receives source URL, seller data, Drive file IDs, or Drive URLs.
-- Runtime activation still requires `GOOGLE_SERVICE_ACCOUNT_JSON` in the approved hosting secret store and Viewer access to the staging root. Without it, the tested repository snapshot remains active.
+- QNAP review currently contains 20 vehicles (10 approved, 10 needs review) and 368 media records. Production/Site activation requires a secure QNAP API origin and token in the approved runtime secret store; without them, the tested repository snapshot remains active.
 - Signed-in customer Vehicle Cases, saved vehicles, imported customer-safe listings, and conversation history now synchronize to a D1-backed account workspace. Anonymous activity remains device-local until the customer signs in.
-- Current branch: `codex/buying-browser-rebuild`.
+- Current application branch: `codex/app`.
 - Previous pushed implementation checkpoint: `e1b4cacc57bdd914c09c671be908f32e817e7a8f`. The current sync milestone commit is recorded in `docs/CODEX_PROGRESS.md`.
 - Bangkok Metro is now the default Browse scope. Six of the current ten reviewed records are in the default operating area; direct links and All Thailand filtering still retain access to the remaining records.
 - Mobile navigation is now Browse, Saved, My Cases, Messages, and Account. Inspection remains available inside My Cases.
@@ -269,29 +268,29 @@ Latest durable operations update:
 - Further commercial activation is blocked until Owner/Finance supplies approved legal issuer details, payment instructions, roles, and actual-funds confirmation policy.
 
 Completed source-layer items:
-1. stable header-mapped Google Sheet schema
-2. deterministic per-vehicle Drive structure
-3. private server-side staging adapter
-4. customer-safe media proxy and visibility enforcement
-5. repository fallback and safe sync status
+1. QNAP PostgreSQL customer inventory adapter
+2. separate customer-visible and internal-only QNAP media roots
+3. strict allowlisted customer DTO parser for QNAP responses
+4. repository fallback and safe QNAP-centric sync status
+5. optional Google migration bridge, disabled by default
 
 Next priority:
-1. Owner configures the runtime service-account secret and shares the private staging root with that account
-2. verify live sync in a non-production preview: customer Browse remains 10 approved vehicles/64 approved media, while Owner review sees all 20 vehicles and the 10-item review queue
+1. QNAP infrastructure supplies a stable authenticated HTTPS Data API origin reachable by the approved app runtime without exposing PostgreSQL
+2. add the authenticated Owner/internal inventory endpoint defined in `docs/QNAP_APP_REQUIREMENTS.md`, then verify all 20 records and the 10-item review queue
 3. verify the deployed Owner account allowlist and D1 account-workspace migration on the existing Site
 4. verify Quotation requests and readiness history through a signed-in production account; PI remains gated until an approved final quotation is accepted
 5. add an authenticated Owner operations queue for availability, actual purchase price, and material cost confirmation
-6. add private operational media storage/retention beyond the reviewed customer asset boundary
+6. verify QNAP media retention, customer/internal separation, backup, and restore under the infrastructure runbook
 7. automate authorized capture -> normalize -> review rows/media without bypassing source controls
 
-## 14. Future QNAP / Hermes direction
+## 14. QNAP / Hermes direction
 
-Approved infrastructure direction under evaluation:
+Approved application storage direction:
 - GitHub remains source-of-truth for code and project decisions.
-- QNAP may become web/API server, PostgreSQL database, private media/file storage, background-worker host, and Hermes host.
+- QNAP PostgreSQL and media/file storage are the V1 authoritative inventory storage target; the signed-in workspace cutover remains separate.
 - Hermes may perform sourcing/AI operator tasks through authorized browser/source workflows.
-- Google Sheets + Drive remain useful as V1 staging/control layer while the QNAP runtime is being proven.
-- Future migration target may be `Hermes/QNAP -> Source -> PostgreSQL + QNAP storage -> NK App`, with Sheets retained as optional admin/export/control view.
+- Google Sheets + Drive remain only a temporary import/migration source and optional export/reporting surface.
+- Target flow is `Hermes/authorized capture -> QNAP PostgreSQL + QNAP storage -> NK App`.
 
 Do not switch production architecture to QNAP until backup, recovery, security, networking, and deployment controls are documented and tested.
 
