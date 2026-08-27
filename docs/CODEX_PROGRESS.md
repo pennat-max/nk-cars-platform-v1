@@ -1251,6 +1251,14 @@ The repository now contains the maximum technically achievable V1 application. R
 - Unconfigured QNAP/Hermes behavior: Run, Pause, Resume, and Save remain disabled; no command or rule success is represented.
 - Clean local runtime check: no browser console warnings or errors.
 
+### Production delivery verification
+
+- Deployed tested application commit `19e89b8` to the existing Vercel project as `dpl_9PQUYzL6zfbDZS5ekU1ocab1dZxf`; the ChatGPT Site and QNAP deployment were not modified.
+- `https://nkautotrade.com/` returned HTTP 307 to `/buy`; `/buy` returned HTTP 200.
+- With production identity still disabled, `/buy/owner/sourcing` redirected to Account and the sourcing API returned HTTP 401.
+- Spoofed external ChatGPT identity headers also returned HTTP 401; Owner/Hermes controls cannot be activated from the public edge.
+- Post-deploy Vercel error-log scan returned no errors.
+
 ## 2026-08-27 - Google and Apple sign-in application readiness
 
 ### Completed
