@@ -304,7 +304,7 @@ The public URL is an account-less Cloudflare Quick Tunnel with no access control
 
 ## 16. Full QNAP Data Stack - 2026-08-27
 
-The current application and reviewed inventory now run side-by-side on QNAP from Git commit `5e2be613e34e`. The previous ports `4330` and `4331`, their tunnels, and the existing ChatGPT Site remain available as rollback/reference points.
+The current application and reviewed inventory now run side-by-side on QNAP from Git commit `99ed4c02ee98da6709f6ba10cd0040e752bdf437`. The previous ports `4330` and `4331`, their tunnels, and the existing ChatGPT Site remain available as rollback/reference points.
 
 Architecture:
 
@@ -316,7 +316,7 @@ Daily backup -> tony-nk-cars-backup -> /share/CACHEDEV6_DATA/nk-cars/backups/pos
 
 - LAN URL: `http://192.168.0.132:4332/buy`
 - Temporary public review URL: `https://desktop-tampa-unnecessary-provinces.trycloudflare.com/buy`
-- Release: `/share/CACHEDEV6_DATA/nk-cars/releases/5e2be613e34e`
+- Release: `/share/CACHEDEV6_DATA/nk-cars/releases/99ed4c02ee98`
 - PostgreSQL data: `/share/CACHEDEV6_DATA/nk-cars/data/postgres`
 - Customer-visible media: `/share/CACHEDEV6_DATA/nk-cars/media/customer-visible`
 - Internal-only media: `/share/CACHEDEV6_DATA/nk-cars/media/internal-only`

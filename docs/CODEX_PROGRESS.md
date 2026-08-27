@@ -1013,7 +1013,7 @@ Started Milestone 1: Next.js shell and visual parity.
 ### Completed
 
 - Preserved the existing ChatGPT Site and QNAP ports `4330`/`4331` as rollback/reference deployments.
-- Deployed commit `5e2be613e34e` side-by-side on QNAP port `4332` with isolated PostgreSQL, authenticated internal Data API, customer web, and daily backup services.
+- Deployed commit `99ed4c02ee98da6709f6ba10cd0040e752bdf437` side-by-side on QNAP port `4332` with isolated PostgreSQL, authenticated internal Data API, customer web, and daily backup services.
 - Migrated the Google staging export and Drive/repository media snapshot: 20 vehicles and 368 media records, with internal-only media excluded from the public web mount.
 - Switched QNAP Browse inventory reads to PostgreSQL through the Source Adapter boundary while retaining Google/repository fallbacks.
 - Split QNAP networking into private data and public web edge networks so PostgreSQL/Data API stay internal while the web port is reachable.
