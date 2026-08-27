@@ -815,6 +815,14 @@ test("QNAP inventory API fails closed to the verified snapshot when runtime acce
   assert.equal(mediaResponse.status, 404);
   const qnapMediaResponse = await worker.fetch(new Request("http://localhost/api/buying-browser/qnap-media/vehicle-approved/photo-01"), env, ctx);
   assert.equal(qnapMediaResponse.status, 404);
+  const anonymousOwnerMedia = await worker.fetch(new Request("http://localhost/api/buying-browser/owner/media/vehicle-approved/evidence-01"), env, ctx);
+  assert.equal(anonymousOwnerMedia.status, 404);
+  const previousOwnerIds = process.env.NK_OWNER_ACCOUNT_IDS;
+  process.env.NK_OWNER_ACCOUNT_IDS = "owner-account-id";
+  const unavailableOwnerMedia = await worker.fetch(new Request("http://localhost/api/buying-browser/owner/media/vehicle-approved/evidence-01", { headers: { "oai-authenticated-user-id": "owner-account-id", "oai-authenticated-user-email": "owner@example.com" } }), env, ctx);
+  if (previousOwnerIds === undefined) delete process.env.NK_OWNER_ACCOUNT_IDS;
+  else process.env.NK_OWNER_ACCOUNT_IDS = previousOwnerIds;
+  assert.equal(unavailableOwnerMedia.status, 404);
 });
 
 test("renders captured and demo source records only in the owner view", async () => {

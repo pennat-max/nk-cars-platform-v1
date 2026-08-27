@@ -236,6 +236,7 @@ Latest confirmed checkpoint from Codex:
 - Buying Browser web app, search/filters, ten reviewed vehicle snapshots, swipeable six- or seven-photo galleries, USD display, Save to NK, Vehicle Cases, availability/inspection/AI/message flows, Owner source boundary, split pricing, and EN/Chinese/Thai localization are complete locally and pushed.
 - Previous Google staging work remains migration history in `docs/CODEX_PROGRESS.md`; current QNAP-primary verification is recorded in the latest entry.
 - QNAP PostgreSQL is the primary server inventory adapter. Google staging is now an explicit migration bridge only; the verified repository snapshot remains fail-safe when QNAP is unavailable.
+- The application has a strict authenticated QNAP Owner inventory client and Owner-only media proxy contract. Until the QNAP Data API implements those endpoints, `/buy/owner` fails closed to the verified internal fallback while customer inventory may remain live.
 - The private `NK Cars Vehicle Staging Registry` contains 20 vehicle rows: 10 approved vehicles plus a second deduplicated batch of 10 vehicles in `Needs Review`.
 - The legacy Google migration source retains deterministic per-vehicle folders for audit/recovery, but customer runtime no longer depends on it by default.
 - `Media.sort_order = 1` is the reviewed customer cover contract. Four approved records that previously opened with interior/bed photos now use deterministic redacted derivatives of their real source covers; original files remain internal evidence.
@@ -273,10 +274,11 @@ Completed source-layer items:
 3. strict allowlisted customer DTO parser for QNAP responses
 4. repository fallback and safe QNAP-centric sync status
 5. optional Google migration bridge, disabled by default
+6. authenticated QNAP Owner inventory parser/client and Owner-only media application proxy
 
 Next priority:
 1. QNAP infrastructure supplies a stable authenticated HTTPS Data API origin reachable by the approved app runtime without exposing PostgreSQL
-2. add the authenticated Owner/internal inventory endpoint defined in `docs/QNAP_APP_REQUIREMENTS.md`, then verify all 20 records and the 10-item review queue
+2. QNAP infrastructure implements the authenticated Owner inventory/media endpoints defined in `docs/QNAP_APP_REQUIREMENTS.md`; the application client is complete and has validated all 20 migrated records and 368 media references
 3. verify the deployed Owner account allowlist and D1 account-workspace migration on the existing Site
 4. verify Quotation requests and readiness history through a signed-in production account; PI remains gated until an approved final quotation is accepted
 5. add an authenticated Owner operations queue for availability, actual purchase price, and material cost confirmation

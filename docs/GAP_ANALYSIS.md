@@ -505,3 +505,12 @@ BB-V1D is blocked on approved production project/configuration and must not depl
 - The QNAP parser now creates a strict allowlisted customer DTO and discards unknown/internal fields rather than returning the upstream object.
 - Remaining infrastructure gap: provide stable authenticated HTTPS access to the customer inventory endpoint and an Owner-only internal inventory endpoint without exposing PostgreSQL or internal media publicly.
 - Remaining cutover gap: ChatGPT identity and D1 Vehicle Case/workspace data have not moved to QNAP. This storage decision does not authorize an identity or production URL cutover.
+
+## QNAP Owner API Application Update - 2026-08-27
+
+- Added a strict Owner inventory parser/client for the authenticated `/v1/admin/inventory-records` contract.
+- Added an Owner-only QNAP media proxy that requires the existing server-side Owner allowlist and returns private `no-store` media responses.
+- Owner records rebuild from allowlisted fields; unknown database fields and legacy Drive storage IDs are dropped. Conflicting imported evidence remains explicitly review-required.
+- Validated the complete migrated seed: 20/20 Owner records and 368/368 protected media references parse successfully.
+- Remaining infrastructure gap: the QNAP Data API must implement `/v1/admin/inventory-records`, `/v1/public/media/:vehicleId/:mediaId`, and `/v1/admin/media/:vehicleId/:mediaId` before external runtimes can use these application clients live.
+- The Owner page continues to use the verified internal fallback if the Owner endpoint is unavailable, even when customer QNAP inventory is live. It does not silently present fallback records as synchronized Owner data.

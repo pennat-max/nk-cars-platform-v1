@@ -1,4 +1,5 @@
-import { getQnapCustomerMedia } from "../../../../../buying-browser/source-adapters/qnap-inventory";
+import { getChatGPTUser, isOwnerUser } from "../../../../../../chatgpt-auth";
+import { getQnapOwnerMedia } from "../../../../../../buying-browser/source-adapters/qnap-inventory";
 
 export const runtime = "nodejs";
 
@@ -10,21 +11,25 @@ function safeMediaId(value: string) {
   return value.length <= 180 && /^[a-zA-Z0-9_-]+(?::[a-zA-Z0-9_-]+)*$/.test(value);
 }
 
+function notFound() {
+  return Response.json({ error: "media_not_found" }, { status: 404, headers: { "Cache-Control": "no-store" } });
+}
+
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ vehicleId: string; mediaId: string }> },
 ) {
+  const user = await getChatGPTUser();
   const { vehicleId, mediaId } = await params;
-  if (!safeVehicleId(vehicleId) || !safeMediaId(mediaId)) {
-    return Response.json({ error: "media_not_found" }, { status: 404, headers: { "Cache-Control": "no-store" } });
-  }
+  if (!isOwnerUser(user) || !safeVehicleId(vehicleId) || !safeMediaId(mediaId)) return notFound();
+
   try {
-    const { bytes, contentType, etag } = await getQnapCustomerMedia(vehicleId, mediaId);
+    const { bytes, contentType, etag } = await getQnapOwnerMedia(vehicleId, mediaId);
     return new Response(bytes, {
       status: 200,
       headers: {
         "Content-Type": contentType,
-        "Cache-Control": "public, max-age=300, s-maxage=300, stale-while-revalidate=86400",
+        "Cache-Control": "private, no-store",
         "Content-Disposition": "inline",
         "X-Content-Type-Options": "nosniff",
         "Cross-Origin-Resource-Policy": "same-origin",
@@ -32,6 +37,6 @@ export async function GET(
       },
     });
   } catch {
-    return Response.json({ error: "media_not_found" }, { status: 404, headers: { "Cache-Control": "no-store" } });
+    return notFound();
   }
 }

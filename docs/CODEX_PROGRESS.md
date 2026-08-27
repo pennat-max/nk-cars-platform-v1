@@ -1064,3 +1064,35 @@ Approve and configure the production identity boundary and stable tunnel, then a
 - Lint passed with 0 errors and 13 existing `<img>` optimization warnings.
 - All 10 approved records in the private QNAP migration seed passed the strict customer DTO parser.
 - Mobile 390 x 844 Account view showed QNAP storage/fallback status with no horizontal overflow and no Google-primary copy.
+
+## 2026-08-27 - QNAP Owner Inventory And Protected Media Application Contract
+
+### Completed
+
+- Added an authenticated server-side QNAP Owner inventory client for `/v1/admin/inventory-records`.
+- Added a strict allowlisted Owner parser that validates stable vehicle/source identities, publication/visibility rules, commercial vehicle fields, HTTPS source links, media identities, and bounded field sizes.
+- Added an Owner-only media application route. It requires the existing ChatGPT Owner account allowlist, validates vehicle/media IDs and raster MIME/size, and returns private `no-store` responses.
+- Kept customer and Owner data paths separate. Unknown database fields and legacy Drive storage IDs are discarded rather than passed through.
+- Preserved imported `Conflict` evidence as explicit Owner review labels while mapping presentation fields to the existing safe `Unknown` / `Need Review` states.
+- Updated the Owner route so live customer inventory is not mistaken for live Owner inventory. If the Owner endpoint is unavailable, the page explicitly uses the verified internal fallback.
+- Expanded `docs/QNAP_APP_REQUIREMENTS.md` with exact Owner inventory and protected media contracts. No `deploy/qnap` infrastructure file was changed.
+
+### Verification
+
+- Production build passed and includes `/api/buying-browser/owner/media/:vehicleId/:mediaId`.
+- `npm.cmd test`: 55/55 tests passed.
+- TypeScript `--noEmit`: passed.
+- Lint: 0 errors; 13 existing `<img>` optimization warnings.
+- `git diff --check`: passed.
+- Full private migration seed compatibility: 20/20 Owner records and 368/368 protected media references parsed successfully.
+- Anonymous and unconfigured Owner media requests fail closed with `404`.
+
+### Remaining Infrastructure Blocker
+
+- QNAP Data API must implement `/v1/admin/inventory-records`, `/v1/public/media/:vehicleId/:mediaId`, and `/v1/admin/media/:vehicleId/:mediaId` before the application can use the new clients live from an external runtime.
+- Stable authenticated QNAP ingress remains required. The current Quick Tunnel is review-only and may change after restart.
+- No production deployment, Site overwrite, production data migration, real message, payment, or purchase action was performed.
+
+### Next Recommended Step
+
+QNAP infrastructure implements the documented endpoints and runs the contract against the existing 20-vehicle/368-media dataset. The application can then perform a live Owner/customer separation test without changing production identity or D1 workspace storage.

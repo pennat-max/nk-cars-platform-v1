@@ -24,11 +24,11 @@ function customerMediaPath(value) {
   return typeof value === "string"
     && value.length <= 500
     && (/^\/vehicle-marketplace\/[a-zA-Z0-9_./-]+$/.test(value)
-      || /^\/api\/buying-browser\/qnap-media\/[a-zA-Z0-9_-]+\/[a-zA-Z0-9_-]+$/.test(value))
+      || /^\/api\/buying-browser\/qnap-media\/[a-zA-Z0-9_-]+\/[a-zA-Z0-9_-]+(?:(?::|%3A)[a-zA-Z0-9_-]+)*$/i.test(value))
     && !value.includes("..");
 }
 
-function customerListing(value) {
+export function parseQnapCustomerListing(value) {
   if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("qnap_inventory_invalid_listing");
   if (value.year !== null && (!Number.isSafeInteger(value.year) || value.year < 1900 || value.year > 2100)) throw new Error("qnap_inventory_invalid_listing");
   if (!TRANSMISSIONS.has(value.transmission) || !DRIVES.has(value.drive)) throw new Error("qnap_inventory_invalid_listing");
@@ -72,7 +72,7 @@ function customerListing(value) {
 export function parseQnapInventoryPayload(payload, now = new Date()) {
   if (!payload || typeof payload !== "object" || !Array.isArray(payload.listings)) throw new Error("qnap_inventory_invalid");
   return {
-    listings: payload.listings.map(customerListing),
+    listings: payload.listings.map(parseQnapCustomerListing),
     observedAt: typeof payload.observedAt === "string" ? payload.observedAt : now.toISOString(),
   };
 }

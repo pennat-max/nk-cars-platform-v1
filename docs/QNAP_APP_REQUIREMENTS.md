@@ -31,6 +31,31 @@ Requirements:
 - Include publication/review status, evidence/media visibility, observed/verified timestamps, and stable vehicle/source IDs.
 - Record access/audit metadata according to the infrastructure policy.
 
+Response envelope:
+
+```json
+{
+  "source": "qnap-postgres",
+  "observedAt": "ISO-8601 timestamp",
+  "records": [
+    {
+      "vehicleId": "stable vehicle ID",
+      "sourceReference": "stable source reference",
+      "publicationStatus": "APPROVED | NEEDS_REVIEW | REJECTED | ARCHIVED",
+      "customerRecord": "customer DTO or null",
+      "internalRecord": "Owner-only internal record",
+      "sourceAdapter": "source adapter ID",
+      "observedAt": "ISO-8601 timestamp",
+      "media": [
+        { "mediaId": "stable media ID", "visibility": "CUSTOMER_VISIBLE | INTERNAL_ONLY" }
+      ]
+    }
+  ]
+}
+```
+
+The application rebuilds every item into a strict Owner DTO. Unknown database fields and legacy storage IDs are discarded. An approved record must include a valid customer DTO and `CUSTOMER_VISIBLE` internal visibility. `Conflict` values from the migration source remain Owner-review evidence and normalize to existing UI-safe `Unknown` / `Need Review` states rather than being presented as confirmed facts.
+
 ## Media Boundary
 
 - Customer-visible and internal-only roots remain separate.
@@ -39,6 +64,8 @@ Requirements:
 - Validate MIME type, file size, path traversal, visibility, and vehicle/media identity before serving.
 - For app runtimes that do not mount QNAP storage, provide authenticated server-to-server `GET /v1/public/media/:vehicleId/:mediaId`. The application exposes it to customers only through `/api/buying-browser/qnap-media/:vehicleId/:mediaId` after MIME/size validation.
 - Listing records may use `/api/buying-browser/qnap-media/<vehicleId>/<mediaId>` as their customer-safe media reference. Never return a QNAP filesystem path.
+- Provide authenticated server-to-server `GET /v1/admin/media/:vehicleId/:mediaId` for Owner evidence. It must verify the media belongs to the requested vehicle and may return both `CUSTOMER_VISIBLE` and `INTERNAL_ONLY` media.
+- The application exposes Owner evidence only through `/api/buying-browser/owner/media/:vehicleId/:mediaId`, after ChatGPT Owner allowlist authorization plus MIME and size validation. Responses are private and `no-store`.
 
 ## Reliability
 
