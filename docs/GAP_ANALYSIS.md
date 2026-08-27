@@ -456,11 +456,11 @@ BB-V1D is blocked on approved production project/configuration and must not depl
 - **External Integration Blocker - availability:** no approved seller messaging channel, send authorization, or reply ingestion.
 - **External Integration Blocker - inspection:** no approved provider/rate/appointment integration; only deterministic estimates and requests exist.
 - **Infrastructure Blocker - private evidence/recovery:** no approved R2/QNAP production storage, retention, backup, and restore setup.
-- **Owner Review Blocker - staged inventory:** the second ten-vehicle batch remains internal until Owner evidence review/redaction/publication approval.
+- **Closed - staged inventory review:** the Owner approved the second ten-vehicle batch for Browse on 2026-08-27. Customer-safe derivatives and selected media are included in the verified fallback; unresolved facts remain Need Review and availability remains unconfirmed.
 
 ### V1-V5 Status
 
-- **V1:** Browse, localization, customer-safe DTOs, Vehicle Cases, durable account workspace, requests/history, deterministic 6% + 4% pricing, Owner verification, quotation/acceptance, and gated PI are implemented. Remaining V1 work depends on the blockers above.
+- **V1:** Browse with 20 reviewed vehicles, localization, customer-safe DTOs, Vehicle Cases, account-workspace contracts, requests/history, deterministic 6% + 4% pricing, Owner verification, quotation/acceptance, and gated PI are implemented. Remaining live operational work depends on identity, legal issuer, availability/messaging, inspection-provider, and QNAP ingress blockers.
 - **V2:** dealer portal/network, reverse marketplace, trust scores, and controlled sourcing automation remain future scope.
 - **V3:** Finance confirmation, payment ledger, purchase approval, deposits/refunds, and Purchase Fund remain disabled future scope.
 - **V4:** secured vehicle, inspection execution, repair, export/shipping, delivery, and after-sales remain future scope.

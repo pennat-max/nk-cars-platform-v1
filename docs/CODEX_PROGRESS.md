@@ -1124,3 +1124,23 @@ QNAP infrastructure implements the documented endpoints and runs the contract ag
 - Production deployment and domain assignment succeeded for `nkautotrade.com` and `www.nkautotrade.com`; both returned HTTP 200 on `/buy`.
 - Public Vercel Production disables the seeded demo workspace. Anonymous visitors use a blank Guest device workspace until production identity is connected.
 - The existing ChatGPT Site and QNAP deployments remain unchanged as rollback/reference environments.
+
+## 2026-08-27 - Second Reviewed Inventory Batch
+
+### Completed
+
+- Applied the Owner's approval to the remaining ten staged Toyota pickup records without treating approval as availability verification.
+- Added ten strict customer-safe listing records to the verified repository fallback, bringing Browse to 20 reviewed vehicles and the Bangkok Metro default result to 16 vehicles.
+- Selected 71 customer-visible images from the private evidence batch. Plates and source/contact markings on six covers use customer-safe derivatives; original evidence was retained unchanged outside the public asset boundary.
+- Preserved unresolved evidence explicitly: transmission/color conflict remains Need Review for record 14 and model year remains unset/Need Review for record 20.
+- Expanded regression coverage for the 20-record/135-image customer marketplace and customer-source leakage boundary.
+
+### Checks
+
+- Verified build completed successfully.
+- Customer inventory/media regression passed; both stale Bangkok Metro count assertions were updated from 6 to 16.
+
+### Remaining
+
+- QNAP infrastructure must import the approved publication states/media mapping and expose the authenticated Data API before QNAP can be reported synchronized.
+- V1 operational activation still requires approved customer identity, legal issuer/payment instructions, seller availability messaging, and inspection-provider setup. No integration was faked or activated.

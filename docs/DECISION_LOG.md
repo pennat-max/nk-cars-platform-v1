@@ -186,3 +186,15 @@ Decision:
 - QNAP PostgreSQL and internal media must not be exposed directly through the public domain.
 - Preview/build/mobile verification must pass before the domain is assigned to a production deployment.
 - ChatGPT identity/D1 workspace behavior is not assumed to exist on Vercel; unsupported authenticated operations must fail safely until the approved workspace adapter is connected.
+
+## 2026-08-27 - Second Ten-Vehicle Browse Approval
+
+Status: APPROVED AND IMPLEMENTED IN VERIFIED FALLBACK
+
+Decision:
+- The Owner approved the remaining ten staged Toyota pickup records for customer Browse.
+- Browse approval does not confirm current availability, source price, condition, model-year conflicts, transmission conflicts, or other unresolved facts.
+- Customer media uses only reviewed selections. License plates and source/contact markings are redacted where required; original evidence remains internal and unchanged.
+- Customer records continue to exclude seller identity/contact, source URL, internal notes, source cost/margin, storage identifiers, and full registration details.
+- The repository fallback now contains 20 reviewed vehicles, including 16 in the Bangkok Metro operating group.
+- QNAP publication-state synchronization remains an infrastructure handoff and must not be represented as complete until the QNAP Data API serves the updated states and customer-safe media.

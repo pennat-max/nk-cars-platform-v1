@@ -235,20 +235,20 @@ Inspection/travel fees must come from configured deterministic rules/rate tables
 ## 12. Current implementation checkpoint — 2026-08-27
 
 Latest confirmed checkpoint from Codex:
-- Buying Browser web app, search/filters, ten reviewed vehicle snapshots, swipeable six- or seven-photo galleries, USD display, Save to NK, Vehicle Cases, availability/inspection/AI/message flows, Owner source boundary, split pricing, and EN/Chinese/Thai localization are complete locally and pushed.
+- Buying Browser web app, search/filters, twenty Owner-approved vehicle snapshots, swipeable customer-safe photo galleries, USD display, Save to NK, Vehicle Cases, availability/inspection/AI/message flows, Owner source boundary, split pricing, and EN/Chinese/Thai localization are implemented.
 - Previous Google staging work remains migration history in `docs/CODEX_PROGRESS.md`; current QNAP-primary verification is recorded in the latest entry.
 - QNAP PostgreSQL is the primary server inventory adapter. Google staging is now an explicit migration bridge only; the verified repository snapshot remains fail-safe when QNAP is unavailable.
 - The application has a strict authenticated QNAP Owner inventory client and Owner-only media proxy contract. Until the QNAP Data API implements those endpoints, `/buy/owner` fails closed to the verified internal fallback while customer inventory may remain live.
-- The private `NK Cars Vehicle Staging Registry` contains 20 vehicle rows: 10 approved vehicles plus a second deduplicated batch of 10 vehicles in `Needs Review`.
+- The Owner approved the second deduplicated ten-vehicle batch for Browse on 2026-08-27. The verified repository fallback therefore contains 20 customer-safe records. Approval for Browse does not verify current availability, price, condition, or unresolved specifications.
 - The legacy Google migration source retains deterministic per-vehicle folders for audit/recovery, but customer runtime no longer depends on it by default.
 - `Media.sort_order = 1` is the reviewed customer cover contract. Four approved records that previously opened with interior/bed photos now use deterministic redacted derivatives of their real source covers; original files remain internal evidence.
 - Production public/internal hardening now requires an explicit server-side Owner account allowlist for `/buy/owner`. Raw browser evidence is retained under repository-private evidence storage and is no longer shipped from `public/`; the nine reviewed POC images were moved under the approved customer marketplace asset boundary.
 - The customer DTO uses first-party NK media-proxy URLs and never receives source URL, seller data, Drive file IDs, or Drive URLs.
-- QNAP review currently contains 20 vehicles (10 approved, 10 needs review) and 368 media records. Production/Site activation requires a secure QNAP API origin and token in the approved runtime secret store; without them, the tested repository snapshot remains active.
+- The existing QNAP database still requires an infrastructure-owned publication-state import for the second batch. Until that handoff is applied, external runtimes use the verified 20-record repository snapshot rather than pretending QNAP is synchronized.
 - Signed-in customer Vehicle Cases, saved vehicles, imported customer-safe listings, and conversation history now synchronize to a D1-backed account workspace. Anonymous activity remains device-local until the customer signs in.
 - Current application branch: `codex/app`.
 - Previous pushed implementation checkpoint: `e1b4cacc57bdd914c09c671be908f32e817e7a8f`. The current sync milestone commit is recorded in `docs/CODEX_PROGRESS.md`.
-- Bangkok Metro is now the default Browse scope. Six of the current ten reviewed records are in the default operating area; direct links and All Thailand filtering still retain access to the remaining records.
+- Bangkok Metro is now the default Browse scope. Sixteen of the twenty reviewed records are in the default operating area; direct links and All Thailand filtering retain access to the remaining records.
 - Mobile navigation is now Browse, Saved, My Cases, Messages, and Account. Inspection remains available inside My Cases.
 - Vehicle detail now surfaces Check Availability and Ask NK AI before specifications, uses a photo-level Save control, and replaces customer-facing technical normalization labels with translated vehicle language.
 

@@ -725,7 +725,7 @@ test("renders additive Buying Browser routes without customer source leakage", a
     if (route === "/buy") {
       assert.match(html, /data-browse-marketplace-v2/i);
       assert.match(html, /data-vehicle-card-v2/i);
-      assert.match(textHtml, /<b>6<\/b> vehicles/i);
+      assert.match(textHtml, /<b>16<\/b> vehicles/i);
       assert.match(html, /NK Selection/i);
       assert.doesNotMatch(html, /10 selected/i);
       assert.match(html, /USD 21,686/i);
@@ -735,7 +735,7 @@ test("renders additive Buying Browser routes without customer source leakage", a
       assert.match(html, /data-browse-marketplace-v2/i);
       assert.match(html, /data-vehicle-card-v2/i);
       assert.match(html, /2020 Toyota Hilux Revo Rocco 2\.4 AT/i);
-      assert.match(textHtml, /<b>6<\/b> vehicles/i);
+      assert.match(textHtml, /<b>16<\/b> vehicles/i);
       assert.match(html, /Bangkok Metro/i);
       assert.doesNotMatch(html, /10 selected/i);
       assert.doesNotMatch(html, /Explore customer-safe vehicle results|Demo market results|Primary Buying Browser actions/i);
@@ -897,17 +897,23 @@ test("browser capture evidence remains private with ten real listings and 167 lo
   assert.ok(images.every((files) => files.length >= 12));
 });
 
-test("customer marketplace exposes ten reviewed listings with only reviewed media", async () => {
+test("customer marketplace exposes twenty Owner-approved listings with only reviewed media", async () => {
   const { readFile, readdir } = await import("node:fs/promises");
   const moduleText = await readFile(new URL("../app/buying-browser/source-adapters/captured-customer-data.ts", import.meta.url), "utf8");
-  const root = new URL("../public/vehicle-marketplace/owner-reviewed-2026-08-26/", import.meta.url);
-  const listingFolders = (await readdir(root, { withFileTypes: true })).filter((entry) => entry.isDirectory() && entry.name.startsWith("nk-mkt-"));
-  const images = await Promise.all(listingFolders.map((entry) => readdir(new URL(`${entry.name}/`, root))));
+  const reviewedRoot = new URL("../public/vehicle-marketplace/owner-reviewed-2026-08-26/", import.meta.url);
+  const approvedRoot = new URL("../public/vehicle-marketplace/owner-approved-2026-08-27/", import.meta.url);
+  const reviewedFolders = (await readdir(reviewedRoot, { withFileTypes: true })).filter((entry) => entry.isDirectory() && entry.name.startsWith("nk-mkt-"));
+  const approvedFolders = (await readdir(approvedRoot, { withFileTypes: true })).filter((entry) => entry.isDirectory() && entry.name.startsWith("nk-mkt-"));
+  const reviewedImages = await Promise.all(reviewedFolders.map((entry) => readdir(new URL(`${entry.name}/`, reviewedRoot))));
+  const approvedImages = await Promise.all(approvedFolders.map((entry) => readdir(new URL(`${entry.name}/`, approvedRoot))));
 
-  assert.equal(listingFolders.length, 10);
-  assert.equal(images.flat().length, 64);
-  assert.equal(images.filter((files) => files.length === 7).length, 4);
-  assert.equal(images.filter((files) => files.length === 6).length, 6);
+  assert.equal(reviewedFolders.length + approvedFolders.length, 20);
+  assert.equal(reviewedImages.flat().length, 64);
+  assert.equal(approvedImages.flat().length, 71);
+  assert.equal((moduleText.match(/demo: false/g) || []).length, 20);
+  for (const listing of ["nk-mkt-11", "nk-mkt-12", "nk-mkt-14", "nk-mkt-17", "nk-mkt-19", "nk-mkt-20"]) {
+    assert.ok(await readdir(new URL(`${listing}/`, approvedRoot)).then((files) => files.includes("cover-redacted.png")));
+  }
   for (const secret of ["facebook.com", "sellerName", "sellerPhone", "sourceUrl", "nk-capture-batch-2026-08-25", "Pranee Pra Jaideaw", "080 632 3247"]) {
     assert.doesNotMatch(moduleText, new RegExp(secret.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"));
   }
