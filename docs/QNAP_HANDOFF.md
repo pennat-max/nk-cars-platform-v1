@@ -1,8 +1,12 @@
 # QNAP Handoff - NK Cars Buying Browser Preview
 
-อัปเดตล่าสุด: 2026-08-27 06:45 Asia/Bangkok
+อัปเดตล่าสุด: 2026-08-27 06:55 Asia/Bangkok
 
 เอกสารนี้บันทึกเฉพาะงาน QNAP infrastructure สำหรับ `NK-Cars-Buying-Browser-V1-Preview` บน branch `codex/qnap-infrastructure` ห้ามใช้เป็นเอกสารยืนยันว่า production business logic หรือ production data ถูกย้ายแล้ว
+
+Authoritative GitHub repository: `pennat-max/nk-cars-platform-v1`
+
+ก่อนทำงาน QNAP/infrastructure ทุกครั้ง ให้ fetch/pull จาก GitHub และอ่าน `docs/CURRENT_V1.md`, `docs/DECISION_LOG.md`, และเอกสาร infrastructure ที่เกี่ยวข้องก่อน
 
 ## 1. ขอบเขต
 
@@ -18,9 +22,11 @@
 
 - Local project: `C:\Users\TONY\Documents\Codex\NK-Cars-Buying-Browser-V1-Preview`
 - Branch สำหรับงานนี้: `codex/qnap-infrastructure`
+- Authoritative GitHub repository: `https://github.com/pennat-max/nk-cars-platform-v1`
 - App source base commit ที่ deploy อยู่บน QNAP: `f018cd5`
 - Deployed image tag: `tony-nk-cars-buying-browser:f018cd5`
-- Git remote `origin`: `C:\Codex\NK-Cars`
+- Git remote `origin`: `https://github.com/pennat-max/nk-cars-platform-v1.git`
+- Git remote `local-origin`: `C:\Codex\NK-Cars`
 - Git remote `sites-preview`: `https://git.chatgpt-team.site/.../appgprj_6a8b559387c48191be9a47db2fdb6468.git`
 
 หมายเหตุ: เอกสารนี้จะถูก commit ใน branch infrastructure และ SHA ล่าสุดให้ดูจากรายงานส่งมอบหลัง push
