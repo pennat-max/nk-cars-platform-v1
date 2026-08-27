@@ -518,6 +518,25 @@ BB-V1D is blocked on approved production project/configuration and must not depl
 
 No additional V1 customer feature should be invented to hide these blockers. V2-V5 remain future scope as classified above.
 
+## Identity and workspace adapter update - 2026-08-27
+
+### Closed application gaps
+
+- Provider-neutral identity boundary with Vercel fail-closed default and QNAP opaque-session validation contract.
+- Safe sign-in/sign-out gateway redirects with bounded same-site return paths.
+- Durable QNAP workspace adapter for customer workspace, Owner queue/verification, quotation acceptance/issue, and PI issue.
+- Strict payload size/schema validation, account ownership, optimistic Revision conflict handling, deterministic customer-write restrictions, and Owner role enforcement.
+- Existing ChatGPT Site/D1 adapter preserved as rollback.
+
+### Remaining activation blockers
+
+- QNAP infrastructure must implement `/v1/auth/session` and the documented customer/Owner workspace endpoints.
+- Owner must authorize the production identity host, cookie policy, recovery/MFA policy, and runtime secrets before `NK_IDENTITY_PROVIDER=qnap` is enabled.
+- A complete D1 export is required if existing signed-in ChatGPT workspaces need migration; partial state must not be imported.
+- Stable authenticated QNAP ingress, monitoring, backup, restore, and a cutover/rollback rehearsal remain required.
+
+The smallest next cross-team milestone is `QNAP-V1-03 - Identity/Workspace Contract Implementation And Staging Cutover`. It is infrastructure-owned; the application side is ready for contract testing.
+
 ## QNAP Primary Inventory Application Update - 2026-08-27
 
 - QNAP is now the primary application inventory/media runtime contract; Google is an opt-in migration bridge and repository data is the fail-safe snapshot.

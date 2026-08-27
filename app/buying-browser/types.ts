@@ -204,6 +204,7 @@ export type CustomerIdentity = {
   country: string;
   destinationPort: string;
   isPreview: boolean;
+  signInPath?: string | null;
 };
 
 export type SourceAdapterStatus = {

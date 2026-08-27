@@ -1187,3 +1187,34 @@ The repository now contains the maximum technically achievable V1 application. R
 - Added redirect regression coverage and retained the previous platform implementation as rollback/reference code.
 - Deployed application commit `49cff52` to Vercel production as `dpl_9J3jQk7TxHYCAnWVZeceqadMdqkD`.
 - Verified `https://nkautotrade.com/` returns HTTP 307 to `/buy`, the destination returns HTTP 200 with Buying Browser content, and the post-deploy error scan is clean.
+
+## 2026-08-27 - Production identity and QNAP workspace application adapter
+
+### Completed
+
+- Added a provider-neutral identity boundary that preserves ChatGPT Site authentication but defaults to disabled on Vercel until explicitly configured.
+- Added strict QNAP opaque-session validation through `/v1/auth/session`; passwords, MFA responses, CAPTCHA, and provider cookies are never collected by an NK form.
+- Added safe sign-in/sign-out gateway redirects with HTTPS-only configuration and protected relative return paths.
+- Added QNAP customer workspace read/write, quotation acceptance, Owner Case queue/verification, quotation issue, and PI issue adapters.
+- Preserved deterministic customer-write restrictions, account ownership, optimistic Revision conflicts, Owner roles, bounded responses, and fail-closed behavior.
+- Kept the existing ChatGPT D1 implementation as rollback/reference without changing or deleting production data.
+- Updated Account UX in English, Simplified Chinese, and Thai so unavailable sign-in is stated honestly instead of linking to a non-working ChatGPT login on Vercel.
+
+### Targeted verification
+
+- TypeScript `--noEmit`: passed.
+- Identity tests cover Vercel fail-closed mode, HTTPS redirect protection, exact cookie extraction, strict user/role parsing, and rejection of malformed identity.
+- QNAP workspace tests cover server token/actor headers, ownership, revision conflicts, and prevention of customer-created availability or purchase-price confirmation.
+
+### Full verification
+
+- `npm.cmd test`: production build and 57/57 tests passed.
+- `npm.cmd run lint`: passed with 0 errors and 13 existing `<img>` optimization warnings.
+- `git diff --check`: passed.
+- Mobile 390 x 844 Account verification in Vercel-equivalent fail-closed mode: no horizontal overflow, no broken images, no console errors, no seeded customer workspace, and no broken ChatGPT sign-in link.
+
+### Remaining infrastructure/Owner blockers
+
+- QNAP must implement the identity/workspace endpoints in `docs/QNAP_APP_REQUIREMENTS.md`.
+- Owner-controlled production identity URLs, cookie policy, secrets, and role assignments are not configured; Vercel remains Guest/device-local by design.
+- No D1 workspace data was migrated and no production authentication/security environment variable was changed.

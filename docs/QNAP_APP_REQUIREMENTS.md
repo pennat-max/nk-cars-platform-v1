@@ -85,3 +85,93 @@ If QNAP is missing or unavailable, Browse uses the verified repository snapshot 
 - QNAP currently requires an infrastructure-owned import/update for the second ten publication states and their reviewed customer media mapping.
 - The QNAP public endpoint must not report synchronization complete until all 20 records are returned with the same unresolved facts, publication states, cover ordering, and customer/internal visibility boundaries.
 - Owner approval for Browse does not confirm current availability, price, condition, or unresolved specifications.
+
+## Identity gateway
+
+The public Vercel application must not trust client-supplied `oai-authenticated-*` headers. ChatGPT Site headers remain supported only in the ChatGPT runtime. QNAP production identity uses an opaque customer session owned by an approved identity gateway.
+
+Application configuration after the gateway is operational:
+
+- `NK_IDENTITY_PROVIDER=qnap`
+- `NK_IDENTITY_SIGN_IN_URL=https://<approved-auth-host>/...`
+- `NK_IDENTITY_SIGN_OUT_URL=https://<approved-auth-host>/...` (optional until sign-out is enabled)
+- `NK_IDENTITY_SESSION_COOKIE=nk_session` (or another approved cookie name)
+- `NK_WORKSPACE_BACKEND=qnap`
+- existing `NK_QNAP_DATA_API_URL` and `NK_INTERNAL_API_TOKEN`
+
+Required server-to-server endpoint:
+
+`GET /v1/auth/session`
+
+Request requirements:
+
+- `Authorization: Bearer <NK_INTERNAL_API_TOKEN>`
+- `X-NK-Session-Token: <opaque session cookie value>`
+- Never accept the actor identity from a public browser header without validating the opaque session.
+- Never log or return the session token.
+
+Successful response:
+
+```json
+{
+  "authenticated": true,
+  "user": {
+    "id": "stable-provider-user-id",
+    "email": "customer@example.com",
+    "displayName": "Customer name",
+    "fullName": "Optional full name",
+    "roles": ["CUSTOMER"]
+  }
+}
+```
+
+Allowed roles are `CUSTOMER`, `STAFF`, and `OWNER`. The session cookie must be `HttpOnly`, `Secure`, bounded in lifetime, protected against fixation, and use an appropriate `SameSite` policy. MFA and recovery remain identity-provider responsibilities; NK never collects a Facebook or identity-provider password in its own form.
+At least one allowed role is required; an authenticated account with no NK role fails closed.
+
+The application defaults to `disabled` identity on Vercel until these settings exist, so spoofed ChatGPT headers cannot activate a customer or Owner session.
+
+## Durable workspace API
+
+All endpoints require the internal bearer token. `X-NK-Actor-Id`, `X-NK-Actor-Email`, and `X-NK-Actor-Roles` are trusted only after that token is verified. QNAP must independently enforce actor role, ownership, validation, revision, audit, and transaction rules.
+
+Customer endpoints:
+
+- `GET /v1/workspaces/:userId`
+- `PUT /v1/workspaces/:userId`
+- `POST /v1/workspaces/:userId/cases/:caseId/quotation-acceptance`
+
+Owner endpoints:
+
+- `GET /v1/admin/cases`
+- `POST /v1/admin/cases/:workspaceUserId/:caseId/verification`
+- `POST /v1/admin/cases/:workspaceUserId/:caseId/quotation`
+- `POST /v1/admin/cases/:workspaceUserId/:caseId/pi`
+
+Customer workspace response:
+
+```json
+{
+  "state": null,
+  "revision": 0,
+  "updatedAt": null
+}
+```
+
+`PUT` request:
+
+```json
+{
+  "state": { "version": 1 },
+  "expectedRevision": 0,
+  "profile": {
+    "email": "customer@example.com",
+    "displayName": "Customer name"
+  }
+}
+```
+
+On revision conflict return HTTP 409 with `{ "error": "workspace_revision_conflict", "current": <current workspace response> }`. The update and append-only workspace event must commit atomically. Customer writes must never create or overwrite Owner-confirmed availability, actual purchase price, NK fee rates, material costs, quotation, PI, payment, or Owner audit records.
+
+`GET /v1/admin/cases` returns `{ "cases": [<OwnerCaseQueueItem>] }`. Each Owner mutation returns `{ "case": <OwnerCaseQueueItem> }`. QNAP document numbering, quotation/PI snapshots, case updates, workspace revision, event, and audit evidence must commit in one database transaction. Operational users cannot delete audit history.
+
+The application revalidates all returned workspace and Owner Case data, recomputes quotation readiness, rejects oversized/malformed responses, and fails closed when the API is unavailable. The existing D1 adapter remains rollback support for the ChatGPT Site only.

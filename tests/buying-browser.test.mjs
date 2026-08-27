@@ -23,6 +23,8 @@ import { customerWorkspaceId, enforceServerControlledWorkspaceState, mergeBuying
 import { applyOwnerCaseVerification, normalizeOwnerCaseVerification } from "../app/buying-browser/owner-case-verification.mjs";
 import { acceptQuotation, currentQuotationStatus, issueQuotation, quotationMaterialKey } from "../app/buying-browser/quotation-domain.mjs";
 import { currentProformaInvoiceStatus, issueProformaInvoice } from "../app/buying-browser/pi-domain.mjs";
+import { cookieValue, identityGatewayRedirect, identityProviderMode, parseQnapIdentity } from "../app/identity-domain.mjs";
+import { qnapWorkspaceTestHelpers, readQnapWorkspace, writeQnapWorkspace } from "../app/buying-browser/qnap-workspace.ts";
 
 const source = {
   id: "listing-1",
@@ -137,6 +139,77 @@ class MemoryWorkspaceD1 {
     }
   }
 }
+
+test("production identity defaults fail closed and QNAP sessions are strictly validated", () => {
+  const previous = {
+    provider: process.env.NK_IDENTITY_PROVIDER,
+    vercel: process.env.VERCEL,
+    signIn: process.env.NK_IDENTITY_SIGN_IN_URL,
+    site: process.env.NEXT_PUBLIC_SITE_URL,
+  };
+  try {
+    delete process.env.NK_IDENTITY_PROVIDER;
+    process.env.VERCEL = "1";
+    assert.equal(identityProviderMode(), "disabled");
+    process.env.NK_IDENTITY_PROVIDER = "qnap";
+    process.env.NK_IDENTITY_SIGN_IN_URL = "https://auth.nkautotrade.com/login";
+    process.env.NEXT_PUBLIC_SITE_URL = "https://nkautotrade.com";
+    const redirect = identityGatewayRedirect("sign-in", "//attacker.example");
+    assert.equal(redirect.origin, "https://auth.nkautotrade.com");
+    assert.equal(redirect.searchParams.get("return_to"), "https://nkautotrade.com/");
+    assert.equal(cookieValue("other=x; nk_session=opaque-session; theme=dark", "nk_session"), "opaque-session");
+    assert.equal(cookieValue("nk_session=", "nk_session"), null);
+    const user = parseQnapIdentity({ authenticated: true, user: { id: "customer-123", email: "Buyer@Example.com", displayName: "Buyer", roles: ["CUSTOMER", "OWNER", "UNKNOWN"] } });
+    assert.deepEqual(user, { id: "qnap:customer-123", email: "buyer@example.com", displayName: "Buyer", fullName: null, provider: "qnap", roles: ["CUSTOMER", "OWNER"] });
+    assert.equal(parseQnapIdentity({ authenticated: true, user: { id: "bad id", email: "buyer@example.com", displayName: "Buyer" } }), null);
+    assert.equal(parseQnapIdentity({ authenticated: true, user: { id: "customer-123", email: "buyer@example.com", displayName: "Buyer", roles: [] } }), null);
+  } finally {
+    if (previous.provider === undefined) delete process.env.NK_IDENTITY_PROVIDER; else process.env.NK_IDENTITY_PROVIDER = previous.provider;
+    if (previous.vercel === undefined) delete process.env.VERCEL; else process.env.VERCEL = previous.vercel;
+    if (previous.signIn === undefined) delete process.env.NK_IDENTITY_SIGN_IN_URL; else process.env.NK_IDENTITY_SIGN_IN_URL = previous.signIn;
+    if (previous.site === undefined) delete process.env.NEXT_PUBLIC_SITE_URL; else process.env.NEXT_PUBLIC_SITE_URL = previous.site;
+  }
+});
+
+test("QNAP workspace adapter preserves ownership, deterministic controls, and revisions", async () => {
+  const previous = {
+    url: process.env.NK_QNAP_DATA_API_URL,
+    token: process.env.NK_INTERNAL_API_TOKEN,
+    fetch: globalThis.fetch,
+  };
+  process.env.NK_QNAP_DATA_API_URL = "https://qnap.example";
+  process.env.NK_INTERNAL_API_TOKEN = "test-internal-token-at-least-20-characters";
+  const user = { id: "qnap:customer-1", email: "buyer@example.com", displayName: "Buyer", fullName: null, provider: "qnap", roles: ["CUSTOMER"] };
+  const listing = presentCustomerListing(source);
+  const vehicleCase = { ...createVehicleCase(listing, [], "spoofed", "2026-08-26T10:00:00.000Z").caseRecord, availability: "Verified Available", actualVehiclePurchasePriceThb: 1 };
+  const incoming = { version: 1, savedListingIds: [listing.id], cases: [vehicleCase], importedListings: [], sourceCaptures: [], generalMessages: [] };
+  let remote = { state: null, revision: 0, updatedAt: null };
+  globalThis.fetch = async (url, init) => {
+    assert.equal(new URL(url).origin, "https://qnap.example");
+    assert.equal(init.headers.authorization, `Bearer ${process.env.NK_INTERNAL_API_TOKEN}`);
+    assert.equal(init.headers["x-nk-actor-id"], user.id);
+    if ((init.method || "GET") === "PUT") {
+      const body = JSON.parse(init.body);
+      assert.equal(body.expectedRevision, remote.revision);
+      remote = { state: body.state, revision: remote.revision + 1, updatedAt: "2026-08-27T10:00:00.000Z" };
+    }
+    return Response.json(remote);
+  };
+  try {
+    assert.deepEqual(await readQnapWorkspace(user), remote);
+    const saved = await writeQnapWorkspace(user, incoming, 0);
+    assert.equal(saved.revision, 1);
+    assert.equal(saved.state.cases[0].customerId, customerWorkspaceId(user.id));
+    assert.equal(saved.state.cases[0].availability, "Availability Not Yet Confirmed");
+    assert.equal(saved.state.cases[0].actualVehiclePurchasePriceThb, null);
+    assert.throws(() => qnapWorkspaceTestHelpers.parseWorkspaceRecord({ state: incoming, revision: -1, updatedAt: null }, user.id), /invalid_workspace_revision/);
+    await assert.rejects(() => writeQnapWorkspace(user, incoming, 0), /workspace_revision_conflict/);
+  } finally {
+    globalThis.fetch = previous.fetch;
+    if (previous.url === undefined) delete process.env.NK_QNAP_DATA_API_URL; else process.env.NK_QNAP_DATA_API_URL = previous.url;
+    if (previous.token === undefined) delete process.env.NK_INTERNAL_API_TOKEN; else process.env.NK_INTERNAL_API_TOKEN = previous.token;
+  }
+});
 
 test("account workspace validation enforces ownership and customer-safe fields", () => {
   const listing = presentCustomerListing(source);

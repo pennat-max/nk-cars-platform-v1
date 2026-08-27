@@ -337,3 +337,9 @@ The maximum technically achievable Buying Browser V1 application scope is comple
 Remaining items are activation blockers rather than unfinished application behavior: production identity/workspace persistence, approved legal issuer/payment instructions, authorized seller messaging/reply ingestion, inspection-provider booking, and stable authenticated QNAP Data API/media ingress. These must not be faked or activated without the required Owner/external inputs.
 
 Public entry behavior: `https://nkautotrade.com/` redirects directly to `/buy`. Existing `/buy/...` routes remain stable for vehicle, Case, PI, and shared links.
+
+Identity/workspace activation checkpoint:
+- The application now supports a provider-neutral QNAP identity gateway without collecting passwords in NK forms.
+- Vercel defaults to identity disabled until the QNAP gateway is explicitly configured; raw ChatGPT identity headers are not trusted there.
+- A strict QNAP workspace adapter covers customer workspace reads/writes, Owner queue/verification, quotation acceptance/issue, and PI issue while preserving ownership, revision, deterministic commercial controls, and append-only audit contracts.
+- ChatGPT Site + D1 remain the rollback adapter. Production account activation still waits for QNAP infrastructure to implement the documented endpoints and for Owner-controlled runtime secrets/URLs to be configured.

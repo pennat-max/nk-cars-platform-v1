@@ -207,3 +207,15 @@ Decision:
 - `https://nkautotrade.com/` is the single customer entry link and opens Buying Browser directly.
 - The root redirects to `/buy`; existing deep links under `/buy/...` remain unchanged and valid.
 - The legacy platform screen is not deleted and remains available through its existing internal route components as rollback/reference code.
+
+## 2026-08-27 - Production identity and workspace boundary
+
+Status: APPROVED APPLICATION CONTRACT; INFRASTRUCTURE ACTIVATION PENDING
+
+Decision:
+- Vercel must fail closed when no approved identity provider is configured and must not treat public `oai-authenticated-*` headers as trusted identity.
+- Production QNAP identity uses an opaque, secure session validated server-to-server by the QNAP identity gateway. NK does not collect or store the identity-provider password.
+- QNAP PostgreSQL is the target durable workspace store for Saved vehicles, Vehicle Cases, conversations, verification, quotation, and PI records.
+- Application business rules remain deterministic and are revalidated at the adapter boundary. QNAP must enforce the same ownership, Revision, transaction, document-numbering, and append-only audit rules.
+- The existing ChatGPT Site/D1 identity and workspace path remains rollback support and is not destructively migrated or removed.
+- Activating production identity/runtime secrets remains an Owner-controlled security action after the infrastructure endpoints are implemented and tested.

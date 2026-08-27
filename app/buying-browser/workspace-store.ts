@@ -2,6 +2,7 @@ import { isOwnerUser, type ChatGPTUser } from "../chatgpt-auth";
 import { assessQuotationReadiness } from "./domain.mjs";
 import { applyOwnerCaseVerification } from "./owner-case-verification.mjs";
 import { currentProformaInvoiceStatus, issueProformaInvoice } from "./pi-domain.mjs";
+import { acceptQnapCustomerCaseQuotation, issueQnapOwnerCaseProformaInvoice, issueQnapOwnerCaseQuotation, listQnapOwnerCases, qnapWorkspaceBackendEnabled, readQnapWorkspace, writeQnapOwnerCaseVerification, writeQnapWorkspace } from "./qnap-workspace";
 import { acceptQuotation, currentQuotationStatus, issueQuotation, quotationMaterialKey } from "./quotation-domain.mjs";
 import type { BuyingBrowserState, OwnerCaseAuditEvent, OwnerCaseQueueItem, OwnerCaseVerificationInput, QuotationReadiness } from "./types";
 import { enforceServerControlledWorkspaceState, validateAndOwnBuyingBrowserState, workspaceSummary } from "./workspace-state.mjs";
@@ -45,6 +46,7 @@ async function database() {
 }
 
 export async function readWorkspace(user: ChatGPTUser): Promise<WorkspaceRecord> {
+  if (qnapWorkspaceBackendEnabled()) return readQnapWorkspace(user);
   const d1 = await database();
   const row = await d1
     .prepare("SELECT state_json, revision, updated_at FROM buying_browser_workspaces WHERE user_id = ? LIMIT 1")
@@ -61,6 +63,7 @@ export async function readWorkspace(user: ChatGPTUser): Promise<WorkspaceRecord>
 }
 
 export async function writeWorkspace(user: ChatGPTUser, value: unknown, expectedRevision: number): Promise<WorkspaceRecord> {
+  if (qnapWorkspaceBackendEnabled()) return writeQnapWorkspace(user, value, expectedRevision);
   const d1 = await database();
   const current = await readWorkspace(user);
   if (!Number.isSafeInteger(expectedRevision) || expectedRevision < 0 || expectedRevision !== current.revision) {
@@ -118,6 +121,7 @@ function parseAuditRow(row: CaseAuditRow): OwnerCaseAuditEvent {
 
 export async function listOwnerCases(owner: ChatGPTUser): Promise<OwnerCaseQueueItem[]> {
   if (!isOwnerUser(owner)) throw new Error("owner_authorization_required");
+  if (qnapWorkspaceBackendEnabled()) return listQnapOwnerCases(owner);
   const d1 = await database();
   const [workspaceResult, auditResult] = await Promise.all([
     d1.prepare("SELECT user_id, email, display_name, state_json, revision, updated_at FROM buying_browser_workspaces ORDER BY updated_at DESC").all<OwnerWorkspaceRow>(),
@@ -164,6 +168,7 @@ export async function writeOwnerCaseVerification(
   expectedRevision: number,
 ): Promise<OwnerCaseQueueItem> {
   if (!isOwnerUser(owner)) throw new Error("owner_authorization_required");
+  if (qnapWorkspaceBackendEnabled()) return writeQnapOwnerCaseVerification(owner, workspaceUserId, caseId, value, expectedRevision);
   if (!workspaceUserId || workspaceUserId.length > 200 || !caseId || caseId.length > 200) throw new Error("invalid_case_reference");
   if (!Number.isSafeInteger(expectedRevision) || expectedRevision < 1) throw new Error("invalid_revision");
   const d1 = await database();
@@ -256,6 +261,7 @@ async function nextPiNumber(d1: D1Database, now: string) {
 
 export async function issueOwnerCaseQuotation(owner: ChatGPTUser, workspaceUserId: string, caseId: string, expectedRevision: number): Promise<OwnerCaseQueueItem> {
   if (!isOwnerUser(owner)) throw new Error("owner_authorization_required");
+  if (qnapWorkspaceBackendEnabled()) return issueQnapOwnerCaseQuotation(owner, workspaceUserId, caseId, expectedRevision);
   if (!workspaceUserId || workspaceUserId.length > 200 || !caseId || caseId.length > 200) throw new Error("invalid_case_reference");
   if (!Number.isSafeInteger(expectedRevision) || expectedRevision < 1) throw new Error("invalid_revision");
   const d1 = await database();
@@ -329,6 +335,7 @@ export async function issueOwnerCaseQuotation(owner: ChatGPTUser, workspaceUserI
 }
 
 export async function acceptCustomerCaseQuotation(user: ChatGPTUser, caseId: string, quotationNumber: string): Promise<WorkspaceRecord> {
+  if (qnapWorkspaceBackendEnabled()) return acceptQnapCustomerCaseQuotation(user, caseId, quotationNumber);
   if (!caseId || caseId.length > 200 || !/^QT-\d{4}-\d{6}$/.test(quotationNumber)) throw new Error("invalid_quotation_reference");
   const d1 = await database();
   const current = await readWorkspace(user);
@@ -364,6 +371,7 @@ export async function acceptCustomerCaseQuotation(user: ChatGPTUser, caseId: str
 
 export async function issueOwnerCaseProformaInvoice(owner: ChatGPTUser, workspaceUserId: string, caseId: string, expectedRevision: number): Promise<OwnerCaseQueueItem> {
   if (!isOwnerUser(owner)) throw new Error("owner_authorization_required");
+  if (qnapWorkspaceBackendEnabled()) return issueQnapOwnerCaseProformaInvoice(owner, workspaceUserId, caseId, expectedRevision);
   if (!workspaceUserId || workspaceUserId.length > 200 || !caseId || caseId.length > 200) throw new Error("invalid_case_reference");
   if (!Number.isSafeInteger(expectedRevision) || expectedRevision < 1) throw new Error("invalid_revision");
   const d1 = await database();

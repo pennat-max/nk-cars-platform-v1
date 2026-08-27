@@ -341,3 +341,17 @@ Not migrated or activated:
 - No Facebook, seller messaging, payment, paid AI, or other real external action was activated.
 
 Security note: QNAP-only database/API secrets are random, stored outside Git in a mode-600 environment file, and were not printed or copied into this document. The QNAP administrator password disclosed in chat must be rotated.
+
+## 17. Identity and workspace implementation handoff - 2026-08-27
+
+The `codex/app` branch now contains the production-compatible identity and QNAP workspace clients. Infrastructure implementation must follow `docs/QNAP_APP_REQUIREMENTS.md`.
+
+Required next infrastructure work:
+
+1. Implement the opaque-session identity endpoint and secure sign-in gateway.
+2. Implement the revisioned customer workspace and Owner Case endpoints.
+3. Enforce service-token authentication, account ownership, least-privilege roles, deterministic commercial restrictions, atomic document numbering, and append-only audit in PostgreSQL.
+4. Test with staging-only accounts and data through stable authenticated HTTPS ingress.
+5. Rehearse backup/restore and rollback before any Vercel environment is changed.
+
+Do not enable Vercel `NK_IDENTITY_PROVIDER=qnap` or `NK_WORKSPACE_BACKEND=qnap` until contract tests pass. The current Vercel site intentionally remains Guest/device-local, and the ChatGPT Site/D1 path remains rollback.
