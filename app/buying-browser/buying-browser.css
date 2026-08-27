@@ -159,3 +159,102 @@
   .bb-next-actions button{min-height:58px;border-radius:10px}
   .bb-next-actions b{font-size:14px}
 }
+
+/* Owner feedback readability pass: iPhone screens should read comfortably without zooming. */
+@media(max-width:720px){
+  .buying-browser{font-size:16px;line-height:1.42}
+  .bb-header{height:58px}
+  .bb-header-inner{padding:0 14px;gap:10px}
+  .bb-brand>span{width:34px;height:34px;font-size:13px}
+  .bb-brand b{font-size:20px}
+  .bb-market-location b{max-width:128px;font-size:13px}
+  .bb-market-location small{display:block;font-size:9px}
+  .bb-language-selector{height:34px}
+  .bb-language-selector select{width:48px;max-width:48px;font-size:12px}
+  .bb-main{padding:14px 14px 30px}
+  .bb-bottom-nav{min-height:74px;padding-top:7px}
+  .bb-bottom-nav a{min-height:58px}
+  .bb-bottom-nav b{font-size:11px}
+  .bb-bottom-nav a i{min-width:19px;height:19px;font-size:10px}
+  .bb-page-heading h1{font-size:33px}
+  .bb-page-heading p:last-child{font-size:14px}
+  .bb-result-count{font-size:12px}
+  .bb-button{min-height:50px;font-size:14px;border-radius:8px}
+  .bb-market-search-row{grid-template-columns:minmax(0,1fr) 50px 50px;gap:7px}
+  .bb-market-search-row .bb-search-field,.bb-market-search-row .bb-filter-button,.bb-sort-button{height:50px;border-radius:10px}
+  .bb-market-search-row .bb-search-field{padding:0 13px}
+  .bb-market-search-row .bb-search-field input{font-size:16px}
+  .bb-market-search-row .bb-filter-button,.bb-sort-button{width:50px}
+  .bb-marketplace-toolbar .bb-quick-filters{padding:9px 0 8px;gap:8px}
+  .bb-marketplace-toolbar .bb-quick-filters button{height:38px;padding:0 14px;font-size:13px}
+  .bb-marketplace-title-row{margin:12px 1px 8px}
+  .bb-marketplace-title-row h2{font-size:30px}
+  .bb-marketplace-title-row p{font-size:14px}
+  .bb-marketplace-title-row>span{padding:7px 10px;font-size:12px}
+  .bb-marketplace-meta{margin-bottom:12px}
+  .bb-marketplace-meta nav a{height:36px;padding:0 12px;font-size:12px}
+  .bb-listing-grid{grid-template-columns:1fr;gap:14px}
+  .bb-listing-card{border-radius:10px}
+  .bb-listing-image{aspect-ratio:1.22;border-radius:10px 10px 0 0}
+  .bb-listing-copy{padding:13px 13px 14px}
+  .bb-listing-copy>strong{font-size:25px}
+  .bb-listing-copy h2{font-size:18px;line-height:1.22;margin:7px 0 7px}
+  .bb-listing-copy footer{font-size:14px;gap:14px}
+  .bb-listing-copy footer svg{width:15px;height:15px}
+  .bb-demo-flag{left:10px;top:10px;padding:6px 8px;font-size:10px;border-radius:6px}
+  .bb-save-icon{right:10px;top:10px;width:48px;height:48px}
+  .bb-save-icon svg{width:25px;height:25px}
+  .bb-back-link{font-size:16px;margin-bottom:12px}
+  .bb-gallery-slide{aspect-ratio:1.14}
+  .bb-gallery-save{width:52px;height:52px}
+  .bb-gallery-save svg{width:28px;height:28px}
+  .bb-gallery-counter{min-width:64px;padding:7px 10px;font-size:13px}
+  .bb-gallery-thumbs button{flex-basis:86px}
+  .bb-vehicle-summary h1{font-size:31px;line-height:1.12;margin-top:16px}
+  .bb-grade{font-size:16px}
+  .bb-vehicle-price{font-size:38px}
+  .bb-price-caption{font-size:14px;max-width:none;margin:8px 0 14px}
+  .bb-detail-primary-actions{gap:9px}
+  .bb-detail-primary-actions button{min-height:62px;border-radius:10px;padding:11px}
+  .bb-detail-primary-actions button b{font-size:18px}
+  .bb-detail-primary-actions button small{font-size:12px}
+  .bb-detail-location{font-size:15px}
+  .bb-detail-location small{font-size:12px}
+  .bb-detail-location b{font-size:16px}
+  .bb-honesty-note{font-size:14px}
+  .bb-section-heading h2{font-size:27px}
+  .bb-spec-grid{gap:10px}
+  .bb-spec-grid>div{min-height:76px;padding:13px}
+  .bb-spec-grid small{font-size:11px}
+  .bb-spec-grid b{font-size:17px}
+  .bb-vehicle-description h3{font-size:22px}
+  .bb-normalized-summary{font-size:17px;line-height:1.55}
+  .bb-vehicle-description>small{font-size:12px}
+  .bb-next-actions button{min-height:72px;padding:14px}
+  .bb-next-actions b{font-size:18px}
+  .bb-next-actions small{font-size:12px}
+  .bb-case-card{grid-template-columns:126px minmax(0,1fr);gap:13px;padding:10px}
+  .bb-case-card>.bb-vehicle-photo{width:126px;height:104px}
+  .bb-case-card h2{font-size:18px}
+  .bb-case-card p{font-size:13px}
+  .bb-case-card small,.bb-case-card>strong{font-size:11px}
+  .bb-case-hero{grid-template-columns:126px minmax(0,1fr);gap:14px}
+  .bb-case-hero>.bb-vehicle-photo{width:126px;height:106px}
+  .bb-case-hero h1{font-size:26px}
+  .bb-case-action-row button,.bb-case-action-row a{min-height:78px}
+  .bb-case-action-row b{font-size:16px}
+  .bb-case-action-row small{font-size:12px}
+  .bb-price-lines span,.bb-price-lines strong,.bb-case-facts dt,.bb-case-facts dd,.bb-chat-messages p,.bb-ai-search-thread p,.bb-general-thread article p{font-size:13px}
+  .bb-pricing-tool h2,.bb-pi-panel h2,.bb-quotation-panel>header h2{font-size:22px}
+  .bb-pricing-tool>footer strong{font-size:27px}
+  .bb-prompt-chips button{min-height:38px;font-size:12px}
+  .bb-case-chat>form label,.bb-case-chat>form button{height:54px}
+  .bb-account-profile b,.bb-account-profile dd,.bb-conversation-list h2{font-size:16px}
+  .bb-account-profile small,.bb-account-profile dt,.bb-conversation-list p,.bb-conversation-list time{font-size:12px}
+}
+
+@media(min-width:521px) and (max-width:720px){
+  .bb-listing-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .bb-listing-copy>strong{font-size:21px}
+  .bb-listing-copy h2{font-size:16px}
+}

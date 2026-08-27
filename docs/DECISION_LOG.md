@@ -314,3 +314,14 @@ Decision:
 - Vehicle Detail keeps the verified NK workflow and full desktop pricing disclosure, but mobile shows the shorter source-price explanation and brings Check Availability, Ask NK AI, and Request Inspection into the first action group.
 - Hide bottom navigation only on mobile Vehicle Detail to avoid covering primary actions.
 - No QNAP/Hermes activation, seller messaging, payment, purchase, publication, pricing math, or customer/internal data-boundary change is authorized by this visual alignment.
+
+## 2026-08-27 - Mobile readability-first customer UI
+
+Status: APPROVED AND IMPLEMENTED
+
+Decision:
+- Owner review on a real iPhone-sized browser showed the active customer UI still felt too small and dense.
+- Prioritize readability over preserving a dense two-column marketplace grid on iPhone-sized screens.
+- Browse now uses one-column vehicle cards on small phones, with larger photos, price/title/meta text, save controls, filters, and bottom navigation.
+- Vehicle Detail and the main customer workflow surfaces inherit larger mobile typography and touch targets while preserving the approved NK workflow.
+- This is a visual/readability change only. It does not change pricing math, source data, availability claims, Vehicle Case rules, inspection gates, QNAP/Hermes behavior, seller messaging, payment, purchase, or publication.
