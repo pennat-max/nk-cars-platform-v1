@@ -39,7 +39,7 @@ export default function BuyingBrowserShell({ view, children }: { view: BuyingBro
             {primaryNavItems.map((item) => { const Icon = item.icon; return <Link key={item.key} className={selected === item.key ? "active" : ""} href={item.href}><Icon size={17} />{t(item.labelKey)}</Link>; })}
           </nav>
           <label className="bb-language-selector" title={t("language")}><Globe2 size={16} /><span className="bb-sr-only">{t("language")}</span><select value={language} onChange={(event) => setLanguage(event.target.value as CustomerLanguage)} aria-label={t("language")}><option value="en">EN</option><option value="zh-CN">简体中文</option><option value="th">ไทย</option></select></label>
-          <Link className="bb-account-button" href="/buy/account" aria-label="Open account"><span>{customerInitials(customer.displayName)}</span><div><b>{customer.displayName}</b><small>{customer.isPreview ? "Preview account" : "NK account"}</small></div><UserRound size={17} /></Link>
+          <Link className="bb-account-button" href="/buy/account" aria-label="Open account"><span>{customerInitials(customer.displayName)}</span><div><b>{customer.displayName}</b><small>{customer.isPreview ? "Device account" : "NK account"}</small></div><UserRound size={17} /></Link>
         </div>
       </header>
       <main className="bb-main">{children}</main>

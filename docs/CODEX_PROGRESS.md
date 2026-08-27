@@ -1121,4 +1121,6 @@ QNAP infrastructure implements the documented endpoints and runs the contract ag
 ### Current Limitation
 
 - Vercel does not provide the ChatGPT Site identity headers or D1 binding. Anonymous Browse and device-local fallback work, but signed-in workspace cutover requires the approved QNAP/PostgreSQL identity and workspace adapter.
-- The Vercel production domain is not recorded as active until the tested commit is pushed and a production deployment/domain assignment succeeds.
+- Production deployment and domain assignment succeeded for `nkautotrade.com` and `www.nkautotrade.com`; both returned HTTP 200 on `/buy`.
+- Public Vercel Production disables the seeded demo workspace. Anonymous visitors use a blank Guest device workspace until production identity is connected.
+- The existing ChatGPT Site and QNAP deployments remain unchanged as rollback/reference environments.
