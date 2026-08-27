@@ -1,0 +1,505 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>NK Cars Mobile Browse Preview</title>
+    <style>
+      :root {
+        --ink: #16202c;
+        --muted: #6d7886;
+        --line: #dbe3ea;
+        --soft: #f5f7f9;
+        --brand: #007d63;
+        --blue: #0f66c3;
+        --navy: #0d2a43;
+        --warn: #8b5b00;
+        --warn-bg: #fff3d8;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: #eef2f5;
+        color: var(--ink);
+        font-family: Arial, Helvetica, sans-serif;
+      }
+      .phone {
+        width: min(100%, 430px);
+        min-height: 100vh;
+        margin: 0 auto;
+        background: #fff;
+        padding-bottom: 82px;
+      }
+      .top {
+        position: sticky;
+        top: 0;
+        z-index: 5;
+        background: #fff;
+        border-bottom: 1px solid var(--line);
+      }
+      .bar {
+        height: 64px;
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        gap: 12px;
+        align-items: center;
+        padding: 10px 14px;
+      }
+      .logo {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 20px;
+        font-weight: 800;
+      }
+      .logo span {
+        display: grid;
+        place-items: center;
+        width: 38px;
+        height: 38px;
+        border-radius: 9px;
+        background: #0b263e;
+        color: #fff;
+        font-weight: 900;
+      }
+      .area {
+        min-width: 0;
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .area b {
+        display: block;
+        color: var(--brand);
+        font-size: 15px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .lang {
+        border: 1px solid var(--line);
+        background: #fff;
+        border-radius: 10px;
+        height: 38px;
+        padding: 0 12px;
+        font-weight: 800;
+      }
+      .search {
+        display: grid;
+        grid-template-columns: 1fr 44px 44px;
+        gap: 8px;
+        padding: 8px 14px 10px;
+      }
+      .search input, .icon-btn {
+        height: 44px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: #fff;
+        font-size: 16px;
+      }
+      .search input {
+        padding: 0 14px;
+      }
+      .icon-btn {
+        display: grid;
+        place-items: center;
+        font-size: 20px;
+      }
+      .chips {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        padding: 0 14px 12px;
+        scrollbar-width: none;
+      }
+      .chip {
+        flex: 0 0 auto;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 8px 12px;
+        font-size: 13px;
+        font-weight: 700;
+        background: #fff;
+      }
+      .chip.active {
+        border-color: #9bd8c8;
+        background: #eaf8f4;
+        color: #006f58;
+      }
+      .section-head {
+        display: flex;
+        align-items: end;
+        justify-content: space-between;
+        padding: 14px 14px 10px;
+      }
+      .section-head h1 {
+        margin: 0;
+        font-size: 22px;
+        line-height: 1.1;
+      }
+      .section-head p {
+        margin: 4px 0 0;
+        color: var(--muted);
+        font-size: 13px;
+      }
+      .pill {
+        border-radius: 999px;
+        background: var(--warn-bg);
+        color: var(--warn);
+        padding: 7px 10px;
+        font-size: 11px;
+        font-weight: 800;
+        white-space: nowrap;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        padding: 0 10px 18px;
+      }
+      .card {
+        position: relative;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #fff;
+      }
+      .photo {
+        aspect-ratio: 1.16;
+        background: #d7dde3 center / cover;
+      }
+      .heart {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        width: 34px;
+        height: 34px;
+        border: 1px solid rgba(0,0,0,.12);
+        border-radius: 50%;
+        background: rgba(255,255,255,.92);
+        display: grid;
+        place-items: center;
+        font-size: 19px;
+      }
+      .tag {
+        position: absolute;
+        top: 8px;
+        left: 8px;
+        border-radius: 5px;
+        background: #008567;
+        color: #fff;
+        padding: 4px 6px;
+        font-size: 9px;
+        font-weight: 900;
+      }
+      .info {
+        padding: 8px 9px 10px;
+      }
+      .price {
+        font-size: 17px;
+        font-weight: 900;
+        letter-spacing: 0;
+      }
+      .name {
+        margin-top: 4px;
+        font-size: 13px;
+        line-height: 1.25;
+        font-weight: 700;
+      }
+      .meta, .place {
+        margin-top: 5px;
+        color: var(--muted);
+        font-size: 11px;
+        line-height: 1.25;
+      }
+      .detail {
+        padding: 0 14px 22px;
+      }
+      .hero {
+        position: relative;
+        aspect-ratio: 1.22;
+        border-radius: 8px;
+        background: #d6dde4 center / cover;
+        overflow: hidden;
+      }
+      .count {
+        position: absolute;
+        left: 50%;
+        bottom: 10px;
+        transform: translateX(-50%);
+        border-radius: 999px;
+        background: rgba(10,21,31,.82);
+        color: #fff;
+        padding: 5px 10px;
+        font-size: 12px;
+        font-weight: 800;
+      }
+      .detail h2 {
+        margin: 14px 0 4px;
+        font-size: 24px;
+        line-height: 1.13;
+      }
+      .detail .sub {
+        color: var(--muted);
+        font-size: 14px;
+      }
+      .price-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-top: 12px;
+      }
+      .detail-price {
+        font-size: 28px;
+        font-weight: 900;
+      }
+      .note {
+        margin-top: 5px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-top: 14px;
+      }
+      .primary-action, .secondary-action {
+        height: 54px;
+        border-radius: 10px;
+        border: 1px solid var(--line);
+        font-size: 15px;
+        font-weight: 900;
+      }
+      .primary-action {
+        grid-column: span 2;
+        background: var(--navy);
+        color: #fff;
+        border-color: var(--navy);
+      }
+      .secondary-action { background: #fff; color: var(--ink); }
+      .specs {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        margin-top: 16px;
+      }
+      .spec {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 9px;
+      }
+      .spec small {
+        display: block;
+        color: var(--muted);
+        font-size: 10px;
+        text-transform: uppercase;
+      }
+      .spec b {
+        display: block;
+        margin-top: 3px;
+        font-size: 13px;
+      }
+      .simple-copy {
+        margin-top: 16px;
+        border-top: 1px solid var(--line);
+        padding-top: 14px;
+        color: #536170;
+        font-size: 15px;
+        line-height: 1.45;
+      }
+      .case-box {
+        margin-top: 16px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 14px;
+        background: var(--soft);
+      }
+      .case-box h3 {
+        margin: 0 0 8px;
+        font-size: 20px;
+      }
+      .steps {
+        display: grid;
+        gap: 8px;
+        margin: 12px 0 0;
+      }
+      .step {
+        display: flex;
+        gap: 9px;
+        align-items: center;
+        font-size: 14px;
+        color: #3e4b58;
+      }
+      .dot {
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        background: #dceaf7;
+        color: var(--blue);
+        font-size: 12px;
+        font-weight: 900;
+      }
+      .bottom {
+        position: fixed;
+        left: 50%;
+        bottom: 0;
+        z-index: 10;
+        transform: translateX(-50%);
+        width: min(100%, 430px);
+        height: 72px;
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        background: #fff;
+        border-top: 1px solid var(--line);
+      }
+      .nav {
+        display: grid;
+        place-items: center;
+        color: #75818d;
+        font-size: 11px;
+        font-weight: 800;
+      }
+      .nav b {
+        display: block;
+        font-size: 22px;
+        line-height: 1;
+        margin-bottom: 4px;
+      }
+      .nav.active { color: var(--brand); }
+      .screen-title {
+        padding: 18px 14px 10px;
+        color: var(--blue);
+        font-size: 12px;
+        font-weight: 900;
+        text-transform: uppercase;
+      }
+      .divider {
+        height: 12px;
+        background: #eef2f5;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="phone">
+      <div class="top">
+        <div class="bar">
+          <div class="logo"><span>NK</span> Cars</div>
+          <div class="area">Search area <b>Bangkok Metro</b></div>
+          <button class="lang">EN</button>
+        </div>
+        <div class="search">
+          <input placeholder="Search Toyota, Hilux..." />
+          <button class="icon-btn">☷</button>
+          <button class="icon-btn">↕</button>
+        </div>
+        <div class="chips">
+          <div class="chip active">Bangkok Metro</div>
+          <div class="chip">Bangkok</div>
+          <div class="chip">Nonthaburi</div>
+          <div class="chip">Samut Prakan</div>
+        </div>
+      </div>
+
+      <section class="section-head">
+        <div>
+          <h1>Vehicles for you</h1>
+          <p>16 reviewed vehicles</p>
+        </div>
+        <div class="pill">Price not verified</div>
+      </section>
+
+      <section class="grid">
+        <article class="card">
+          <div class="photo" style="background-image:url('/vehicle-marketplace/owner-reviewed-2026-08-26/nk-mkt-01/51372ba48027443c.jpg')"></div>
+          <div class="tag">NK</div><div class="heart">♡</div>
+          <div class="info">
+            <div class="price">USD 21,686</div>
+            <div class="name">2020 Toyota Hilux Revo</div>
+            <div class="meta">64,000 km</div>
+            <div class="place">Bangkok</div>
+          </div>
+        </article>
+        <article class="card">
+          <div class="photo" style="background-image:url('/vehicle-marketplace/owner-reviewed-2026-08-26/nk-mkt-03/817aeaff8f915111.jpg')"></div>
+          <div class="tag">NK</div><div class="heart">♡</div>
+          <div class="info">
+            <div class="price">USD 15,143</div>
+            <div class="name">2020 Toyota Hilux Revo</div>
+            <div class="meta">98,000 km</div>
+            <div class="place">Samut Sakhon</div>
+          </div>
+        </article>
+        <article class="card">
+          <div class="photo" style="background-image:url('/vehicle-marketplace/owner-reviewed-2026-08-26/nk-mkt-02/cover-redacted.webp')"></div>
+          <div class="tag">NK</div><div class="heart">♡</div>
+          <div class="info">
+            <div class="price">USD 14,257</div>
+            <div class="name">2020 Toyota Hilux Revo</div>
+            <div class="meta">36,000 km</div>
+            <div class="place">Samut Prakan</div>
+          </div>
+        </article>
+        <article class="card">
+          <div class="photo" style="background-image:url('/vehicle-marketplace/owner-reviewed-2026-08-26/nk-mkt-04/cover-redacted.webp')"></div>
+          <div class="tag">NK</div><div class="heart">♡</div>
+          <div class="info">
+            <div class="price">USD 10,543</div>
+            <div class="name">2020 Toyota Hilux Revo</div>
+            <div class="meta">97,225 km</div>
+            <div class="place">Nonthaburi</div>
+          </div>
+        </article>
+      </section>
+
+      <div class="divider"></div>
+      <div class="screen-title">Detail direction</div>
+      <section class="detail">
+        <div class="hero" style="background-image:url('/vehicle-marketplace/owner-reviewed-2026-08-26/nk-mkt-01/51372ba48027443c.jpg')">
+          <div class="heart">♡</div>
+          <div class="count">1 of 6</div>
+        </div>
+        <h2>2020 Toyota Hilux Revo Rocco</h2>
+        <div class="sub">Rocco · Double Cab · Bangkok</div>
+        <div class="price-row">
+          <div>
+            <div class="detail-price">USD 21,686</div>
+            <div class="note">Estimated from source listing. NK will verify before quote.</div>
+          </div>
+        </div>
+        <div class="actions">
+          <button class="primary-action">Check Availability</button>
+          <button class="secondary-action">Ask NK AI</button>
+          <button class="secondary-action">Request Inspection</button>
+        </div>
+        <div class="specs">
+          <div class="spec"><small>Year</small><b>2020</b></div>
+          <div class="spec"><small>Engine</small><b>2.4 diesel</b></div>
+          <div class="spec"><small>Gear</small><b>AT</b></div>
+          <div class="spec"><small>Drive</small><b>2WD</b></div>
+          <div class="spec"><small>Cab</small><b>Double</b></div>
+          <div class="spec"><small>Mileage</small><b>64k km</b></div>
+        </div>
+        <p class="simple-copy">NK will check if the vehicle is still available, confirm the seller details internally, then prepare the next buying step.</p>
+        <div class="case-box">
+          <h3>Request sent</h3>
+          <div class="pill" style="display:inline-block">Availability check</div>
+          <div class="steps">
+            <div class="step"><span class="dot">1</span> NK receives your request</div>
+            <div class="step"><span class="dot">2</span> We verify price and availability</div>
+            <div class="step"><span class="dot">3</span> Quote comes after verification</div>
+          </div>
+        </div>
+      </section>
+    </main>
+    <nav class="bottom">
+      <div class="nav active"><b>⌕</b>Browse</div>
+      <div class="nav"><b>♡</b>Saved</div>
+      <div class="nav"><b>▣</b>Cases</div>
+      <div class="nav"><b>□</b>Messages</div>
+      <div class="nav"><b>♙</b>Account</div>
+    </nav>
+  </body>
+</html>

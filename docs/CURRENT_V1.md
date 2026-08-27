@@ -348,6 +348,8 @@ Remaining items are activation blockers rather than unfinished application behav
 
 Public entry behavior: `https://nkautotrade.com/` redirects directly to `/buy`. Existing `/buy/...` routes remain stable for vehicle, Case, PI, and shared links.
 
+Owner visual review route: `/preview/marketplace-style` is an isolated, noindex visual preview for a lighter Marketplace-style mobile Browse/Detail direction. It is not the active Buying Browser, does not replace `/buy`, does not mutate workspace data, and does not activate real messaging, payment, QNAP, Hermes, or production sourcing behavior.
+
 Identity/workspace activation checkpoint:
 - The application now supports a provider-neutral QNAP identity gateway without collecting passwords in NK forms.
 - The identity gateway contract now supports allowlisted Google and Apple provider selection. The Account UI renders provider-specific actions only when the corresponding gateway providers are explicitly enabled.

@@ -285,3 +285,12 @@ Decision:
 - This approval does not open All Thailand sourcing or customer publication.
 - The pilot remains limited to `NEEDS_REVIEW` candidate retention only.
 - Seller messaging, reservation, purchase, payment, and automatic customer publication remain prohibited.
+
+## 2026-08-27 - Marketplace-style mobile visual preview route
+
+Status: OWNER APPROVED FOR ISOLATED PRODUCTION-DOMAIN REVIEW
+
+Decision:
+- Add a separate noindex visual preview route at `/preview/marketplace-style` so the Owner can review a lighter Marketplace-style mobile Browse/Detail direction from `nkautotrade.com`.
+- The preview route must not replace `/buy`, change active customer workflows, mutate customer workspace data, or activate real sourcing, messaging, payment, QNAP, or Hermes behavior.
+- The direction under review is image-first, price-forward, lower-text-density customer browsing with a simpler post-availability-check status before detailed quotation/pricing.
