@@ -4,6 +4,8 @@
 
 เอกสารนี้บันทึกเฉพาะงาน QNAP infrastructure สำหรับ `NK-Cars-Buying-Browser-V1-Preview` บน branch `codex/qnap-infrastructure` ห้ามใช้เป็นเอกสารยืนยันว่า production business logic หรือ production data ถูกย้ายแล้ว
 
+> Integration note: QNAP currently runs the older application snapshot `f018cd5`. The infrastructure commit was imported into `codex/buying-browser-rebuild` after application commit `f3cbf7a`, but the current application build has not been deployed to QNAP. The temporary Quick Tunnel has no access control and must not carry real customer, seller, financial, or source data.
+
 ## 1. ขอบเขต
 
 - ทำงานเฉพาะ infrastructure บน QNAP

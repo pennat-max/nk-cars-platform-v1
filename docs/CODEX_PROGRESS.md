@@ -934,3 +934,28 @@ Started Milestone 1: Next.js shell and visual parity.
 ### Next Recommended Step
 
 - Owner/Finance supplies and approves legal issuer/document details and the payment-control policy. After that, implement authorized PI issuer configuration and Finance-only payment reporting/confirmation without enabling automatic transfers.
+
+## 2026-08-27 - QNAP Infrastructure Handoff Integration
+
+### Completed
+
+- Verified QNAP infrastructure commit `cfc9644f8a31baa6f574f70914c78ea5c8b0d010` and pushed its branch to the actual GitHub remote as `origin/codex/qnap-infrastructure`.
+- Imported only the five-file infrastructure commit into `codex/buying-browser-rebuild`; unrelated historical application changes from the infrastructure branch were not merged.
+- Added the QNAP Dockerfile, Compose definition, Thai LAN deployment guide, and infrastructure handoff without changing NK Cars business logic.
+- Recorded that QNAP currently serves old snapshot `f018cd5`, while the application branch already contains newer D1-backed Case, quotation, and PI work.
+
+### Verification
+
+- Confirmed the QNAP handoff reports HTTP 200 for LAN `/buy` and the temporary public tunnel.
+- Confirmed the Quick Tunnel is unauthenticated and suitable only for non-confidential preview data.
+- `npm.cmd test`: production build and 52/52 tests passed after adding Git Bash to this Windows session's `PATH`.
+- `npx.cmd tsc --noEmit`: passed.
+- `npm.cmd run lint`: passed with 0 errors and 13 pre-existing `<img>` warnings.
+- `git diff --check`: passed.
+- QNAP handoff records `docker compose config --quiet` as passed on QNAP. It could not be repeated on this Windows session because Docker CLI is not installed here.
+
+### Blockers
+
+- QNAP does not yet run the current application commit or a persistent NK Cars PostgreSQL/media backend.
+- The temporary Quick Tunnel has no access control or uptime guarantee.
+- Production data migration, secrets, named tunnel/access policy, backup, restore, and cutover still require separate implementation and Owner approval where applicable.
