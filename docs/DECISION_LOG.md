@@ -152,3 +152,40 @@ Decision:
 - Stable vehicle/media identities, original evidence, audit history, privacy classification, and private sharing state must be preserved.
 - Destructive deletion, irreversible migration, public sharing, or breaking schema changes remain subject to the existing Owner-approval rules.
 - A `README` tab is the first Registry tab and documents the runtime tabs, publication rules, safe edit flow, privacy boundary, cache, identity rules, and preserved legacy tabs.
+
+## 2026-08-27 — Hermes Vehicle Review & Learning Loop
+
+Status: APPROVED PRODUCT / OPERATING DIRECTION
+
+Decision:
+Hermes-sourced vehicles must pass through a human review and correction loop before customer publication during the initial learning phase.
+
+Target flow:
+**Authorized source -> Hermes capture -> media/details evidence -> AI normalize/analyze -> Review Queue -> Human edit/comment -> Approve / Reject / Need More Info -> Publish approved customer-safe record -> retain correction feedback for future vehicle intelligence improvements.**
+
+Initial operating states:
+- `CAPTURED`
+- `AI_ANALYZED`
+- `PENDING_REVIEW`
+- `NEED_MORE_INFO`
+- `APPROVED`
+- `REJECTED`
+- `PUBLISHED`
+
+Rules:
+- No newly sourced vehicle may auto-publish during the initial learning phase; human approval is required before publication.
+- Reviewers must be able to inspect source/evidence media, original source text, normalized fields, AI prediction, confidence/evidence, and internal provenance as permitted.
+- Reviewers must be able to edit incorrect fields, add a correction/comment, request more information, approve, or reject.
+- Human correction updates the current staged vehicle record while preserving the original AI prediction and evidence for audit/learning.
+- Store structured feedback such as predicted value, confidence, corrected value, reviewer comment/reason, evidence reference, reviewer, and timestamp.
+- Hermes/AI must use `UNKNOWN`, `NEED_REVIEW`, or `CONFLICT` when evidence is insufficient; it must not invent vehicle facts.
+- Human corrections are learning evidence, not permission for Hermes to silently rewrite global rules.
+- Repeated correction patterns may generate proposed knowledge/rule improvements, but a human must approve material knowledge/rule changes before they become authoritative.
+- Auto-approval may be considered later only for fields/workflows demonstrated to meet an Owner-approved accuracy threshold. Price, VIN, mileage, drivetrain, availability, and other material facts remain subject to stricter evidence/verification rules.
+- Customer-facing publication must continue to use customer-safe DTO/privacy boundaries; seller/source/internal evidence is not exposed merely because a vehicle is approved.
+- This workflow should be implemented so Google Sheets/Drive staging can later migrate to QNAP PostgreSQL/private storage without rewriting the review/learning business logic.
+
+Ownership split:
+- Hermes: authorized capture, evidence collection, normalization/analysis, candidate preparation, recheck/monitoring, and routine sourcing operations.
+- NK application/Codex: Review Queue UI, workflow/state model, correction/audit storage boundary, publication controls, and customer-safe presentation.
+- Human Owner/Staff: correction, approval/rejection, material knowledge-rule approval, and escalation decisions.
