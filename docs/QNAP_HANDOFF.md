@@ -349,6 +349,9 @@ The `codex/app` branch now contains the production-compatible identity and QNAP 
 Required next infrastructure work:
 
 1. Implement the opaque-session identity endpoint and secure sign-in gateway.
+   - Accept only `provider=google|apple` values enabled by infrastructure configuration.
+   - Implement Google Authorization Code/OIDC first; keep Apple disabled until the Owner App ID/Services ID/Key ID/private key are available.
+   - Follow the callback, token-validation, account-linking, least-privilege role, session-rotation, and secret-handling requirements in `docs/QNAP_APP_REQUIREMENTS.md`.
 2. Implement the revisioned customer workspace and Owner Case endpoints.
 3. Enforce service-token authentication, account ownership, least-privilege roles, deterministic commercial restrictions, atomic document numbering, and append-only audit in PostgreSQL.
 4. Test with staging-only accounts and data through stable authenticated HTTPS ingress.

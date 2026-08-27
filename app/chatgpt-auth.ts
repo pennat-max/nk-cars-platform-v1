@@ -1,6 +1,8 @@
 import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
-import { configuredHttpsUrl, cookieValue, identityGatewayRedirect as buildIdentityGatewayRedirect, identityProviderMode as resolveIdentityProviderMode, parseQnapIdentity, safeIdentityReturnPath as normalizeIdentityReturnPath } from "./identity-domain.mjs";
+import { configuredHttpsUrl, cookieValue, identityGatewayRedirect as buildIdentityGatewayRedirect, identityProviderMode as resolveIdentityProviderMode, identitySocialProviders as resolveIdentitySocialProviders, parseQnapIdentity, safeIdentityReturnPath as normalizeIdentityReturnPath } from "./identity-domain.mjs";
+
+export type IdentitySocialProvider = "google" | "apple";
 
 export type ChatGPTUser = {
   id: string;
@@ -65,11 +67,27 @@ export function chatGPTSignOutPath(returnTo = "/"): string {
   return `${SIGN_OUT_PATH}?return_to=${encodeURIComponent(normalizeIdentityReturnPath(returnTo))}`;
 }
 
-export function identitySignInPath(returnTo: string): string | null {
+export function identitySignInPath(returnTo: string, provider?: IdentitySocialProvider): string | null {
   const mode = identityProviderMode();
+  if (provider && mode !== "qnap") return null;
   if (mode === "chatgpt") return chatGPTSignInPath(returnTo);
-  if (mode === "qnap" && configuredHttpsUrl(process.env.NK_IDENTITY_SIGN_IN_URL)) return `/api/buying-browser/auth/sign-in?return_to=${encodeURIComponent(normalizeIdentityReturnPath(returnTo))}`;
+  if (mode === "qnap" && configuredHttpsUrl(process.env.NK_IDENTITY_SIGN_IN_URL)) {
+    if (provider && !identitySocialProviders().includes(provider)) return null;
+    const providerQuery = provider ? `&provider=${provider}` : "";
+    return `/api/buying-browser/auth/sign-in?return_to=${encodeURIComponent(normalizeIdentityReturnPath(returnTo))}${providerQuery}`;
+  }
   return null;
+}
+
+export function identitySocialProviders(): IdentitySocialProvider[] {
+  return resolveIdentitySocialProviders().filter((provider: string): provider is IdentitySocialProvider => provider === "google" || provider === "apple");
+}
+
+export function identitySignInOptions(returnTo: string): Array<{ provider: IdentitySocialProvider; path: string }> {
+  return identitySocialProviders().flatMap((provider) => {
+    const path = identitySignInPath(returnTo, provider);
+    return path ? [{ provider, path }] : [];
+  });
 }
 
 export function identitySignOutPath(returnTo = "/"): string | null {
@@ -79,8 +97,8 @@ export function identitySignOutPath(returnTo = "/"): string | null {
   return null;
 }
 
-export function identityGatewayRedirect(kind: "sign-in" | "sign-out", returnTo: string): URL | null {
-  return buildIdentityGatewayRedirect(kind, returnTo);
+export function identityGatewayRedirect(kind: "sign-in" | "sign-out", returnTo: string, provider?: IdentitySocialProvider): URL | null {
+  return buildIdentityGatewayRedirect(kind, returnTo, process.env, provider ?? null);
 }
 
 export function safeIdentityReturnPath(value: string): string {

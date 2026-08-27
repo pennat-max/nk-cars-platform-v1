@@ -205,6 +205,7 @@ export type CustomerIdentity = {
   destinationPort: string;
   isPreview: boolean;
   signInPath?: string | null;
+  signInProviders?: Array<{ provider: "google" | "apple"; path: string }>;
 };
 
 export type SourceAdapterStatus = {

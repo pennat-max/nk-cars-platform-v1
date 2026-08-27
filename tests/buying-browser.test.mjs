@@ -23,7 +23,7 @@ import { customerWorkspaceId, enforceServerControlledWorkspaceState, mergeBuying
 import { applyOwnerCaseVerification, normalizeOwnerCaseVerification } from "../app/buying-browser/owner-case-verification.mjs";
 import { acceptQuotation, currentQuotationStatus, issueQuotation, quotationMaterialKey } from "../app/buying-browser/quotation-domain.mjs";
 import { currentProformaInvoiceStatus, issueProformaInvoice } from "../app/buying-browser/pi-domain.mjs";
-import { cookieValue, identityGatewayRedirect, identityProviderMode, parseQnapIdentity } from "../app/identity-domain.mjs";
+import { cookieValue, identityGatewayRedirect, identityProviderMode, identitySocialProviders, parseQnapIdentity } from "../app/identity-domain.mjs";
 import { qnapWorkspaceTestHelpers, readQnapWorkspace, writeQnapWorkspace } from "../app/buying-browser/qnap-workspace.ts";
 
 const source = {
@@ -145,6 +145,7 @@ test("production identity defaults fail closed and QNAP sessions are strictly va
     provider: process.env.NK_IDENTITY_PROVIDER,
     vercel: process.env.VERCEL,
     signIn: process.env.NK_IDENTITY_SIGN_IN_URL,
+    socialProviders: process.env.NK_IDENTITY_SOCIAL_PROVIDERS,
     site: process.env.NEXT_PUBLIC_SITE_URL,
   };
   try {
@@ -153,10 +154,16 @@ test("production identity defaults fail closed and QNAP sessions are strictly va
     assert.equal(identityProviderMode(), "disabled");
     process.env.NK_IDENTITY_PROVIDER = "qnap";
     process.env.NK_IDENTITY_SIGN_IN_URL = "https://auth.nkautotrade.com/login";
+    process.env.NK_IDENTITY_SOCIAL_PROVIDERS = "google,apple,google,unknown";
     process.env.NEXT_PUBLIC_SITE_URL = "https://nkautotrade.com";
     const redirect = identityGatewayRedirect("sign-in", "//attacker.example");
     assert.equal(redirect.origin, "https://auth.nkautotrade.com");
     assert.equal(redirect.searchParams.get("return_to"), "https://nkautotrade.com/");
+    assert.deepEqual(identitySocialProviders(), ["google", "apple"]);
+    const googleRedirect = identityGatewayRedirect("sign-in", "/buy/account", process.env, "google");
+    assert.equal(googleRedirect.searchParams.get("provider"), "google");
+    assert.equal(googleRedirect.searchParams.get("return_to"), "https://nkautotrade.com/buy/account");
+    assert.equal(identityGatewayRedirect("sign-in", "/buy/account", process.env, "facebook"), null);
     assert.equal(cookieValue("other=x; nk_session=opaque-session; theme=dark", "nk_session"), "opaque-session");
     assert.equal(cookieValue("nk_session=", "nk_session"), null);
     const user = parseQnapIdentity({ authenticated: true, user: { id: "customer-123", email: "Buyer@Example.com", displayName: "Buyer", roles: ["CUSTOMER", "OWNER", "UNKNOWN"] } });
@@ -167,6 +174,7 @@ test("production identity defaults fail closed and QNAP sessions are strictly va
     if (previous.provider === undefined) delete process.env.NK_IDENTITY_PROVIDER; else process.env.NK_IDENTITY_PROVIDER = previous.provider;
     if (previous.vercel === undefined) delete process.env.VERCEL; else process.env.VERCEL = previous.vercel;
     if (previous.signIn === undefined) delete process.env.NK_IDENTITY_SIGN_IN_URL; else process.env.NK_IDENTITY_SIGN_IN_URL = previous.signIn;
+    if (previous.socialProviders === undefined) delete process.env.NK_IDENTITY_SOCIAL_PROVIDERS; else process.env.NK_IDENTITY_SOCIAL_PROVIDERS = previous.socialProviders;
     if (previous.site === undefined) delete process.env.NEXT_PUBLIC_SITE_URL; else process.env.NEXT_PUBLIC_SITE_URL = previous.site;
   }
 });

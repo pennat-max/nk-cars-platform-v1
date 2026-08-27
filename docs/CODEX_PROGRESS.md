@@ -1226,3 +1226,27 @@ The repository now contains the maximum technically achievable V1 application. R
 - Unconfigured identity sign-in returned HTTP 503 and a spoofed ChatGPT identity header could not write the Vercel workspace (HTTP 401).
 - Mobile 390 x 844 production Account verification passed with no horizontal overflow, broken images, seeded customer workspace, broken ChatGPT sign-in link, or browser console error observed.
 - Vercel deployment error-log scan returned no errors.
+
+## 2026-08-27 - Google and Apple sign-in application readiness
+
+### Completed
+
+- Added allowlisted Google/Apple provider selection to the existing QNAP identity gateway boundary.
+- Added provider-specific Account actions in English, Simplified Chinese, and Thai without changing the existing Account layout or anonymous device workspace behavior.
+- Protected provider and return-path forwarding; unknown providers fail closed and cannot be forwarded to the gateway.
+- Documented Google/Apple callback validation, account-linking, least-privilege roles, opaque-session rotation, cookie policy, and secret boundaries for QNAP infrastructure.
+
+### Owner / external blockers
+
+- QNAP identity gateway and same-origin auth ingress are not implemented yet.
+- Google OAuth web client ID/secret and exact callback registration require the Owner-controlled Google Cloud project.
+- Apple sign-in requires the Owner Apple Developer App ID/Services ID/Team ID/Key ID/private key.
+- Production identity remains disabled; no OAuth provider, secret, callback, or account session is represented as active.
+
+### Verification
+
+- TypeScript `--noEmit`: passed.
+- `npm.cmd test`: production build and 57/57 tests passed.
+- ESLint: passed with 0 errors and 13 existing `<img>` optimization warnings.
+- Google and Apple local gateway requests returned HTTP 303 with the exact allowlisted provider and protected `https://nkautotrade.com/buy/account` return URL; an unknown provider returned HTTP 400.
+- Mobile 390 x 844 Account verification: both localized provider actions rendered, with no horizontal overflow, broken images, or browser console errors.

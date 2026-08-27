@@ -2,6 +2,7 @@ const SIGN_IN_PATH = "/signin-with-chatgpt";
 const SIGN_OUT_PATH = "/signout-with-chatgpt";
 const CALLBACK_PATH = "/callback";
 const QNAP_ID_PREFIX = "qnap:";
+const ALLOWED_SOCIAL_PROVIDERS = new Set(["google", "apple"]);
 
 export function identityProviderMode(env = process.env) {
   const configured = String(env.NK_IDENTITY_PROVIDER || "").trim().toLowerCase();
@@ -32,11 +33,26 @@ export function configuredHttpsUrl(value) {
   }
 }
 
-export function identityGatewayRedirect(kind, returnTo, env = process.env) {
+export function identitySocialProviders(env = process.env) {
+  const configured = String(env.NK_IDENTITY_SOCIAL_PROVIDERS || "");
+  return [...new Set(configured.split(",").map((value) => value.trim().toLowerCase()).filter((value) => ALLOWED_SOCIAL_PROVIDERS.has(value)))];
+}
+
+/**
+ * @param {"sign-in" | "sign-out"} kind
+ * @param {string} returnTo
+ * @param {Record<string, string | undefined>} env
+ * @param {"google" | "apple" | null} provider
+ */
+export function identityGatewayRedirect(kind, returnTo, env = process.env, provider = null) {
   const configured = kind === "sign-in" ? env.NK_IDENTITY_SIGN_IN_URL : env.NK_IDENTITY_SIGN_OUT_URL;
   const gateway = configuredHttpsUrl(configured);
   const site = configuredHttpsUrl(env.NEXT_PUBLIC_SITE_URL);
   if (!gateway || !site || identityProviderMode(env) !== "qnap") return null;
+  if (kind === "sign-in" && provider !== null) {
+    if (!identitySocialProviders(env).includes(provider)) return null;
+    gateway.searchParams.set("provider", provider);
+  }
   gateway.searchParams.set("return_to", new URL(safeIdentityReturnPath(returnTo), site).href);
   return gateway;
 }

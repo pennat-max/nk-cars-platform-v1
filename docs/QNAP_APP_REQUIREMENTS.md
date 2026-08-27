@@ -95,6 +95,7 @@ Application configuration after the gateway is operational:
 - `NK_IDENTITY_PROVIDER=qnap`
 - `NK_IDENTITY_SIGN_IN_URL=https://<approved-auth-host>/...`
 - `NK_IDENTITY_SIGN_OUT_URL=https://<approved-auth-host>/...` (optional until sign-out is enabled)
+- `NK_IDENTITY_SOCIAL_PROVIDERS=google,apple` (enable only providers whose credentials and callbacks have passed verification)
 - `NK_IDENTITY_SESSION_COOKIE=nk_session` (or another approved cookie name)
 - `NK_WORKSPACE_BACKEND=qnap`
 - existing `NK_QNAP_DATA_API_URL` and `NK_INTERNAL_API_TOKEN`
@@ -129,6 +130,32 @@ Allowed roles are `CUSTOMER`, `STAFF`, and `OWNER`. The session cookie must be `
 At least one allowed role is required; an authenticated account with no NK role fails closed.
 
 The application defaults to `disabled` identity on Vercel until these settings exist, so spoofed ChatGPT headers cannot activate a customer or Owner session.
+
+### Google and Apple social sign-in
+
+The customer Account screen can present provider-specific Google and Apple actions. The application sends only an allowlisted `provider=google|apple` and a protected absolute `return_to` URL to the identity gateway. The gateway owns OAuth/OIDC authorization, callback handling, account linking, recovery, and the opaque NK session.
+
+Required gateway behavior:
+
+- Prefer a same-origin gateway under `https://nkautotrade.com/auth/...` through the approved reverse proxy so the final `nk_session` can remain a host-only cookie. If a separate auth host is used, document and security-review the cookie/domain boundary before activation.
+- Google: use an Owner-controlled OAuth web client, exact HTTPS redirect URI, Authorization Code flow, and server-side ID-token validation including issuer, audience, expiry, `state`, and `nonce`.
+- Apple: use an Owner-controlled Apple Developer App ID/Services ID, Team ID, Key ID, and private key; validate authorization response and identity token server-side. The private key is a secret and must never enter GitHub or the browser bundle.
+- Use PKCE where supported, single-use short-lived authorization state, exact redirect allowlists, and no open redirects.
+- Key identities by the verified `(provider, subject)` pair. Do not merge accounts solely from an email address, particularly Apple private relay addresses; linking providers requires an authenticated, explicit account-link action.
+- Assign new customer identities only the `CUSTOMER` role. `STAFF` and `OWNER` roles require a separate audited administrative assignment and must never derive from email-domain matching alone.
+- Rotate the opaque NK session after successful authentication and logout; set `HttpOnly`, `Secure`, `SameSite=Lax` or a stricter reviewed policy, `Path=/`, bounded expiry, and server-side revocation.
+- Do not log authorization codes, access/ID tokens, provider secrets, Apple private keys, or the opaque NK session.
+
+Expected sign-in gateway request:
+
+`GET <NK_IDENTITY_SIGN_IN_URL>?provider=google|apple&return_to=https%3A%2F%2Fnkautotrade.com%2Fbuy%2Faccount`
+
+Activation order:
+
+1. Implement and test Google in a non-production environment.
+2. Implement Apple after the Owner Apple Developer identifiers/key are available.
+3. Run callback, session persistence, logout, account isolation, role escalation, and mobile tests.
+4. Only then set `NK_IDENTITY_PROVIDER=qnap`, `NK_IDENTITY_SOCIAL_PROVIDERS`, and the gateway URLs in Vercel Production.
 
 ## Durable workspace API
 

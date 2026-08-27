@@ -523,6 +523,7 @@ No additional V1 customer feature should be invented to hide these blockers. V2-
 ### Closed application gaps
 
 - Provider-neutral identity boundary with Vercel fail-closed default and QNAP opaque-session validation contract.
+- Allowlisted Google/Apple sign-in selection, localized Account actions, and protected provider/return-path forwarding to the QNAP gateway.
 - Safe sign-in/sign-out gateway redirects with bounded same-site return paths.
 - Durable QNAP workspace adapter for customer workspace, Owner queue/verification, quotation acceptance/issue, and PI issue.
 - Strict payload size/schema validation, account ownership, optimistic Revision conflict handling, deterministic customer-write restrictions, and Owner role enforcement.
@@ -532,6 +533,7 @@ No additional V1 customer feature should be invented to hide these blockers. V2-
 
 - QNAP infrastructure must implement `/v1/auth/session` and the documented customer/Owner workspace endpoints.
 - Owner must authorize the production identity host, cookie policy, recovery/MFA policy, and runtime secrets before `NK_IDENTITY_PROVIDER=qnap` is enabled.
+- Google OAuth client credentials/callback registration and Apple Developer App ID/Services ID/key are external activation blockers. No provider is presented as live until its gateway path passes callback, session, logout, isolation, and role-escalation tests.
 - A complete D1 export is required if existing signed-in ChatGPT workspaces need migration; partial state must not be imported.
 - Stable authenticated QNAP ingress, monitoring, backup, restore, and a cutover/rollback rehearsal remain required.
 

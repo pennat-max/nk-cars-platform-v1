@@ -219,3 +219,14 @@ Decision:
 - Application business rules remain deterministic and are revalidated at the adapter boundary. QNAP must enforce the same ownership, Revision, transaction, document-numbering, and append-only audit rules.
 - The existing ChatGPT Site/D1 identity and workspace path remains rollback support and is not destructively migrated or removed.
 - Activating production identity/runtime secrets remains an Owner-controlled security action after the infrastructure endpoints are implemented and tested.
+
+## 2026-08-27 - Google and Apple customer sign-in
+
+Status: APPROVED PROVIDER DIRECTION; CREDENTIAL/INFRASTRUCTURE ACTIVATION PENDING
+
+Decision:
+- Customer identity may use Google and Apple through the QNAP identity gateway; NK Cars must not collect either provider's password.
+- Start operational activation with Google. Apple remains supported and should be enabled after the required Owner Apple Developer configuration is available.
+- The app sends only an allowlisted provider and safe return path. OAuth callbacks, token validation, account linking, role assignment, session rotation, and revocation remain deterministic gateway responsibilities.
+- New social identities receive only the Customer role. Staff/Owner elevation requires a separate audited administrative action.
+- Production remains fail-closed until the gateway, callback URLs, credentials, session cookie, and QNAP workspace isolation tests pass.
