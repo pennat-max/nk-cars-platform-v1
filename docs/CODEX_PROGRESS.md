@@ -1275,7 +1275,10 @@ The repository now contains the maximum technically achievable V1 application. R
 - Full `npm.cmd test`: production build and 60/60 tests passed.
 - Mobile 390 x 844 Account and sourcing preview: no horizontal overflow, broken layout, or browser console errors.
 - Preview Run and Save controls remained disabled; the operational Owner route and API authorization tests remained passing.
-- Production access-control checks, commit/push, and deployment verification follow after final diff review.
+- Application commit `544911b` was pushed to `codex/app` and deployed to the existing Vercel project as `dpl_Ft6gjoSEW6RajtSAFZBS6fxe8uTj`; the ChatGPT Site and QNAP deployment were not modified.
+- Production `/buy/account` exposes the preview link and `/buy/owner-preview/sourcing` returns HTTP 200 with disabled Save/Run controls and the default Toyota rule.
+- Operational `/buy/owner/sourcing` still redirects anonymous users to Account and the Owner sourcing API still returns HTTP 401.
+- Production mobile 390 x 844 passed with no horizontal overflow or browser console errors; the post-deploy Vercel error-log scan returned no errors.
 
 ## 2026-08-27 - Google and Apple sign-in application readiness
 
