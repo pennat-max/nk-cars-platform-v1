@@ -1418,3 +1418,11 @@ The repository now contains the maximum technically achievable V1 application. R
 
 - `node --test tests/sourcing-automation-service.test.mjs`: passed 13/13.
 - Local full build was not run on the Windows workstation because `bash` is not available in PATH; QNAP Docker build remains the production build verification path.
+
+### QNAP deployment
+
+- Deployed QNAP full stack commit `f31c030f6d7a0946af033f9005412c6671e84238`; QNAP Docker build completed and `/buy` was healthy on port `4332`.
+- Created the Owner-approved pilot rule `Toyota Revo 2022 - Phetchaburi pilot` in QNAP Data API with rule ID `7412f2fb-fe79-4469-b36b-96d3c55daa3a`.
+- Created a pre-release backup at `/share/CACHEDEV6_DATA/nk-cars/backups/postgres/nk-cars-before-phetchaburi-20260827T155828Z.dump`.
+- Manual Facebook profile setup was attempted from the Owner-controlled Chrome profile, but the connector timed out and the subsequent session check reported `login_required`.
+- No live Facebook search was run, no candidate was retained, and no customer publication, seller contact, payment, reservation, or purchase occurred.
