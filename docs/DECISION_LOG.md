@@ -294,3 +294,12 @@ Decision:
 - Add a separate noindex visual preview route at `/preview/marketplace-style` so the Owner can review a lighter Marketplace-style mobile Browse/Detail direction from `nkautotrade.com`.
 - The preview route must not replace `/buy`, change active customer workflows, mutate customer workspace data, or activate real sourcing, messaging, payment, QNAP, or Hermes behavior.
 - The direction under review is image-first, price-forward, lower-text-density customer browsing with a simpler post-availability-check status before detailed quotation/pricing.
+
+## 2026-08-27 - Marketplace-style mobile pass approved for active Browse and Detail
+
+Status: APPROVED AND IMPLEMENTED
+
+Decision:
+- Apply the Marketplace-style visual direction to the active `/buy` Browse and Vehicle Detail customer screens.
+- Keep the change visual and content-density focused: larger price/type hierarchy, less card metadata, full-width mobile Check Availability, shorter source-price disclosure, and compact mobile specification tiles.
+- Do not change Vehicle Case business rules, pricing math, inspection workflow, localization data ownership, source adapter boundaries, QNAP/Hermes activation, payments, seller messaging, or production data behavior as part of this pass.

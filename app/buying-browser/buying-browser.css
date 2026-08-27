@@ -80,3 +80,45 @@
 @media(max-width:720px){.bb-pi-panel>header{flex-direction:column;padding:12px}.bb-pi-panel>dl{grid-template-columns:1fr;padding:3px 12px}.bb-pi-panel>dl>div{padding:8px 0}.bb-pi-panel>dl>div+div{padding-left:0;border-left:0;border-top:1px solid var(--bb-line)}.bb-pi-panel>.bb-button{margin:10px 12px 0;width:calc(100% - 24px)}.bb-pi-panel>p{margin:10px 12px 12px}.bb-pi-document-actions{align-items:stretch;flex-direction:column}.bb-pi-document-actions .bb-button{width:100%}.bb-pi-document{padding:18px 14px}.bb-pi-document>header{flex-direction:column}.bb-pi-document>header>div:last-child{text-align:left}.bb-pi-parties{grid-template-columns:1fr}.bb-pi-document-meta{grid-template-columns:1fr}.bb-pi-document-meta>div+div{border-left:0;border-top:1px solid var(--bb-line)}.bb-owner-case-commands{grid-template-columns:1fr}}
 @media print{.bb-header,.bb-bottom-nav,.bb-pi-document-actions{display:none!important}.buying-browser,.bb-main{background:#fff}.bb-main{max-width:none;padding:0}.bb-pi-document{border:0;box-shadow:none;padding:0}.bb-pi-document-page{max-width:none}}
 .buying-browser.view-pi .bb-bottom-nav{display:none}.buying-browser.view-pi .bb-main{padding-bottom:28px}
+
+/* Marketplace-style customer pass: keep browse/detail lighter on phones. */
+@media(max-width:720px){
+  .bb-listing-grid{gap:10px;padding-bottom:10px}
+  .bb-listing-card{border-radius:8px}
+  .bb-listing-image{aspect-ratio:1.16}
+  .bb-listing-copy{padding:10px 9px 11px}
+  .bb-listing-copy>strong{font-size:18px;line-height:1.1}
+  .bb-listing-copy h2{font-size:13px;line-height:1.25;margin:6px 0 5px;font-weight:850}
+  .bb-listing-copy>p{display:none}
+  .bb-listing-copy footer{border-top:0;margin-top:0;padding-top:0;gap:3px;font-size:11px}
+  .bb-demo-flag{left:8px;top:8px;border-radius:5px;padding:4px 6px;font-size:7px}
+  .bb-save-icon{right:8px;top:8px;width:36px;height:36px}
+  .bb-marketplace-meta{font-size:11px}
+  .bb-marketplace-meta nav a{font-size:9px}
+
+  .bb-back-link{margin-bottom:9px;font-size:12px}
+  .bb-gallery-track{border-radius:8px}
+  .bb-gallery-slide{aspect-ratio:1.22}
+  .bb-gallery-counter{border-radius:999px;font-size:10px}
+  .bb-vehicle-summary h1{font-size:27px;line-height:1.12;margin:12px 0 5px}
+  .bb-grade{font-size:14px}
+  .bb-vehicle-price{font-size:32px;line-height:1.05;margin-top:14px}
+  .bb-price-caption{font-size:11px;line-height:1.45;margin:6px 0 12px}
+  .bb-detail-primary-actions{grid-template-columns:1fr;gap:9px}
+  .bb-detail-primary-actions button{min-height:54px;border-radius:10px;justify-content:center;text-align:center}
+  .bb-detail-primary-actions button b{font-size:15px}
+  .bb-detail-primary-actions button small{font-size:10px}
+  .bb-detail-location{margin-top:15px;padding:11px 0}
+  .bb-honesty-note{font-size:11px}
+  .bb-section-heading h2{font-size:22px}
+  .bb-spec-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;border:0;background:transparent;overflow:visible}
+  .bb-spec-grid>div,.bb-spec-grid>div:nth-child(2n),.bb-spec-grid>div:nth-child(3),.bb-spec-grid>div:nth-child(-n+3),.bb-spec-grid>div:nth-last-child(-n+2){border:1px solid var(--bb-line)}
+  .bb-spec-grid>div{border-radius:8px;background:#fff;padding:10px 9px;min-height:58px}
+  .bb-spec-grid small{font-size:9px;text-transform:uppercase}
+  .bb-spec-grid b{font-size:13px;line-height:1.2}
+  .bb-vehicle-description h3{font-size:16px}
+  .bb-normalized-summary{font-size:15px;line-height:1.5}
+  .bb-evidence-row{display:none}
+  .bb-next-actions button{min-height:58px;border-radius:10px}
+  .bb-next-actions b{font-size:14px}
+}
