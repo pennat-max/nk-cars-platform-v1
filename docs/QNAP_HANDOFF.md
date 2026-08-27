@@ -352,6 +352,12 @@ Required next infrastructure work:
    - Accept only `provider=google|apple` values enabled by infrastructure configuration.
    - Implement Google Authorization Code/OIDC first; keep Apple disabled until the Owner App ID/Services ID/Key ID/private key are available.
    - Follow the callback, token-validation, account-linking, least-privilege role, session-rotation, and secret-handling requirements in `docs/QNAP_APP_REQUIREMENTS.md`.
+
+### Owner sourcing automation handoff
+
+The `codex/app` branch now includes `/buy/owner/sourcing`, deterministic sourcing-rule validation, Owner API authorization, and a QNAP sourcing adapter. Infrastructure must implement the four sourcing endpoints in `docs/QNAP_APP_REQUIREMENTS.md`, persist revision/audit history, and connect commands to Hermes without exposing Hermes or browser sessions publicly.
+
+Do not enable the app environment until a staging contract test proves: Owner-only access, create/update revision conflicts, command idempotency, daily cap, concurrency one, Login Required stop, pause/resume, no auto-publication, and no seller message side effect.
 2. Implement the revisioned customer workspace and Owner Case endpoints.
 3. Enforce service-token authentication, account ownership, least-privilege roles, deterministic commercial restrictions, atomic document numbering, and append-only audit in PostgreSQL.
 4. Test with staging-only accounts and data through stable authenticated HTTPS ingress.

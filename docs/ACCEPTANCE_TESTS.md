@@ -185,6 +185,10 @@ Create deterministic evidence fixtures for each case.
 - [ ] Wanted transitions through Searching, Matched, Customer Reviewing, Closed.
 - [ ] A hot vehicle/request match produces Hot Match attention.
 - [ ] Owner can create/edit/toggle all Sourcing Rule fields.
+- [ ] Owner mobile sourcing menu validates year range, Bangkok Metro areas, daily limit 1-50, required/excluded keywords, schedule, priority, and active state.
+- [ ] Run Now/Pause/Resume requires authenticated Owner access, uses an idempotency key, and produces an audit event.
+- [ ] Hermes respects the daily cap and concurrency one, stops on Login Required/MFA/CAPTCHA/rate limiting, and never auto-publishes or sends seller messages.
+- [ ] Unconfigured/unavailable QNAP/Hermes control fails closed without pretending a command or rule was saved.
 - [ ] Facebook/Meta rule integration is visibly connector-ready only; it cannot fake ingestion.
 - [ ] Vehicle 360 includes information, sources, pricing, inquiries, status, timeline, and AI summary.
 - [ ] Every required important action produces a chronologically correct immutable activity entry.

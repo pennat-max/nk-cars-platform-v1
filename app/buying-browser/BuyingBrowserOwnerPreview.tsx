@@ -5,6 +5,7 @@
 import Link from "next/link";
 import {
   ArrowLeft,
+  Bot,
   Database,
   ExternalLink,
   EyeOff,
@@ -78,7 +79,7 @@ export default function BuyingBrowserOwnerPreview({ records, sourceStatus, stora
   return (
     <div className="buying-browser bb-owner-preview" data-buying-browser-owner-preview>
       <header className="bb-owner-header">
-        <Link href="/buy"><ArrowLeft size={18} />Customer preview</Link>
+        <div className="bb-owner-header-links"><Link href="/buy"><ArrowLeft size={18} />Customer preview</Link><Link href="/buy/owner/sourcing"><Bot size={17} />Sourcing automation</Link></div>
         <div><span>NK</span><div><b>Buying Browser</b><small>Owner / Internal Source Preview</small></div></div>
       </header>
       <main>

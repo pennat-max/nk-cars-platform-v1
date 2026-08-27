@@ -295,6 +295,7 @@ Approved application storage direction:
 - Hermes may perform sourcing/AI operator tasks through authorized browser/source workflows.
 - Google Sheets + Drive remain only a temporary import/migration source and optional export/reporting surface.
 - Target flow is `Hermes/authorized capture -> QNAP PostgreSQL + QNAP storage -> NK App`.
+- The application now includes an Owner-only mobile sourcing automation menu for rule criteria, year range, Bangkok Metro areas, daily cap, schedule, and Hermes Run Now/Pause/Resume commands. Commands fail closed until the QNAP sourcing-control endpoints are implemented.
 
 Do not switch production architecture to QNAP until backup, recovery, security, networking, and deployment controls are documented and tested.
 

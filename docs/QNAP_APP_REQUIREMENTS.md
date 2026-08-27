@@ -202,3 +202,68 @@ On revision conflict return HTTP 409 with `{ "error": "workspace_revision_confli
 `GET /v1/admin/cases` returns `{ "cases": [<OwnerCaseQueueItem>] }`. Each Owner mutation returns `{ "case": <OwnerCaseQueueItem> }`. QNAP document numbering, quotation/PI snapshots, case updates, workspace revision, event, and audit evidence must commit in one database transaction. Operational users cannot delete audit history.
 
 The application revalidates all returned workspace and Owner Case data, recomputes quotation readiness, rejects oversized/malformed responses, and fails closed when the API is unavailable. The existing D1 adapter remains rollback support for the ChatGPT Site only.
+
+## Owner sourcing automation and Hermes control
+
+The application provides an Owner-only mobile menu at `/buy/owner/sourcing`. QNAP/Hermes remains disabled until these endpoints are implemented behind the existing internal bearer-token boundary.
+
+Required endpoints:
+
+- `GET /v1/admin/sourcing`
+- `POST /v1/admin/sourcing/rules`
+- `PUT /v1/admin/sourcing/rules/:ruleId`
+- `POST /v1/admin/sourcing/commands`
+
+Every endpoint must verify `NK_INTERNAL_API_TOKEN`, then independently require the trusted actor to have the `OWNER` role. Browser-supplied actor headers are never trusted directly.
+
+Snapshot response:
+
+```json
+{
+  "connected": true,
+  "hermesState": "ready | running | paused | login_required | error",
+  "browserProfileState": "ready | paused | login_required | error",
+  "queueDepth": 0,
+  "processedToday": 0,
+  "lastRunAt": null,
+  "lastHeartbeatAt": "ISO-8601 timestamp",
+  "message": "Customer-safe operational status",
+  "rules": []
+}
+```
+
+Rule fields:
+
+- stable `id`, `revision`, `createdAt`, `updatedAt`
+- `name`, `active`, `priority`
+- `brand`, optional `model`, `bodyType=pickup`
+- `yearFrom`, `yearTo`, optional `maxSourcePriceThb`
+- `dailyLimit` from 1 to 50 qualified retained candidates per Bangkok calendar day
+- Bangkok Metro `locations`
+- `requiredKeywords`, `excludedKeywords`
+- `sourceAdapter=facebook_marketplace`
+- schedule using `Asia/Bangkok`, selected weekdays, `startHour`, and exclusive `endHour`
+
+Create/update request uses `{ "rule": <validated rule>, "expectedRevision": 0 }`. Updates require the current revision; stale writes return HTTP 409. Rule update and append-only audit event commit atomically. Do not physically delete rule/audit history.
+
+Command request:
+
+```json
+{
+  "action": "run_now | pause | resume",
+  "ruleId": "optional rule ID",
+  "idempotencyKey": "UUID"
+}
+```
+
+Hermes execution rules:
+
+- Queue concurrency is one per authorized browser profile with conservative source-specific rate controls.
+- `run_now` schedules active rules only and never bypasses the per-rule daily cap.
+- Count only retained candidates that passed rule filters and duplicate pre-check; unrelated search results do not consume the configured target.
+- Stop and set `login_required` on logout, checkpoint, MFA, CAPTCHA, or source verification. Never bypass these controls.
+- Stop/pause safely on source rate limiting, account risk, missing permission, or repeated adapter errors.
+- Capture only permitted evidence; normalize, translate, and deduplicate before creating `Needs Review` records.
+- Never auto-publish, confirm availability, send seller messages, reserve a vehicle, or make a financial commitment from this scheduler.
+- `pause` prevents new jobs and allows the current atomic capture step to finish safely. `resume` re-enables scheduling but does not bypass `login_required`.
+- Persist run/rule/profile status, counts, safe error codes, actor, timestamps, and audit events without tokens, cookies, seller PII, or raw stack traces.

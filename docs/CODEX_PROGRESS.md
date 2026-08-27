@@ -1227,6 +1227,30 @@ The repository now contains the maximum technically achievable V1 application. R
 - Mobile 390 x 844 production Account verification passed with no horizontal overflow, broken images, seeded customer workspace, broken ChatGPT sign-in link, or browser console error observed.
 - Vercel deployment error-log scan returned no errors.
 
+## 2026-08-27 - Owner sourcing automation and Hermes control
+
+### Completed
+
+- Added an Owner-only sourcing automation route and mobile management menu linked from Source & Case Control.
+- Added deterministic multi-rule inputs for Toyota/pickup scope, model, year range, maximum source price, Bangkok Metro areas, required/excluded keywords, priority, active state, daily cap, weekdays, and Bangkok working hours.
+- Added Hermes operational status, Browser Profile status, queue depth, processed-today count, and audited Run Now/Pause/Resume command controls.
+- Added strict QNAP sourcing status/rule/command adapter boundaries with bounded responses, internal bearer token, Owner actor metadata, optimistic rule revisions, and idempotent command keys.
+- Kept production honest: no automatic publish, seller message, availability confirmation, source-security bypass, or command success is simulated when QNAP/Hermes is unavailable.
+
+### External blocker
+
+- QNAP/Hermes must implement and verify the sourcing endpoints documented in `docs/QNAP_APP_REQUIREMENTS.md`. Until connected, the menu is read-only/fail-closed and sends no command.
+
+### Verification
+
+- TypeScript `--noEmit`: passed.
+- Targeted ESLint for the sourcing domain, adapter, API, and Owner UI: passed with no warnings or errors.
+- Full `npm.cmd test`: production build and 60/60 tests passed.
+- `git diff --check`: passed.
+- Mobile 390 x 844 Owner sourcing menu: passed with no horizontal overflow; default Toyota pickup 2020+, daily cap 10, Bangkok Metro areas, weekdays, working hours, and safety notice render correctly.
+- Unconfigured QNAP/Hermes behavior: Run, Pause, Resume, and Save remain disabled; no command or rule success is represented.
+- Clean local runtime check: no browser console warnings or errors.
+
 ## 2026-08-27 - Google and Apple sign-in application readiness
 
 ### Completed

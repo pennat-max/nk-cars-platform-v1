@@ -230,3 +230,14 @@ Decision:
 - The app sends only an allowlisted provider and safe return path. OAuth callbacks, token validation, account linking, role assignment, session rotation, and revocation remain deterministic gateway responsibilities.
 - New social identities receive only the Customer role. Staff/Owner elevation requires a separate audited administrative action.
 - Production remains fail-closed until the gateway, callback URLs, credentials, session cookie, and QNAP workspace isolation tests pass.
+
+## 2026-08-27 - Owner-managed Hermes sourcing automation
+
+Status: APPROVED APPLICATION CONTROL; QNAP/HERMES ACTIVATION PENDING
+
+Decision:
+- Owner may manage multiple sourcing rules from mobile, including brand/model, pickup body, year range, maximum source price, Bangkok Metro areas, keywords, priority, active state, daily candidate cap, weekdays, and Bangkok working hours.
+- Owner commands are limited to Run Now, Pause, and Resume through an authenticated, audited QNAP API.
+- V1 defaults to Toyota pickup, model optional, year 2020 onward, Bangkok Metro, and a target maximum of ten qualified retained candidates per day.
+- Scheduler discovery never means verified availability and never authorizes automatic publication, seller messaging, reservation, payment, or purchase.
+- Hermes must stop on Login Required, MFA, CAPTCHA, platform verification, rate limiting, or material account risk. It may not bypass source security controls.

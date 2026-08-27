@@ -25,6 +25,8 @@ import { acceptQuotation, currentQuotationStatus, issueQuotation, quotationMater
 import { currentProformaInvoiceStatus, issueProformaInvoice } from "../app/buying-browser/pi-domain.mjs";
 import { cookieValue, identityGatewayRedirect, identityProviderMode, identitySocialProviders, parseQnapIdentity } from "../app/identity-domain.mjs";
 import { qnapWorkspaceTestHelpers, readQnapWorkspace, writeQnapWorkspace } from "../app/buying-browser/qnap-workspace.ts";
+import { readQnapSourcingAutomation, saveQnapSourcingRule, sendQnapHermesCommand } from "../app/buying-browser/qnap-sourcing.ts";
+import { defaultSourcingRuleInput, normalizeHermesCommand, normalizeSourcingRuleInput, parseSourcingAutomationSnapshot } from "../app/buying-browser/sourcing-automation.ts";
 
 const source = {
   id: "listing-1",
@@ -216,6 +218,71 @@ test("QNAP workspace adapter preserves ownership, deterministic controls, and re
     globalThis.fetch = previous.fetch;
     if (previous.url === undefined) delete process.env.NK_QNAP_DATA_API_URL; else process.env.NK_QNAP_DATA_API_URL = previous.url;
     if (previous.token === undefined) delete process.env.NK_INTERNAL_API_TOKEN; else process.env.NK_INTERNAL_API_TOKEN = previous.token;
+  }
+});
+
+test("Owner sourcing rules deterministically bound year, daily volume, area, schedule, and keywords", () => {
+  const draft = defaultSourcingRuleInput();
+  const normalized = normalizeSourcingRuleInput(draft);
+  assert.equal(normalized.brand, "Toyota");
+  assert.equal(normalized.yearFrom, 2020);
+  assert.equal(normalized.dailyLimit, 10);
+  assert.equal(normalized.locations.length, 6);
+  assert.deepEqual(normalizeHermesCommand({ action: "run_now", ruleId: null }), { action: "run_now", ruleId: null });
+  assert.throws(() => normalizeSourcingRuleInput({ ...draft, dailyLimit: 51 }), /invalid_daily_limit/);
+  assert.throws(() => normalizeSourcingRuleInput({ ...draft, yearFrom: 2024, yearTo: 2020 }), /invalid_year_to/);
+  assert.throws(() => normalizeSourcingRuleInput({ ...draft, locations: ["Phuket"] }), /invalid_location/);
+  assert.throws(() => normalizeSourcingRuleInput({ ...draft, requiredKeywords: ["revo"], excludedKeywords: ["REVO"] }), /conflicting_keywords/);
+  assert.throws(() => normalizeSourcingRuleInput({ ...draft, schedule: { ...draft.schedule, startHour: 20, endHour: 8 } }), /invalid_schedule_window/);
+  assert.throws(() => normalizeHermesCommand({ action: "send_seller_message" }), /invalid_hermes_action/);
+});
+
+test("QNAP sourcing adapter sends only authenticated Owner rules and allowlisted Hermes commands", async () => {
+  const previous = {
+    url: process.env.NK_QNAP_DATA_API_URL,
+    token: process.env.NK_INTERNAL_API_TOKEN,
+    fetch: globalThis.fetch,
+  };
+  process.env.NK_QNAP_DATA_API_URL = "https://qnap.example";
+  process.env.NK_INTERNAL_API_TOKEN = "test-internal-token-at-least-20-characters";
+  const owner = { id: "qnap:owner-1", email: "owner@example.com", displayName: "Owner", fullName: null, provider: "qnap", roles: ["OWNER"] };
+  const now = "2026-08-27T12:00:00.000Z";
+  const draft = defaultSourcingRuleInput();
+  const snapshot = {
+    connected: true,
+    hermesState: "ready",
+    browserProfileState: "ready",
+    queueDepth: 0,
+    processedToday: 3,
+    lastRunAt: now,
+    lastHeartbeatAt: now,
+    message: "Hermes ready",
+    rules: [{ ...draft, id: "rule-1", revision: 1, createdAt: now, updatedAt: now }],
+  };
+  const calls = [];
+  globalThis.fetch = async (url, init) => {
+    calls.push({ url: String(url), init });
+    assert.equal(init.headers.authorization, `Bearer ${process.env.NK_INTERNAL_API_TOKEN}`);
+    assert.equal(init.headers["x-nk-actor-id"], owner.id);
+    assert.equal(init.headers["x-nk-actor-roles"], "OWNER");
+    return Response.json(snapshot);
+  };
+  try {
+    assert.deepEqual(await readQnapSourcingAutomation(owner), parseSourcingAutomationSnapshot(snapshot));
+    await saveQnapSourcingRule(owner, draft);
+    await sendQnapHermesCommand(owner, { action: "run_now", ruleId: "rule-1" });
+    assert.equal(new URL(calls[0].url).pathname, "/v1/admin/sourcing");
+    assert.equal(calls[1].init.method, "POST");
+    assert.equal(new URL(calls[1].url).pathname, "/v1/admin/sourcing/rules");
+    const command = JSON.parse(calls[2].init.body);
+    assert.equal(new URL(calls[2].url).pathname, "/v1/admin/sourcing/commands");
+    assert.equal(command.action, "run_now");
+    assert.equal(command.ruleId, "rule-1");
+    assert.match(command.idempotencyKey, /^[0-9a-f-]{36}$/);
+  } finally {
+    if (previous.url === undefined) delete process.env.NK_QNAP_DATA_API_URL; else process.env.NK_QNAP_DATA_API_URL = previous.url;
+    if (previous.token === undefined) delete process.env.NK_INTERNAL_API_TOKEN; else process.env.NK_INTERNAL_API_TOKEN = previous.token;
+    globalThis.fetch = previous.fetch;
   }
 });
 
@@ -947,6 +1014,33 @@ test("renders captured and demo source records only in the owner view", async ()
   assert.doesNotMatch(html, /\/vehicle-evidence\//i);
   assert.match(html, /NK fee settings/i);
   assert.match(html, /Platform &amp; Transaction component/i);
+});
+
+test("Owner sourcing automation menu is private and fails closed without QNAP Hermes control", async () => {
+  const workerUrl = new URL("../dist/server/index.js", import.meta.url);
+  workerUrl.searchParams.set("test", `owner-sourcing-${process.pid}-${Date.now()}`);
+  const { default: worker } = await import(workerUrl.href);
+  const env = { ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) } };
+  const ctx = { waitUntil() {}, passThroughOnException() {} };
+  const anonymousPage = await worker.fetch(new Request("http://localhost/buy/owner/sourcing", { headers: { accept: "text/html" } }), env, ctx);
+  assert.ok([302, 303, 307, 308].includes(anonymousPage.status));
+  const anonymousApi = await worker.fetch(new Request("http://localhost/api/buying-browser/owner/sourcing"), env, ctx);
+  assert.equal(anonymousApi.status, 401);
+  const previousOwnerIds = process.env.NK_OWNER_ACCOUNT_IDS;
+  process.env.NK_OWNER_ACCOUNT_IDS = "owner-account-id";
+  const ownerHeaders = { "oai-authenticated-user-id": "owner-account-id", "oai-authenticated-user-email": "owner@example.com" };
+  const ownerPage = await worker.fetch(new Request("http://localhost/buy/owner/sourcing", { headers: { accept: "text/html", ...ownerHeaders } }), env, ctx);
+  const ownerApi = await worker.fetch(new Request("http://localhost/api/buying-browser/owner/sourcing", { headers: ownerHeaders }), env, ctx);
+  if (previousOwnerIds === undefined) delete process.env.NK_OWNER_ACCOUNT_IDS;
+  else process.env.NK_OWNER_ACCOUNT_IDS = previousOwnerIds;
+  assert.equal(ownerPage.status, 200);
+  const html = (await ownerPage.text()).replaceAll("<!-- -->", "");
+  assert.match(html, /data-owner-sourcing-automation/i);
+  assert.match(html, /ตั้งค่าดึงรถอัตโนมัติ/);
+  assert.match(html, /Toyota pickup 2020\+/);
+  assert.match(html, /QNAP\/Hermes sourcing control is not connected/);
+  assert.equal(ownerApi.status, 503);
+  assert.deepEqual(await ownerApi.json(), { error: "sourcing_control_unavailable" });
 });
 
 test("vehicle gallery provides an accessible swipeable fullscreen viewer", async () => {
