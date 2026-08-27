@@ -1185,3 +1185,5 @@ The repository now contains the maximum technically achievable V1 application. R
 - Changed only the public root entry so `https://nkautotrade.com/` redirects to Buying Browser at `/buy`.
 - Preserved all existing vehicle, Vehicle Case, quotation, PI, Owner, and API routes.
 - Added redirect regression coverage and retained the previous platform implementation as rollback/reference code.
+- Deployed application commit `49cff52` to Vercel production as `dpl_9J3jQk7TxHYCAnWVZeceqadMdqkD`.
+- Verified `https://nkautotrade.com/` returns HTTP 307 to `/buy`, the destination returns HTTP 200 with Buying Browser content, and the post-deploy error scan is clean.
