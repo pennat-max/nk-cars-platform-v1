@@ -1,0 +1,101 @@
+services:
+  nk-cars-postgres:
+    image: postgres:17-alpine
+    container_name: tony-nk-cars-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: nk_cars
+      POSTGRES_USER: nk_cars_admin
+      POSTGRES_PASSWORD: "${NK_CARS_DB_ADMIN_PASSWORD:?Set NK_CARS_DB_ADMIN_PASSWORD in the QNAP-only env file}"
+      NK_CARS_APP_DB_PASSWORD: "${NK_CARS_APP_DB_PASSWORD:?Set NK_CARS_APP_DB_PASSWORD in the QNAP-only env file}"
+      TZ: Asia/Bangkok
+    volumes:
+      - "${NK_CARS_DATA_ROOT:?Set NK_CARS_DATA_ROOT}/postgres:/var/lib/postgresql/data"
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nk_cars_admin -d nk_cars"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    networks: [nk-cars-private]
+
+  nk-cars-data:
+    build:
+      context: ../..
+      dockerfile: deploy/qnap/data-service/Dockerfile
+    image: "tony-nk-cars-data:${NK_CARS_RELEASE_TAG:?Set NK_CARS_RELEASE_TAG to the Git commit}"
+    container_name: tony-nk-cars-data
+    restart: unless-stopped
+    environment:
+      PORT: "3001"
+      NK_DB_HOST: nk-cars-postgres
+      NK_DB_PORT: "5432"
+      NK_DB_NAME: nk_cars
+      NK_DB_USER: nk_cars_app
+      NK_DB_PASSWORD: "${NK_CARS_APP_DB_PASSWORD}"
+      NK_INTERNAL_API_TOKEN: "${NK_INTERNAL_API_TOKEN:?Set NK_INTERNAL_API_TOKEN in the QNAP-only env file}"
+      TZ: Asia/Bangkok
+    depends_on:
+      nk-cars-postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3001/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+    networks: [nk-cars-private]
+
+  nk-cars-app:
+    build:
+      context: ../..
+      dockerfile: deploy/qnap/Dockerfile
+    image: "tony-nk-cars-full:${NK_CARS_RELEASE_TAG}"
+    container_name: tony-nk-cars-full
+    restart: unless-stopped
+    ports:
+      - "${NK_CARS_BIND_IP:-192.168.0.132}:${NK_CARS_HOST_PORT:-4332}:3000"
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      TZ: Asia/Bangkok
+      WRANGLER_LOG_PATH: .wrangler/wrangler.log
+      NK_QNAP_DATA_API_URL: http://nk-cars-data:3001
+      NK_INTERNAL_API_TOKEN: "${NK_INTERNAL_API_TOKEN}"
+    volumes:
+      - "${NK_CARS_MEDIA_ROOT:?Set NK_CARS_MEDIA_ROOT}/customer-visible:/app/public/vehicle-marketplace:ro"
+    depends_on:
+      nk-cars-data:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/buy').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 10s
+      start_period: 45s
+      retries: 8
+    networks: [nk-cars-private]
+
+  nk-cars-backup:
+    image: postgres:17-alpine
+    container_name: tony-nk-cars-backup
+    restart: unless-stopped
+    environment:
+      PGHOST: nk-cars-postgres
+      PGPORT: "5432"
+      PGDATABASE: nk_cars
+      PGUSER: nk_cars_admin
+      PGPASSWORD: "${NK_CARS_DB_ADMIN_PASSWORD}"
+      NK_BACKUP_RETENTION_DAYS: "${NK_BACKUP_RETENTION_DAYS:-30}"
+      NK_BACKUP_INTERVAL_SECONDS: "${NK_BACKUP_INTERVAL_SECONDS:-86400}"
+    command: ["/bin/sh", "/opt/nk/backup-loop.sh"]
+    volumes:
+      - ./postgres/backup-loop.sh:/opt/nk/backup-loop.sh:ro
+      - "${NK_CARS_BACKUP_ROOT:?Set NK_CARS_BACKUP_ROOT}:/backups"
+    depends_on:
+      nk-cars-postgres:
+        condition: service_healthy
+    networks: [nk-cars-private]
+
+networks:
+  nk-cars-private:
+    name: nk-cars-private
+    internal: true

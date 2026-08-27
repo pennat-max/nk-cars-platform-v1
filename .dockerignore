@@ -13,6 +13,9 @@ work
 .codex-preview
 .connector-profile
 .marketplace-connector-profile
+.migration-private
+private
+backups
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

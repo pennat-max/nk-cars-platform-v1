@@ -45,3 +45,4 @@ next-env.d.ts
 /.codex-preview/
 /.connector-profile/
 /.marketplace-connector-profile/
+/.migration-private/
