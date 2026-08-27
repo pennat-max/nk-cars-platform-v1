@@ -325,3 +325,14 @@ Decision:
 - Browse now uses one-column vehicle cards on small phones, with larger photos, price/title/meta text, save controls, filters, and bottom navigation.
 - Vehicle Detail and the main customer workflow surfaces inherit larger mobile typography and touch targets while preserving the approved NK workflow.
 - This is a visual/readability change only. It does not change pricing math, source data, availability claims, Vehicle Case rules, inspection gates, QNAP/Hermes behavior, seller messaging, payment, purchase, or publication.
+
+## 2026-08-28 - Facebook Marketplace-inspired Browse feed
+
+Status: APPROVED AND IMPLEMENTED
+
+Decision:
+- Owner requested the Browse feed look closer to Facebook Marketplace.
+- On small phones, Browse now uses a white, two-column feed with square photos, minimal card framing, price-first listing text, and compact location/mileage metadata.
+- NK-specific controls remain where required: NK header, search/filter/sort, Save heart, customer-safe NK Selection state, Paste Link, Ask NK AI, and bottom navigation.
+- This is an inspired layout treatment only, not a Facebook embed, proxy, login, scraping, or source-access change.
+- No Vehicle Case workflow, pricing math, inspection behavior, QNAP/Hermes activation, seller messaging, payment, purchase, or publication behavior changes are authorized by this visual update.

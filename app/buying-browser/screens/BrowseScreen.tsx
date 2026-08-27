@@ -37,7 +37,7 @@ export default function BrowseScreen({ savedOnly = false }: { savedOnly?: boolea
     setFilters((current) => ({ ...current, [key]: value }));
   }
 
-  const marketplaceHeading = language === "zh-CN" ? "为你推荐" : language === "th" ? "รถที่เหมาะกับคุณ" : "Vehicles for you";
+  const marketplaceHeading = language === "zh-CN" ? "为你推荐" : language === "th" ? "รถที่เหมาะกับคุณ" : "Today's picks";
   const priceStatus = language === "zh-CN" ? "价格待核实" : language === "th" ? "ราคายังไม่ยืนยัน" : "Price not verified";
   const reviewedVehiclesLabel = language === "zh-CN" ? `${visibleListings.length} 台已审核车辆` : language === "th" ? `รถที่ตรวจแล้ว ${visibleListings.length} คัน` : `${visibleListings.length} reviewed vehicles`;
 

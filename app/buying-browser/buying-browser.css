@@ -258,3 +258,45 @@
   .bb-listing-copy>strong{font-size:21px}
   .bb-listing-copy h2{font-size:16px}
 }
+
+/* Facebook Marketplace-inspired browse layout for small phones. */
+@media(max-width:520px){
+  .view-browse{background:#fff}
+  .view-browse .bb-header{height:56px;border-bottom:1px solid #dadde1;background:#fff;box-shadow:none}
+  .view-browse .bb-header-inner{padding:0 12px}
+  .view-browse .bb-brand>span{width:31px;height:31px;border-radius:6px}
+  .view-browse .bb-brand b{font-size:20px}
+  .view-browse .bb-market-location{gap:5px}
+  .view-browse .bb-market-location small{font-size:8px}
+  .view-browse .bb-market-location b{max-width:118px;font-size:12px}
+  .view-browse .bb-main{width:100%;padding:10px 0 86px;background:#fff}
+  .view-browse .bb-marketplace-toolbar{padding:0 10px;margin:0}
+  .view-browse .bb-market-search-row{grid-template-columns:minmax(0,1fr) 48px 48px;gap:7px}
+  .view-browse .bb-market-search-row .bb-search-field,.view-browse .bb-market-search-row .bb-filter-button,.view-browse .bb-sort-button{height:48px;border-color:#d8dce1;border-radius:9px;background:#fff}
+  .view-browse .bb-market-search-row .bb-search-field input{font-size:16px}
+  .view-browse .bb-market-search-row .bb-filter-button,.view-browse .bb-sort-button{width:48px}
+  .view-browse .bb-quick-filters{padding:10px 0 8px;gap:7px}
+  .view-browse .bb-quick-filters button{height:36px;padding:0 13px;border-radius:999px;border-color:#cfd5dc;background:#fff;font-size:13px;color:#4b5560}
+  .view-browse .bb-quick-filters button.active{background:#1c2733;border-color:#1c2733;color:#fff}
+  .view-browse .bb-marketplace-title-row{display:flex;align-items:flex-end;justify-content:space-between;margin:8px 0 8px}
+  .view-browse .bb-marketplace-title-row h2{font-size:23px;line-height:1.1;font-weight:850}
+  .view-browse .bb-marketplace-title-row p{font-size:13px}
+  .view-browse .bb-marketplace-title-row>span{padding:6px 9px;font-size:11px}
+  .view-browse .bb-marketplace-meta{margin:0 0 8px}
+  .view-browse .bb-marketplace-meta nav a{height:32px;padding:0 10px;border-radius:999px;font-size:12px}
+  .view-browse .bb-listing-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:20px 4px;padding:0 0 12px}
+  .view-browse .bb-listing-card{border:0;border-radius:0;background:#fff;box-shadow:none;overflow:visible}
+  .view-browse .bb-listing-image{aspect-ratio:1/1;border-radius:4px;background:#e7eaed}
+  .view-browse .bb-listing-image .bb-vehicle-photo{border-radius:4px}
+  .view-browse .bb-listing-copy{padding:8px 10px 0}
+  .view-browse .bb-listing-copy>strong{font-size:22px;line-height:1.05;font-weight:900;color:#111827}
+  .view-browse .bb-listing-copy h2{font-size:16px;line-height:1.18;margin:5px 0 4px;font-weight:650;color:#111827}
+  .view-browse .bb-listing-copy footer{display:block;font-size:13px;line-height:1.28;color:#656f7a}
+  .view-browse .bb-listing-copy footer span{display:flex;gap:4px}
+  .view-browse .bb-listing-copy footer span+span{margin-top:2px}
+  .view-browse .bb-listing-copy footer svg{display:none}
+  .view-browse .bb-demo-flag{left:7px;top:7px;padding:4px 6px;border-radius:5px;background:rgba(0,128,96,.92);font-size:8px}
+  .view-browse .bb-save-icon{right:7px;top:7px;width:40px;height:40px;background:rgba(255,255,255,.94);box-shadow:0 1px 5px rgba(0,0,0,.18)}
+  .view-browse .bb-save-icon svg{width:22px;height:22px}
+  .view-browse .bb-bottom-nav{min-height:72px;border-top-color:#dadde1}
+}
