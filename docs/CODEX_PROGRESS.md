@@ -981,3 +981,29 @@ Started Milestone 1: Next.js shell and visual parity.
 ### Architecture Blocker
 
 - A QNAP-hosted build cannot provide the current signed-in workspace, Owner queue, quotation, or PI behavior until an approved replacement for ChatGPT auth headers and the Cloudflare D1 binding is implemented. The safe interim architecture is to keep the current ChatGPT Site for identity/customer access while QNAP services are introduced behind a controlled API.
+
+## 2026-08-27 - Current Build Deployed to QNAP
+
+### Completed
+
+- Deployed application commit `736277a` to QNAP as side-by-side container `tony-nk-cars-current` without stopping or replacing the existing preview, Hermes, n8n, or PostgreSQL containers.
+- Kept the previous QNAP preview on LAN port `4330`; the current build uses port `4331`.
+- Added a separate account-less Cloudflare Quick Tunnel for mobile review.
+- Corrected the deployment script for QNAP POSIX shell compatibility and enforced Unix line endings in release archives.
+
+### Verification
+
+- Local production build and 52/52 tests passed.
+- QNAP Docker build and container health check passed.
+- LAN and public `/buy` returned HTTP 200.
+- Browse and Vehicle Detail passed a 390 x 844 mobile check with no console errors or horizontal overflow; Vehicle Detail loaded 12 image elements.
+
+### Security / Owner Action
+
+- The temporary public tunnel has no authentication or uptime guarantee and must not be used for confidential production data.
+- The QNAP administrator password was disclosed in chat and must be rotated. It was not written to Git, repository files, release archives, or application environment variables.
+
+### Remaining Migration Work
+
+- ChatGPT authentication headers and Cloudflare D1 data remain on the existing ChatGPT Site.
+- Moving signed-in Cases, Owner approvals, quotations, PI records, and audit history requires an approved QNAP authentication boundary, PostgreSQL adapter, D1 export/import, backup, and restore test before cutover.

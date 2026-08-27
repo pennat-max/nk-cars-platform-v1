@@ -279,3 +279,25 @@ The application branch now includes a side-by-side QNAP release definition:
 - Existing preview container and port `4330` remain unchanged for rollback.
 
 The current build passed its production build and 52/52 application tests before packaging. Deployment still requires an authenticated QNAP admin or SSH session. This package does not silently copy ChatGPT authentication, D1 data, Google credentials, or production secrets.
+
+### Deployed 2026-08-27
+
+- Application commit: `736277a`
+- Image: `tony-nk-cars-current:736277a`
+- Container: `tony-nk-cars-current`
+- Release directory: `/share/CACHEDEV6_DATA/nk-cars-buying-browser-current/releases/736277a-20260827-083905`
+- LAN URL: `http://192.168.0.132:4331/buy`
+- Temporary public URL: `https://modelling-explorer-student-further.trycloudflare.com/buy`
+- Tunnel container: `tony-nk-cars-current-tunnel`
+- Previous preview at port `4330` remains running and unchanged.
+
+Verification:
+
+- QNAP Docker build passed.
+- Container health check passed.
+- LAN `/buy`: HTTP 200.
+- Temporary public `/buy`: HTTP 200.
+- Mobile viewport 390 x 844 rendered Browse and Vehicle Detail without horizontal overflow or console errors.
+- Vehicle Detail loaded 12 image elements and retained customer-safe source redaction.
+
+The public URL is an account-less Cloudflare Quick Tunnel with no access control or uptime guarantee. It is a review URL, not a production identity/data cutover. ChatGPT Site D1 data and authentication have not moved to QNAP.
