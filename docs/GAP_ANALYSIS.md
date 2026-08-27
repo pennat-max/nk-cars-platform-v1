@@ -550,6 +550,10 @@ The smallest next cross-team milestone is `QNAP-V1-03 - Identity/Workspace Contr
 - Private Hermes worker claim/heartbeat/complete contract with a distinct credential and single-consumer database locking.
 - Bounded QNAP web ingress allowlist for public listings and Owner sourcing controls without exposing PostgreSQL, raw Data API ports, worker endpoints, or internal media.
 - Existing-volume migration and full-stack deployment script; fresh and existing QNAP databases use the same idempotent schema.
+- Review-only candidate ingestion with canonical-source deduplication, snapshotted-rule revalidation, per-rule Bangkok-day limits, and immutable candidate retention records.
+- Internal-only source-image persistence with trusted-host checks, bounded downloads, raster decode/re-encode, and no public media mount.
+- Deterministic QNAP worker bridge from claim -> authorized Marketplace connector search -> candidate retention -> safe completion.
+- Authenticated QNAP Owner inventory and customer/Owner media endpoints required by the existing application clients.
 
 ### Still blocked before real automation
 
@@ -558,7 +562,7 @@ The smallest next cross-team milestone is `QNAP-V1-03 - Identity/Workspace Contr
 - **Worker authorization:** a distinct QNAP-only worker secret must be provisioned through an approved secret channel and must not be copied into Git or chat.
 - **Hermes execution:** the running Hermes gateway is not connected to the private Data API worker contract. Its current free inference provider has returned HTTP 429, and cron/browser-profile readiness is not proven.
 - **Source session:** no verified Facebook Marketplace browser session/profile is available to the worker. Login, MFA, CAPTCHA, checkpoints, and rate limits must stop the run rather than be bypassed.
-- **Candidate ingestion:** the worker must still normalize/deduplicate captured evidence into `NEEDS_REVIEW` inventory and persist permitted media before end-to-end sourcing can pass.
+- **Candidate staging deployment:** the implementation is complete in source, but the QNAP release and private worker bridge have not been deployed/configured together and no real candidate has yet completed the path.
 - **Credential rotation:** QNAP credentials/tokens visible during administrative diagnostics must be rotated before production activation. No values belong in repository documentation.
 
 ### V1 status and smallest next milestone
@@ -579,5 +583,5 @@ This remains V1 operational activation work. V2-V5 scope is unchanged. The small
 - Added an Owner-only QNAP media proxy that requires the existing server-side Owner allowlist and returns private `no-store` media responses.
 - Owner records rebuild from allowlisted fields; unknown database fields and legacy Drive storage IDs are dropped. Conflicting imported evidence remains explicitly review-required.
 - Validated the complete migrated seed: 20/20 Owner records and 368/368 protected media references parse successfully.
-- Remaining infrastructure gap: the QNAP Data API must implement `/v1/admin/inventory-records`, `/v1/public/media/:vehicleId/:mediaId`, and `/v1/admin/media/:vehicleId/:mediaId` before external runtimes can use these application clients live.
+- Remaining infrastructure gap: deploy the Data API release containing `/v1/admin/inventory-records`, `/v1/public/media/:vehicleId/:mediaId`, and `/v1/admin/media/:vehicleId/:mediaId`, then verify storage mounts and access controls against the live migrated media.
 - The Owner page continues to use the verified internal fallback if the Owner endpoint is unavailable, even when customer QNAP inventory is live. It does not silently present fallback records as synchronized Owner data.

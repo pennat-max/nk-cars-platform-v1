@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { candidateMatchesRule } from "./candidate-domain.mjs";
 
 function mapRule(row) {
   return {
@@ -31,6 +32,12 @@ function bangkokDate(value) {
   }).formatToParts(value);
   const part = (type) => parts.find((item) => item.type === type)?.value;
   return `${part("year")}-${part("month")}-${part("day")}`;
+}
+
+function canonicalJson(value) {
+  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
+  if (value && typeof value === "object") return `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${canonicalJson(value[key])}`).join(",")}}`;
+  return JSON.stringify(value);
 }
 
 export class PostgresSourcingRepository {
@@ -118,8 +125,8 @@ export class PostgresSourcingRepository {
           if (!selected.rows[0]) throw new Error("rule_not_found");
           ruleSnapshot = selected.rows[0].rule_json;
         } else if (command.action === "run_now") {
-          const activeRules = await client.query("SELECT rule_json FROM sourcing_rules WHERE (rule_json->>'active')::boolean = true ORDER BY created_at, id");
-          ruleSnapshot = activeRules.rows.map((row) => row.rule_json);
+          const activeRules = await client.query("SELECT id, rule_json FROM sourcing_rules WHERE (rule_json->>'active')::boolean = true ORDER BY created_at, id");
+          ruleSnapshot = activeRules.rows.map((row) => ({ id: row.id, rule: row.rule_json }));
         }
         const commandId = crypto.randomUUID();
         const now = this.now();
@@ -149,7 +156,16 @@ export class PostgresSourcingRepository {
         [crypto.randomUUID(), selected.rows[0].id, workerId, now],
       );
       await client.query("UPDATE sourcing_runtime_state SET hermes_state = 'running', last_run_at = $1, last_heartbeat_at = $1, message = 'Hermes accepted a sourcing command.', updated_at = $1 WHERE singleton = true", [now]);
-      return mapCommand({ ...selected.rows[0], status: "CLAIMED", claimed_at: now });
+      let ruleSnapshot = selected.rows[0].rule_snapshot_json;
+      if (!selected.rows[0].rule_id && Array.isArray(ruleSnapshot) && ruleSnapshot.some((entry) => !entry?.id || !entry?.rule)) {
+        const rules = await client.query("SELECT id, rule_json FROM sourcing_rules ORDER BY created_at, id");
+        ruleSnapshot = ruleSnapshot.map((snapshot) => {
+          if (snapshot?.id && snapshot?.rule) return snapshot;
+          const match = rules.rows.find((rule) => canonicalJson(rule.rule_json) === canonicalJson(snapshot));
+          return match ? { id: match.id, rule: snapshot } : null;
+        }).filter(Boolean);
+      }
+      return mapCommand({ ...selected.rows[0], rule_snapshot_json: ruleSnapshot, status: "CLAIMED", claimed_at: now });
     });
   }
 
@@ -186,6 +202,88 @@ export class PostgresSourcingRepository {
         [completion.state, completion.browserProfileState, now, completion.processedIncrement, completion.message],
       );
       return { accepted: true };
+    });
+  }
+
+  async ingestCandidate(commandId, workerId, candidate) {
+    return this.transaction(async (client) => {
+      const commandResult = await client.query(
+        "SELECT id, rule_id, rule_snapshot_json FROM sourcing_commands WHERE id = $1 AND worker_id = $2 AND status = 'CLAIMED' FOR UPDATE",
+        [commandId, workerId],
+      );
+      const command = commandResult.rows[0];
+      if (!command) throw new Error("command_not_found");
+      if (command.rule_id && command.rule_id !== candidate.ruleId) throw new Error("candidate_rule_mismatch");
+
+      const ruleResult = await client.query("SELECT id, rule_json FROM sourcing_rules WHERE id = $1", [candidate.ruleId]);
+      const ruleRow = ruleResult.rows[0];
+      if (!ruleRow) throw new Error("rule_not_found");
+      if (!command.rule_id) {
+        const snapshots = Array.isArray(command.rule_snapshot_json) ? command.rule_snapshot_json : [];
+        const snapshotted = snapshots.some((snapshot) => canonicalJson(snapshot?.rule || snapshot) === canonicalJson(ruleRow.rule_json));
+        if (!snapshotted) throw new Error("candidate_rule_mismatch");
+      }
+      const match = candidateMatchesRule(candidate, ruleRow.rule_json);
+      if (!match.matches) throw new Error("candidate_rule_mismatch");
+      await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [`candidate-rule:${candidate.ruleId}`]);
+      await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [`candidate-source:${candidate.sourceReference}`]);
+
+      const existingCandidate = await client.query(
+        "SELECT vehicle_id, outcome FROM sourcing_candidate_ingestions WHERE candidate_id = $1",
+        [candidate.candidateId],
+      );
+      if (existingCandidate.rows[0]) {
+        return { status: existingCandidate.rows[0].outcome.toLowerCase(), vehicleId: existingCandidate.rows[0].vehicle_id, idempotent: true };
+      }
+
+      const now = this.now();
+      const existingVehicle = await client.query("SELECT vehicle_id FROM inventory_vehicles WHERE source_reference = $1", [candidate.sourceReference]);
+      if (existingVehicle.rows[0]) {
+        await client.query(
+          "INSERT INTO sourcing_candidate_ingestions (candidate_id, command_id, rule_id, vehicle_id, source_reference, outcome, worker_id, safe_detail_json, created_at) VALUES ($1, $2, $3, $4, $5, 'DUPLICATE', $6, $7::jsonb, $8)",
+          [candidate.candidateId, commandId, candidate.ruleId, existingVehicle.rows[0].vehicle_id, candidate.sourceReference, workerId, JSON.stringify({ reason: "source_reference_exists" }), now],
+        );
+        return { status: "duplicate", vehicleId: existingVehicle.rows[0].vehicle_id, idempotent: false };
+      }
+
+      const retainedToday = await client.query(
+        "SELECT count(*)::int AS count FROM sourcing_candidate_ingestions WHERE rule_id = $1 AND outcome = 'RETAINED' AND (timezone('Asia/Bangkok', created_at))::date = (timezone('Asia/Bangkok', $2::timestamptz))::date",
+        [candidate.ruleId, now],
+      );
+      if ((retainedToday.rows[0]?.count || 0) >= ruleRow.rule_json.dailyLimit) throw new Error("daily_limit_reached");
+
+      await client.query(
+        `INSERT INTO inventory_vehicles
+         (vehicle_id, source_reference, publication_status, customer_record, internal_record, source_adapter, observed_at, imported_at, updated_at)
+         VALUES ($1, $2, 'NEEDS_REVIEW', NULL, $3::jsonb, 'facebook_marketplace_worker', $4, $5, $5)`,
+        [candidate.vehicleId, candidate.sourceReference, JSON.stringify(candidate.internalRecord), candidate.observedAt, now],
+      );
+      await client.query(
+        "INSERT INTO sourcing_candidate_ingestions (candidate_id, command_id, rule_id, vehicle_id, source_reference, outcome, worker_id, safe_detail_json, created_at) VALUES ($1, $2, $3, $4, $5, 'RETAINED', $6, $7::jsonb, $8)",
+        [candidate.candidateId, commandId, candidate.ruleId, candidate.vehicleId, candidate.sourceReference, workerId, JSON.stringify({ imageUrlCount: candidate.images.length, publicationStatus: "NEEDS_REVIEW" }), now],
+      );
+      await client.query(
+        "UPDATE sourcing_runtime_state SET processed_today = CASE WHEN processed_date = (timezone('Asia/Bangkok', $1::timestamptz))::date THEN processed_today + 1 ELSE 1 END, processed_date = (timezone('Asia/Bangkok', $1::timestamptz))::date, last_heartbeat_at = $1, message = 'A candidate was retained for Owner review.', updated_at = $1 WHERE singleton = true",
+        [now],
+      );
+      return { status: "retained", vehicleId: candidate.vehicleId, idempotent: false };
+    });
+  }
+
+  async attachCandidateMedia(vehicleId, media) {
+    if (!media.length) return { stored: 0 };
+    return this.transaction(async (client) => {
+      const vehicle = await client.query("SELECT vehicle_id FROM inventory_vehicles WHERE vehicle_id = $1 AND publication_status = 'NEEDS_REVIEW' FOR UPDATE", [vehicleId]);
+      if (!vehicle.rows[0]) throw new Error("candidate_not_found");
+      for (const item of media) {
+        await client.query(
+          `INSERT INTO vehicle_media (media_id, vehicle_id, relative_path, visibility, lifecycle_stage, sha256, size_bytes)
+           VALUES ($1, $2, $3, 'INTERNAL_ONLY', 'Source', $4, $5)
+           ON CONFLICT (media_id) DO NOTHING`,
+          [item.mediaId, vehicleId, item.relativePath, item.sha256, item.sizeBytes],
+        );
+      }
+      return { stored: media.length };
     });
   }
 }

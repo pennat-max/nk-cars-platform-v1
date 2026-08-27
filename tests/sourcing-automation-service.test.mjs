@@ -1,7 +1,12 @@
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
 import test from "node:test";
+import sharp from "sharp";
 import { createDataService } from "../deploy/qnap/data-service/server.mjs";
+import { candidateMatchesRule, normalizeCandidateSubmission } from "../deploy/qnap/data-service/candidate-domain.mjs";
+import { QnapMediaStore } from "../deploy/qnap/data-service/media-store.mjs";
 import {
   normalizeCommand,
   normalizeCompletion,
@@ -9,6 +14,7 @@ import {
   normalizeSourcingRule,
 } from "../deploy/qnap/data-service/sourcing-domain.mjs";
 import { allowedQnapIngressPath, qnapIngressAuthorized } from "../app/buying-browser/qnap-ingress.ts";
+import { runQnapWorkerOnce } from "../marketplace-connector/qnap-worker.mjs";
 
 const apiToken = "admin-token-that-is-at-least-32-characters-long";
 const workerToken = "worker-token-that-is-different-and-32-characters";
@@ -42,6 +48,35 @@ const snapshot = {
   rules: [],
 };
 
+const commandId = "775ba56b-c781-4c87-ae0c-a9c12164c6cf";
+const ruleId = "423fd244-cf3c-4a3d-a63e-e702b5ca52a2";
+const candidatePayload = {
+  commandId,
+  ruleId,
+  candidate: {
+    candidate_id: "cand_0123456789abcdef0123",
+    brand: "Toyota",
+    model: "Hilux Revo",
+    year: 2022,
+    transmission: "AT",
+    drive_type: "2WD",
+    body_type: "Double Cab pickup",
+    mileage_km: 65000,
+    source_price_thb: 765000,
+    images: ["https://scontent.fbcdn.net/revo.jpg"],
+    source: {
+      platform: "facebook_marketplace",
+      source_url: "https://www.facebook.com/marketplace/item/123456789/",
+      source_listing_id: "123456789",
+      title: "2022 Toyota Hilux Revo pickup",
+      listing_text: "Toyota Revo pickup Bangkok",
+      seller: "Marketplace seller",
+      location: "Bangkok, Thailand",
+      observed_at: "2026-08-27T02:00:00.000Z",
+    },
+  },
+};
+
 function ownerHeaders(token = apiToken) {
   return {
     authorization: `Bearer ${token}`,
@@ -62,9 +97,12 @@ async function withService(run) {
     claimNext: async (workerId) => { calls.push({ method: "claimNext", workerId }); return null; },
     heartbeat: async (id, workerId, heartbeat) => { calls.push({ method: "heartbeat", id, workerId, heartbeat }); return { accepted: true }; },
     complete: async (id, workerId, completion) => { calls.push({ method: "complete", id, workerId, completion }); return { accepted: true }; },
+    ingestCandidate: async (id, workerId, candidate) => { calls.push({ method: "ingestCandidate", id, workerId, candidate }); return { status: "retained", vehicleId: candidate.vehicleId, idempotent: false }; },
+    attachCandidateMedia: async (vehicleId, media) => { calls.push({ method: "attachCandidateMedia", vehicleId, media }); return { stored: media.length }; },
   };
   const pool = { query: async () => ({ rows: [{ ok: 1 }] }) };
-  const server = createDataService({ pool, apiToken, workerToken, sourcingRepository: repository });
+  const mediaStore = { retainCandidateImages: async () => ({ media: [], failures: [{ index: 1, code: "image_unavailable" }] }) };
+  const server = createDataService({ pool, apiToken, workerToken, sourcingRepository: repository, mediaStore });
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
   const address = server.address();
   const baseUrl = `http://127.0.0.1:${address.port}`;
@@ -89,6 +127,17 @@ test("sourcing command and worker payloads reject unsupported actions and unsafe
   assert.throws(() => normalizeCommand({ action: "bypass_login", idempotencyKey }), /invalid_hermes_action/);
   assert.deepEqual(normalizeHeartbeat({ browserProfileState: "login_required", processedIncrement: 0, message: "Facebook login is required." }), { browserProfileState: "login_required", processedIncrement: 0, message: "Facebook login is required." });
   assert.throws(() => normalizeCompletion({ state: "published", browserProfileState: "ready", message: "Done" }), /invalid_hermes_state/);
+});
+
+test("candidate ingestion normalizes confidential review data and enforces the active sourcing rule", () => {
+  const candidate = normalizeCandidateSubmission(candidatePayload);
+  assert.equal(candidate.vehicleId, "nk-auto-370aa049ce212e1ce994");
+  assert.equal(candidate.internalRecord.visibility, "INTERNAL_ONLY");
+  assert.equal(candidate.internalRecord.publicationStatus, "Needs Review");
+  assert.equal(candidate.internalRecord.sourceUrl, candidatePayload.candidate.source.source_url);
+  assert.deepEqual(candidateMatchesRule(candidate, validRule), { matches: true, failures: [] });
+  assert.equal(candidateMatchesRule({ ...candidate, location: "Chiang Mai" }, validRule).matches, false);
+  assert.throws(() => normalizeCandidateSubmission({ ...candidatePayload, candidate: { ...candidatePayload.candidate, source: { ...candidatePayload.candidate.source, source_url: "https://example.com/marketplace/item/1" } } }), /invalid_candidate_source_url/);
 });
 
 test("admin sourcing API requires the server token and an independent Owner role", async () => {
@@ -118,6 +167,40 @@ test("admin rule and command endpoints pass normalized records to the repository
   });
 });
 
+test("Data API serves strict Owner inventory records and visibility-gated media", async () => {
+  const pool = {
+    query: async (sql, params = []) => {
+      if (sql.includes("FROM inventory_vehicles ORDER BY")) return { rows: [{ vehicle_id: "nk-auto-test", source_reference: "FB-MKT-1", publication_status: "NEEDS_REVIEW", customer_record: null, internal_record: { vehicleId: "nk-auto-test" }, source_adapter: "facebook_marketplace_worker", observed_at: new Date("2026-08-27T02:00:00Z") }] };
+      if (sql.includes("FROM vehicle_media WHERE vehicle_id IS NOT NULL")) return { rows: [{ media_id: "nk-auto-test:auto-001", vehicle_id: "nk-auto-test", visibility: "INTERNAL_ONLY" }] };
+      if (sql.includes("FROM vehicle_media m")) {
+        const requestedVisibility = params[2];
+        if (requestedVisibility === "CUSTOMER_VISIBLE") return { rows: [] };
+        return { rows: [{ relative_path: "automated/nk-auto-test/001.jpg", visibility: "INTERNAL_ONLY", sha256: "a".repeat(64) }] };
+      }
+      return { rows: [{ ok: 1 }] };
+    },
+  };
+  const mediaStore = { read: async () => Buffer.from([0xff, 0xd8, 0xff, 0xd9]) };
+  const server = createDataService({ pool, apiToken, workerToken, sourcingRepository: {}, mediaStore });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const address = server.address();
+  const baseUrl = `http://127.0.0.1:${address.port}`;
+  try {
+    const records = await fetch(`${baseUrl}/v1/admin/inventory-records`, { headers: { authorization: `Bearer ${apiToken}` } });
+    assert.equal(records.status, 200);
+    const payload = await records.json();
+    assert.equal(payload.records[0].publicationStatus, "NEEDS_REVIEW");
+    assert.deepEqual(payload.records[0].media, [{ mediaId: "nk-auto-test:auto-001", visibility: "INTERNAL_ONLY" }]);
+    const customerMedia = await fetch(`${baseUrl}/v1/public/media/nk-auto-test/nk-auto-test%3Aauto-001`, { headers: { authorization: `Bearer ${apiToken}` } });
+    assert.equal(customerMedia.status, 404, "internal evidence never crosses the customer media endpoint");
+    const ownerMedia = await fetch(`${baseUrl}/v1/admin/media/nk-auto-test/nk-auto-test%3Aauto-001`, { headers: { authorization: `Bearer ${apiToken}` } });
+    assert.equal(ownerMedia.status, 200);
+    assert.equal(ownerMedia.headers.get("cache-control"), "private, no-store");
+  } finally {
+    await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+  }
+});
+
 test("worker endpoints use a distinct token and never accept Owner credentials", async () => {
   await withService(async ({ baseUrl, calls }) => {
     const rejected = await fetch(`${baseUrl}/v1/worker/sourcing/commands/claim`, { method: "POST", headers: { authorization: `Bearer ${apiToken}`, "x-nk-worker-id": "hermes-qnap" } });
@@ -127,6 +210,69 @@ test("worker endpoints use a distinct token and never accept Owner credentials",
     assert.deepEqual(await claimed.json(), { command: null });
     assert.deepEqual(calls[0], { method: "claimNext", workerId: "hermes-qnap" });
   });
+});
+
+test("worker candidate endpoint retains only a review record and reports partial media safely", async () => {
+  await withService(async ({ baseUrl, calls }) => {
+    const response = await fetch(`${baseUrl}/v1/worker/sourcing/candidates`, {
+      method: "POST",
+      headers: { authorization: `Bearer ${workerToken}`, "content-type": "application/json", "x-nk-worker-id": "hermes-qnap" },
+      body: JSON.stringify(candidatePayload),
+    });
+    assert.equal(response.status, 201);
+    const payload = await response.json();
+    assert.equal(payload.status, "retained");
+    assert.deepEqual(payload.media, { stored: 0, failed: 1, failures: [{ index: 1, code: "image_unavailable" }] });
+    assert.equal(calls[0].method, "ingestCandidate");
+    assert.equal(calls[0].candidate.internalRecord.visibility, "INTERNAL_ONLY");
+    assert.equal(calls[1].method, "attachCandidateMedia");
+  });
+});
+
+test("QNAP media store re-encodes permitted source images into the internal-only root", async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "nk-media-test-"));
+  try {
+    const png = await sharp({ create: { width: 8, height: 8, channels: 3, background: "#123456" } }).png().toBuffer();
+    const store = new QnapMediaStore({
+      customerRoot: path.join(root, "customer"),
+      internalRoot: path.join(root, "internal"),
+      fetchImpl: async () => new Response(png, { status: 200, headers: { "content-type": "image/png" } }),
+    });
+    const candidate = normalizeCandidateSubmission(candidatePayload);
+    const retained = await store.retainCandidateImages(candidate);
+    assert.equal(retained.media.length, 1);
+    assert.equal(retained.media[0].visibility, "INTERNAL_ONLY");
+    assert.match(retained.media[0].relativePath, /^automated\/nk-auto-/);
+    assert.equal((await store.read(retained.media[0].relativePath, "INTERNAL_ONLY")).subarray(0, 2).toString("hex"), "ffd8");
+  } finally {
+    await fs.rm(root, { recursive: true, force: true });
+  }
+});
+
+test("deterministic QNAP worker bridge claims, searches, retains candidates, and completes without external messages", async () => {
+  const calls = [];
+  let runPolls = 0;
+  const fetchImpl = async (url, options = {}) => {
+    const pathname = new URL(url).pathname;
+    calls.push({ pathname, method: options.method || "GET", body: options.body ? JSON.parse(options.body) : null });
+    if (pathname.endsWith("/commands/claim")) return Response.json({ command: { id: commandId, action: "run_now", ruleId, rule: validRule } });
+    if (pathname.endsWith("/v1/search-runs") && options.method === "POST") return Response.json({ run_id: "run_775ba56b-c781-4c87-ae0c-a9c12164c6cf", status: "queued" }, { status: 202 });
+    if (pathname.endsWith("/heartbeat")) return Response.json({ accepted: true });
+    if (pathname.includes("/v1/search-runs/run_")) {
+      runPolls += 1;
+      return Response.json({ status: "completed", candidates: [candidatePayload.candidate] });
+    }
+    if (pathname.endsWith("/sourcing/candidates")) return Response.json({ status: "retained", vehicleId: "nk-auto-test", media: { stored: 1, failed: 0 } }, { status: 201 });
+    if (pathname.endsWith("/complete")) return Response.json({ accepted: true });
+    return Response.json({ error: "unexpected_request" }, { status: 500 });
+  };
+  const config = { qnapUrl: "http://qnap.internal", qnapToken: workerToken, connectorUrl: "http://127.0.0.1:4317", connectorToken: "connector-token-that-is-at-least-32-characters", workerId: "hermes-qnap", profileId: "fb-buyer-01", pollIntervalMs: 30_000 };
+  const result = await runQnapWorkerOnce(config, fetchImpl);
+  assert.deepEqual(result, { status: "completed", commandId, retained: 1, duplicates: 0 });
+  assert.equal(runPolls, 1);
+  assert.equal(calls.find((call) => call.pathname.endsWith("/sourcing/candidates")).body.ruleId, ruleId);
+  const completion = calls.find((call) => call.pathname.endsWith("/complete")).body;
+  assert.equal(completion.processedIncrement, 0, "candidate retention is the sole daily counter authority");
 });
 
 test("Data API can deploy before worker authorization without exposing worker endpoints", async () => {
@@ -155,8 +301,9 @@ test("QNAP HTTPS ingress exposes only the bounded Data API allowlist", () => {
 });
 
 test("QNAP sourcing schema is append-only and deployment migrates existing volumes", async () => {
-  const [schema, compose, deployment] = await Promise.all([
+  const [schema, candidateSchema, compose, deployment] = await Promise.all([
     fs.readFile(new URL("../deploy/qnap/postgres/init/020_sourcing_automation.sql", import.meta.url), "utf8"),
+    fs.readFile(new URL("../deploy/qnap/postgres/init/030_candidate_ingestion.sql", import.meta.url), "utf8"),
     fs.readFile(new URL("../deploy/qnap/docker-compose.full.yml", import.meta.url), "utf8"),
     fs.readFile(new URL("../deploy/qnap/deploy-full.sh", import.meta.url), "utf8"),
   ]);
@@ -165,9 +312,15 @@ test("QNAP sourcing schema is append-only and deployment migrates existing volum
   assert.match(schema, /ON DELETE RESTRICT/);
   assert.match(schema, /REVOKE DELETE/);
   assert.doesNotMatch(schema, /GRANT ALL/);
+  assert.match(candidateSchema, /sourcing_candidate_ingestions/);
+  assert.match(candidateSchema, /outcome IN \('RETAINED', 'DUPLICATE'\)/);
+  assert.match(candidateSchema, /REVOKE DELETE, UPDATE/);
   assert.match(compose, /NK_HERMES_WORKER_TOKEN:\s+"\$\{NK_HERMES_WORKER_TOKEN:-\}"/);
+  assert.match(compose, /internal-only:\/data\/media\/internal-only/);
+  assert.match(compose, /customer-visible:\/data\/media\/customer-visible:ro/);
   assert.doesNotMatch(compose, /NK_HERMES_WORKER_TOKEN:\s+[A-Za-z0-9_-]{32}/);
   assert.match(deployment, /020_sourcing_automation\.sql/);
+  assert.match(deployment, /030_candidate_ingestion\.sql/);
   assert.match(deployment, /psql -v ON_ERROR_STOP=1/);
   assert.doesNotMatch(deployment, /PASSWORD=/);
 });

@@ -1259,6 +1259,40 @@ The repository now contains the maximum technically achievable V1 application. R
 
 `QNAP-V1-04 - Authenticated Sourcing Staging Run`: deploy this tested backend on QNAP, provision the separate worker secret through a secure Owner-controlled channel, configure stable ingress and Owner identity, then connect one Hermes/browser worker and verify one real Toyota pickup becomes a review-only candidate. Do not deploy production sourcing or enable seller messaging.
 
+## 2026-08-27 - Review-only candidate ingestion and connector bridge
+
+### Completed locally
+
+- Added the private worker candidate endpoint and PostgreSQL candidate-ingestion history.
+- Revalidates candidates against the claimed Owner rule and enforces canonical-source deduplication plus per-rule Bangkok-day limits inside the Data API transaction.
+- Retained automation results can only create `NEEDS_REVIEW` inventory with `customer_record = NULL`; no publication, availability claim, seller message, reservation, payment, or purchase is possible through this path.
+- Added bounded Facebook-media retrieval with trusted redirect hosts, raster decode/re-encode, 12 MB source limits, 2,400 px output limits, and internal-only QNAP storage.
+- Added QNAP Owner inventory-record and customer/Owner media endpoints used by the existing strict application clients.
+- Added a deterministic worker bridge that claims QNAP commands, invokes the existing authorized Marketplace connector, submits candidates, reports safe login/error state, and completes commands without double-counting daily retention.
+- Updated the full-stack compose/deployment migration for the new candidate schema and private media mounts.
+
+### Verification
+
+- Targeted connector and sourcing service tests: 20/20 passed.
+- Candidate tests cover source-host rejection, rule/location mismatch, internal-only records, image re-encoding, worker token separation, and claim/search/retain/complete flow.
+- Full `npm.cmd test`: production build and 73/73 tests passed.
+- TypeScript `--noEmit`: passed.
+- ESLint: 0 errors and 13 pre-existing `<img>` optimization warnings.
+- `git diff --check`: passed with line-ending notices only.
+
+### Owner / external blockers
+
+- This source release is not deployed to QNAP; production deployment remains Owner-approved infrastructure work.
+- A separate QNAP-only worker token, authorized Facebook browser profile/session, and connector runtime reachable from the worker are not configured.
+- Facebook login, MFA, CAPTCHA, checkpoints, and rate limits require normal user/platform handling and stop automation; they are never bypassed.
+- Hermes' observed free-provider HTTP 429 condition and browser/cron readiness remain external runtime blockers.
+- No real Marketplace candidate has been claimed through this new path yet; live success must not be reported until the staging run is observed in PostgreSQL and Owner review.
+- Previously exposed QNAP/runtime credentials must be rotated before activation.
+
+### Next recommended milestone
+
+`QNAP-V1-04 - Authenticated Sourcing Staging Run`: infrastructure deploys this commit, provisions the distinct worker secret through a secure channel, connects one compliant browser profile, and proves one real Toyota pickup reaches Owner `NEEDS_REVIEW` with internal-only evidence. Production publication and seller messaging remain disabled.
+
 ## 2026-08-27 - Owner sourcing automation and Hermes control
 
 ### Completed

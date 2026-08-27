@@ -275,5 +275,8 @@ Worker endpoints, available only on the private Data API network:
 - `POST /v1/worker/sourcing/commands/claim`
 - `POST /v1/worker/sourcing/commands/:commandId/heartbeat`
 - `POST /v1/worker/sourcing/commands/:commandId/complete`
+- `POST /v1/worker/sourcing/candidates`
 
 Workers authenticate with a distinct `NK_HERMES_WORKER_TOKEN` and a bounded `X-NK-Worker-Id`. The worker token must never equal `NK_INTERNAL_API_TOKEN`, must never be routed through public ingress, and may remain unset while the worker is disabled. Claim uses PostgreSQL `FOR UPDATE SKIP LOCKED` so one command is processed once. Completion accepts only safe deterministic states (`ready`, `paused`, `login_required`, or `error`) and safe error codes; it cannot mark publication, availability, seller contact, payment, or purchase.
+
+Candidate submission includes the claimed command ID, snapshotted rule ID, and connector-normalized candidate. The Data API must independently revalidate the rule scope, reject non-Facebook source/image hosts, enforce the per-rule Bangkok-day retained limit, and deduplicate the source reference. A successful new candidate creates only `inventory_vehicles.publication_status = 'NEEDS_REVIEW'` with no customer record. Source evidence and downloaded media remain `INTERNAL_ONLY`; downloaded raster images are bounded, decoded, re-encoded, and stored outside the public web mount.

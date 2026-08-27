@@ -262,3 +262,15 @@ Decision:
 - Owner/admin traffic and Hermes worker traffic use distinct bearer credentials. An absent worker credential disables worker endpoints instead of falling back to the admin credential.
 - Public ingress is restricted to an explicit Data API allowlist through the QNAP web container. PostgreSQL, raw Data API ports, worker endpoints, tokens, browser sessions, and internal evidence remain private.
 - Activation requires production Owner identity, stable authenticated HTTPS ingress, a separately provisioned worker secret, a compliant authenticated browser profile, and a functioning Hermes inference provider. No success state may be simulated while any dependency is absent.
+
+## 2026-08-27 - Automated candidate retention boundary
+
+Status: IMPLEMENTED IN SOURCE; LIVE STAGING RUN PENDING
+
+Decision:
+- Authorized sourcing results enter the existing inventory database as `NEEDS_REVIEW` with `customer_record = NULL`; automation cannot publish a vehicle or create a customer-visible price/availability claim.
+- Source URL, seller, exact location, listing text, and unreviewed evidence remain internal-only. Customer DTOs continue to exclude them.
+- Candidate retention is idempotent by connector candidate identity and deduplicated by canonical source reference. Only newly retained candidates count toward the rule's Bangkok-day limit.
+- The Data API revalidates the candidate against the snapshotted Owner rule, including brand, year, price, keywords, pickup evidence, and Bangkok Metro location, instead of trusting the browser worker result.
+- Permitted Facebook image URLs are downloaded with bounded size/type/redirect rules, decoded and re-encoded as JPEG, and written only to the internal QNAP media root. Missing media leaves an explicit review limitation and never blocks preservation of the candidate record.
+- Worker, browser, and Data API credentials remain separate. The bridge stops on login/MFA/CAPTCHA/checkpoint/rate-limit conditions and cannot send seller messages, reserve, pay, purchase, or bypass source controls.

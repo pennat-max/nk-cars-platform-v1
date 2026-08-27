@@ -44,6 +44,8 @@ fi
 # idempotent sourcing migration explicitly before starting the new Data API.
 "${docker_bin}" exec tony-nk-cars-postgres sh -c \
   'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" -f /docker-entrypoint-initdb.d/020_sourcing_automation.sql'
+"${docker_bin}" exec tony-nk-cars-postgres sh -c \
+  'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" -f /docker-entrypoint-initdb.d/030_candidate_ingestion.sql'
 
 "${docker_bin}" compose -f "${compose_file}" build nk-cars-data nk-cars-app
 "${docker_bin}" compose -f "${compose_file}" up -d

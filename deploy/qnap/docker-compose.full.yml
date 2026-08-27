@@ -35,7 +35,12 @@ services:
       NK_DB_PASSWORD: "${NK_CARS_APP_DB_PASSWORD}"
       NK_INTERNAL_API_TOKEN: "${NK_INTERNAL_API_TOKEN:?Set NK_INTERNAL_API_TOKEN in the QNAP-only env file}"
       NK_HERMES_WORKER_TOKEN: "${NK_HERMES_WORKER_TOKEN:-}"
+      NK_CUSTOMER_MEDIA_ROOT: /data/media/customer-visible
+      NK_INTERNAL_MEDIA_ROOT: /data/media/internal-only
       TZ: Asia/Bangkok
+    volumes:
+      - "${NK_CARS_MEDIA_ROOT:?Set NK_CARS_MEDIA_ROOT}/customer-visible:/data/media/customer-visible:ro"
+      - "${NK_CARS_MEDIA_ROOT}/internal-only:/data/media/internal-only"
     depends_on:
       nk-cars-postgres:
         condition: service_healthy

@@ -240,7 +240,7 @@ Latest confirmed checkpoint from Codex:
 - Buying Browser web app, search/filters, twenty Owner-approved vehicle snapshots, swipeable customer-safe photo galleries, USD display, Save to NK, Vehicle Cases, availability/inspection/AI/message flows, Owner source boundary, split pricing, and EN/Chinese/Thai localization are implemented.
 - Previous Google staging work remains migration history in `docs/CODEX_PROGRESS.md`; current QNAP-primary verification is recorded in the latest entry.
 - QNAP PostgreSQL is the primary server inventory adapter. Google staging is now an explicit migration bridge only; the verified repository snapshot remains fail-safe when QNAP is unavailable.
-- The application has a strict authenticated QNAP Owner inventory client and Owner-only media proxy contract. Until the QNAP Data API implements those endpoints, `/buy/owner` fails closed to the verified internal fallback while customer inventory may remain live.
+- The repository Data API now implements the strict authenticated QNAP Owner inventory and customer/Owner media endpoints used by the application. The currently installed QNAP release must still be upgraded before those endpoints are live; until then `/buy/owner` fails closed to the verified internal fallback.
 - The Owner approved the second deduplicated ten-vehicle batch for Browse on 2026-08-27. The verified repository fallback therefore contains 20 customer-safe records. Approval for Browse does not verify current availability, price, condition, or unresolved specifications.
 - The legacy Google migration source retains deterministic per-vehicle folders for audit/recovery, but customer runtime no longer depends on it by default.
 - `Media.sort_order = 1` is the reviewed customer cover contract. Four approved records that previously opened with interior/bed photos now use deterministic redacted derivatives of their real source covers; original files remain internal evidence.
@@ -279,15 +279,18 @@ Completed source-layer items:
 4. repository fallback and safe QNAP-centric sync status
 5. optional Google migration bridge, disabled by default
 6. authenticated QNAP Owner inventory parser/client and Owner-only media application proxy
+7. QNAP Owner inventory/media Data API endpoints with customer/internal visibility enforcement
+8. deterministic Hermes/connector worker bridge and review-only candidate ingestion with duplicate and Bangkok-day limit enforcement
+9. internal-only source-image download, bounded raster validation, re-encoding, and QNAP persistence
 
 Next priority:
 1. QNAP infrastructure supplies a stable authenticated HTTPS Data API origin reachable by the approved app runtime without exposing PostgreSQL
-2. QNAP infrastructure implements the authenticated Owner inventory/media endpoints defined in `docs/QNAP_APP_REQUIREMENTS.md`; the application client is complete and has validated all 20 migrated records and 368 media references
+2. QNAP infrastructure deploys the repository Data API release that implements the authenticated Owner inventory/media and candidate-ingestion endpoints; the application client has validated all 20 migrated records and 368 media references
 3. verify the deployed Owner account allowlist and D1 account-workspace migration on the existing Site
 4. verify Quotation requests and readiness history through a signed-in production account; PI remains gated until an approved final quotation is accepted
 5. add an authenticated Owner operations queue for availability, actual purchase price, and material cost confirmation
 6. verify QNAP media retention, customer/internal separation, backup, and restore under the infrastructure runbook
-7. automate authorized capture -> normalize -> review rows/media without bypassing source controls
+7. provision the private worker credential and authorized Facebook browser profile, then prove one real candidate reaches `NEEDS_REVIEW` without publication or seller messaging
 
 ## 14. QNAP / Hermes direction
 
@@ -298,7 +301,7 @@ Approved application storage direction:
 - Google Sheets + Drive remain only a temporary import/migration source and optional export/reporting surface.
 - Target flow is `Hermes/authorized capture -> QNAP PostgreSQL + QNAP storage -> NK App`.
 - The application now includes an Owner-only mobile sourcing automation menu for rule criteria, year range, Bangkok Metro areas, daily cap, schedule, and Hermes Run Now/Pause/Resume commands.
-- The repository now includes the QNAP PostgreSQL sourcing-rule/audit/command/runtime schema, authenticated admin endpoints, separate worker-token endpoints, and a bounded HTTPS ingress allowlist. These components remain fail-closed until the tested release is installed on QNAP and production identity/ingress/worker authorization is activated.
+- The repository now includes the QNAP PostgreSQL sourcing-rule/audit/command/runtime/candidate schema, authenticated admin endpoints, separate worker-token endpoints, deterministic connector bridge, internal-only media persistence, and a bounded HTTPS ingress allowlist. Candidate ingestion can only create `NEEDS_REVIEW` records. These components remain fail-closed until the tested release is installed on QNAP and production identity/ingress/worker authorization is activated.
 - The installed Hermes container is running, but its current free inference provider has returned rate-limit errors and its browser profile/worker token are not connected. The application must continue to report `not_configured` or the real safe error state; it must not claim that automated sourcing ran.
 
 Do not switch production architecture to QNAP until backup, recovery, security, networking, and deployment controls are documented and tested.
