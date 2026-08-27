@@ -267,3 +267,15 @@ cd /share/CACHEDEV6_DATA/nk-cars-buying-browser-preview/releases/f018cd5-2026082
 - เปิดให้ลูกค้าจริงใช้งาน
 - เขียน/แก้ไข database หรือ Google Sheets
 - ลบข้อมูลหรือ restore ทับ production
+
+## 15. Current Application Side-by-Side Release
+
+The application branch now includes a side-by-side QNAP release definition:
+
+- Compose: `deploy/qnap/docker-compose.current.yml`
+- Deploy script: `deploy/qnap/deploy-current.sh`
+- New container: `tony-nk-cars-current`
+- New LAN port: `4331`
+- Existing preview container and port `4330` remain unchanged for rollback.
+
+The current build passed its production build and 52/52 application tests before packaging. Deployment still requires an authenticated QNAP admin or SSH session. This package does not silently copy ChatGPT authentication, D1 data, Google credentials, or production secrets.

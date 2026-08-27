@@ -959,3 +959,25 @@ Started Milestone 1: Next.js shell and visual parity.
 - QNAP does not yet run the current application commit or a persistent NK Cars PostgreSQL/media backend.
 - The temporary Quick Tunnel has no access control or uptime guarantee.
 - Production data migration, secrets, named tunnel/access policy, backup, restore, and cutover still require separate implementation and Owner approval where applicable.
+
+## 2026-08-27 - Current Build QNAP Release Preparation
+
+### Completed
+
+- Added a side-by-side QNAP Compose release for the current application build using container `tony-nk-cars-current` and LAN port `4331`.
+- Preserved the old QNAP preview container at port `4330` as an immediate rollback/reference point.
+- Added a bounded deployment script that validates Compose on QNAP, builds a commit-tagged image, waits for container health, and verifies `/buy` before reporting success.
+- Documented that container deployment alone cannot migrate ChatGPT authentication headers or Cloudflare D1 persistence.
+
+### Verification
+
+- `bash -n deploy/qnap/deploy-current.sh`: passed.
+- `npm.cmd test`: production build and 52/52 tests passed.
+
+### Owner Blocker
+
+- The QNAP admin page is reachable, but no authenticated browser or SSH session is available to this Codex session. The Owner must authenticate directly; the password must not be placed in Git, chat, scripts, or environment templates.
+
+### Architecture Blocker
+
+- A QNAP-hosted build cannot provide the current signed-in workspace, Owner queue, quotation, or PI behavior until an approved replacement for ChatGPT auth headers and the Cloudflare D1 binding is implemented. The safe interim architecture is to keep the current ChatGPT Site for identity/customer access while QNAP services are introduced behind a controlled API.

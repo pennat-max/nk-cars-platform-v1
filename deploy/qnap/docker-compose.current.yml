@@ -1,0 +1,33 @@
+services:
+  nk-cars-current:
+    container_name: tony-nk-cars-current
+    build:
+      context: ../..
+      dockerfile: deploy/qnap/Dockerfile
+    image: "tony-nk-cars-current:${NK_CARS_RELEASE_TAG:?Set NK_CARS_RELEASE_TAG to the Git commit}"
+    restart: unless-stopped
+    ports:
+      - "${NK_CARS_BIND_IP:-192.168.0.132}:${NK_CARS_HOST_PORT:-4331}:3000"
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      TZ: Asia/Bangkok
+      WRANGLER_LOG_PATH: .wrangler/wrangler.log
+    mem_limit: 1536m
+    cpus: 1.5
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000/buy').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 15s
+      timeout: 10s
+      start_period: 45s
+      retries: 8
+    networks:
+      - nk-cars-current-lan
+
+networks:
+  nk-cars-current-lan:
+    name: nk-cars-current-lan
