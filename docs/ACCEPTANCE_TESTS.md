@@ -189,6 +189,8 @@ Create deterministic evidence fixtures for each case.
 - [ ] Run Now/Pause/Resume requires authenticated Owner access, uses an idempotency key, and produces an audit event.
 - [ ] Hermes respects the daily cap and concurrency one, stops on Login Required/MFA/CAPTCHA/rate limiting, and never auto-publishes or sends seller messages.
 - [ ] Unconfigured/unavailable QNAP/Hermes control fails closed without pretending a command or rule was saved.
+- [ ] Anonymous Account exposes an Owner sourcing menu preview that renders the default rule and permits temporary form exploration without internal records.
+- [ ] Owner sourcing preview cannot save rules or send Run/Pause/Resume commands; operational Owner routes and APIs remain authenticated.
 - [ ] Facebook/Meta rule integration is visibly connector-ready only; it cannot fake ingestion.
 - [ ] Vehicle 360 includes information, sources, pricing, inquiries, status, timeline, and AI summary.
 - [ ] Every required important action produces a chronologically correct immutable activity entry.

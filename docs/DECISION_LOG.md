@@ -241,3 +241,13 @@ Decision:
 - V1 defaults to Toyota pickup, model optional, year 2020 onward, Bangkok Metro, and a target maximum of ten qualified retained candidates per day.
 - Scheduler discovery never means verified availability and never authorizes automatic publication, seller messaging, reservation, payment, or purchase.
 - Hermes must stop on Login Required, MFA, CAPTCHA, platform verification, rate limiting, or material account risk. It may not bypass source security controls.
+
+## 2026-08-27 - Public Owner sourcing menu preview before account activation
+
+Status: APPROVED AND IMPLEMENTED
+
+Decision:
+- Account may link to a public interactive preview of the Owner sourcing-rule menu while production identity remains unavailable.
+- Preview input changes are temporary page state only. The preview receives no internal inventory, seller, customer, source, session, or Hermes runtime data.
+- Save, Run Now, Pause, and Resume remain disabled in preview mode, and the authenticated Owner API remains the only mutation boundary.
+- `/buy/owner` and `/buy/owner/sourcing` remain protected and must not be opened anonymously merely to simplify early review.

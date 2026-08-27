@@ -1259,6 +1259,24 @@ The repository now contains the maximum technically achievable V1 application. R
 - Spoofed external ChatGPT identity headers also returned HTTP 401; Owner/Hermes controls cannot be activated from the public edge.
 - Post-deploy Vercel error-log scan returned no errors.
 
+## 2026-08-27 - Owner sourcing menu preview before account activation
+
+### Completed
+
+- Added an anonymous-safe interactive preview at `/buy/owner-preview/sourcing`, linked from the multilingual Account screen.
+- Preserved the default Toyota pickup 2020+, Bangkok Metro, daily cap, keyword, weekday, and schedule controls so the Owner can review the intended workflow before account activation.
+- Preview choices remain temporary page state. The preview receives no internal inventory or runtime status and cannot save rules or send Run/Pause/Resume commands.
+- Kept `/buy/owner`, `/buy/owner/sourcing`, and the sourcing mutation API server-authorized and unchanged.
+
+### Verification
+
+- TypeScript `--noEmit`: passed.
+- Targeted ESLint for the preview route, Owner sourcing UI, Account screen, and localization: passed with no warnings or errors. Full ESLint passed with 0 errors and 13 existing `<img>` optimization warnings.
+- Full `npm.cmd test`: production build and 60/60 tests passed.
+- Mobile 390 x 844 Account and sourcing preview: no horizontal overflow, broken layout, or browser console errors.
+- Preview Run and Save controls remained disabled; the operational Owner route and API authorization tests remained passing.
+- Production access-control checks, commit/push, and deployment verification follow after final diff review.
+
 ## 2026-08-27 - Google and Apple sign-in application readiness
 
 ### Completed

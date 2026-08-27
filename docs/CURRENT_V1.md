@@ -15,6 +15,8 @@ Implementation status: The Owner-approved cross-platform Buying Browser directio
 
 Web companion status: `/buy/browser` provides a browser-style NK shell on iPhone, Android, and Windows web browsers. It opens the real Facebook Marketplace in Facebook's own tab/app, accepts the selected listing link, and forwards explicit NK actions into the existing Vehicle Case flow. It does not embed, proxy, inspect, or control Facebook and must not be described as a native in-app Facebook browser.
 
+Owner menu preview status: `/buy/owner-preview/sourcing` is an anonymous-safe interactive preview linked from Account. It allows the Owner to try sourcing-rule inputs before production identity is activated, but it receives no internal records, cannot save rules, and cannot send Hermes commands. The operational `/buy/owner` and `/buy/owner/sourcing` routes remain server-authorized Owner-only surfaces.
+
 Vercel delivery status: the Owner registered `nkautotrade.com` in the `nkautotrade` Vercel team. The application now has a separate `nk-cars-platform-v1` Vercel project, and `https://nkautotrade.com/buy` is the active customer web domain. This does not replace `.openai/hosting.json`, the existing ChatGPT Site, QNAP storage, or the QNAP adapter boundary. `NEXT_PUBLIC_SITE_URL` controls canonical/social metadata for each runtime. Vercel Production sets `NK_ENABLE_DEMO_WORKSPACE=false`, so anonymous visitors start with a blank Guest device workspace instead of seeded demo Cases.
 
 ## 1. Current product

@@ -1022,6 +1022,18 @@ test("Owner sourcing automation menu is private and fails closed without QNAP He
   const { default: worker } = await import(workerUrl.href);
   const env = { ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) } };
   const ctx = { waitUntil() {}, passThroughOnException() {} };
+  const accountPage = await worker.fetch(new Request("http://localhost/buy/account", { headers: { accept: "text/html" } }), env, ctx);
+  const publicPreview = await worker.fetch(new Request("http://localhost/buy/owner-preview/sourcing", { headers: { accept: "text/html" } }), env, ctx);
+  assert.equal(accountPage.status, 200);
+  assert.match(await accountPage.text(), /\/buy\/owner-preview\/sourcing/i);
+  assert.equal(publicPreview.status, 200);
+  const previewHtml = (await publicPreview.text()).replaceAll("<!-- -->", "");
+  assert.match(previewHtml, /data-preview-mode="true"/i);
+  assert.match(previewHtml, /Preview only/i);
+  assert.match(previewHtml, /Toyota pickup 2020\+/i);
+  assert.match(previewHtml, /ทำงานตอนนี้<\/button>/i);
+  assert.match(previewHtml, /disabled=""/i);
+  assert.doesNotMatch(previewHtml, /facebook\.com\/marketplace\/item|sellerPhone|internalNotes|sourceUrl/i);
   const anonymousPage = await worker.fetch(new Request("http://localhost/buy/owner/sourcing", { headers: { accept: "text/html" } }), env, ctx);
   assert.ok([302, 303, 307, 308].includes(anonymousPage.status));
   const anonymousApi = await worker.fetch(new Request("http://localhost/api/buying-browser/owner/sourcing"), env, ctx);

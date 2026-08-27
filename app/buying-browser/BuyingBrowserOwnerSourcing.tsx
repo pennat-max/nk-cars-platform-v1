@@ -76,7 +76,7 @@ function statusLabel(value: string) {
   } as Record<string, string>)[value] || "ไม่ทราบสถานะ";
 }
 
-export default function BuyingBrowserOwnerSourcing({ initialSnapshot }: { initialSnapshot: SourcingAutomationSnapshot }) {
+export default function BuyingBrowserOwnerSourcing({ initialSnapshot, previewMode = false }: { initialSnapshot: SourcingAutomationSnapshot; previewMode?: boolean }) {
   const [snapshot, setSnapshot] = useState(initialSnapshot);
   const [selectedId, setSelectedId] = useState(initialSnapshot.rules[0]?.id || "new");
   const [form, setForm] = useState<SourcingRuleInput>(initialSnapshot.rules[0] ? editableRule(initialSnapshot.rules[0]) : defaultSourcingRuleInput());
@@ -148,20 +148,20 @@ export default function BuyingBrowserOwnerSourcing({ initialSnapshot }: { initia
   }
 
   return (
-    <div className="buying-browser bb-owner-preview" data-owner-sourcing-automation>
+    <div className="buying-browser bb-owner-preview" data-owner-sourcing-automation data-preview-mode={previewMode || undefined}>
       <header className="bb-owner-header">
-        <div className="bb-owner-header-links"><Link href="/buy/owner"><ArrowLeft size={18} />Source & Case Control</Link></div>
-        <div><span>NK</span><div><b>Sourcing Automation</b><small>Owner / Hermes Control</small></div></div>
+        <div className="bb-owner-header-links"><Link href={previewMode ? "/buy/account" : "/buy/owner"}><ArrowLeft size={18} />{previewMode ? "Back to Account" : "Source & Case Control"}</Link></div>
+        <div><span>NK</span><div><b>Sourcing Automation</b><small>{previewMode ? "Interactive Owner menu preview" : "Owner / Hermes Control"}</small></div></div>
       </header>
       <main>
         <section className="bb-page-heading">
           <div><p className="bb-kicker">Owner sourcing control</p><h1>ตั้งค่าดึงรถอัตโนมัติ</h1><p>กำหนดรถเป้าหมาย จำนวนต่อวัน และช่วงเวลาทำงาน แล้วส่งคำสั่งให้ Hermes ผ่าน QNAP</p></div>
-          <span className={`bb-status-chip ${snapshot.connected ? "requested" : "pending"}`}>{snapshot.connected ? <ShieldCheck size={13} /> : <WifiOff size={13} />}{snapshot.connected ? "QNAP connected" : "Fail closed"}</span>
+          <span className={`bb-status-chip ${snapshot.connected && !previewMode ? "requested" : "pending"}`}>{snapshot.connected && !previewMode ? <ShieldCheck size={13} /> : <WifiOff size={13} />}{previewMode ? "Preview only" : snapshot.connected ? "QNAP connected" : "Fail closed"}</span>
         </section>
 
-        <div className={snapshot.connected ? "bb-owner-sourcing-note" : "bb-owner-warning"}>
-          {snapshot.connected ? <Bot size={18} /> : <WifiOff size={18} />}
-          <div><b>{statusLabel(snapshot.hermesState)}</b><p>{snapshot.message}</p></div>
+        <div className={snapshot.connected && !previewMode ? "bb-owner-sourcing-note" : "bb-owner-warning"}>
+          {snapshot.connected && !previewMode ? <Bot size={18} /> : <WifiOff size={18} />}
+          <div><b>{previewMode ? "ทดลองเลือกค่าได้โดยยังไม่บันทึก" : statusLabel(snapshot.hermesState)}</b><p>{previewMode ? "ค่าที่เลือกอยู่เฉพาะบนหน้านี้ ระบบจะไม่บันทึกกฎหรือส่งคำสั่งให้ Hermes จนกว่าจะเข้าสู่ระบบ Owner และเชื่อม QNAP" : snapshot.message}</p></div>
         </div>
 
         <section className="bb-owner-kpis">
@@ -172,9 +172,9 @@ export default function BuyingBrowserOwnerSourcing({ initialSnapshot }: { initia
         </section>
 
         <section className="bb-owner-hermes-actions" aria-label="Hermes commands">
-          <button className="bb-button primary" disabled={busy || !snapshot.connected} onClick={() => command("run_now")}><CirclePlay size={17} />ทำงานตอนนี้</button>
-          <button className="bb-button secondary" disabled={busy || !snapshot.connected || snapshot.hermesState === "paused"} onClick={() => command("pause")}><CirclePause size={17} />หยุดชั่วคราว</button>
-          <button className="bb-button secondary" disabled={busy || !snapshot.connected || snapshot.hermesState !== "paused"} onClick={() => command("resume")}><CirclePlay size={17} />ทำงานต่อ</button>
+          <button className="bb-button primary" disabled={previewMode || busy || !snapshot.connected} onClick={() => command("run_now")}><CirclePlay size={17} />ทำงานตอนนี้</button>
+          <button className="bb-button secondary" disabled={previewMode || busy || !snapshot.connected || snapshot.hermesState === "paused"} onClick={() => command("pause")}><CirclePause size={17} />หยุดชั่วคราว</button>
+          <button className="bb-button secondary" disabled={previewMode || busy || !snapshot.connected || snapshot.hermesState !== "paused"} onClick={() => command("resume")}><CirclePlay size={17} />ทำงานต่อ</button>
           <small>คำสั่งจะหยุดเองเมื่อพบ Login Required, MFA, CAPTCHA, rate limit หรือถึงจำนวนสูงสุดต่อวัน</small>
         </section>
 
@@ -206,7 +206,7 @@ export default function BuyingBrowserOwnerSourcing({ initialSnapshot }: { initia
             <div className="bb-owner-sourcing-schedule"><label><Clock3 size={15} /><span>เริ่ม</span><input type="number" min="0" max="23" value={form.schedule.startHour} onChange={(event) => update("schedule", { ...form.schedule, startHour: Number(event.target.value) })} /></label><label><Clock3 size={15} /><span>สิ้นสุด</span><input type="number" min="1" max="24" value={form.schedule.endHour} onChange={(event) => update("schedule", { ...form.schedule, endHour: Number(event.target.value) })} /></label><small>เวลา Asia/Bangkok</small></div>
 
             <div className="bb-owner-sourcing-safety"><ShieldCheck size={17} /><p>Hermes เก็บเฉพาะข้อมูลที่เข้าถึงได้ตามสิทธิ์ ส่งเข้า Needs Review และตรวจรถซ้ำ ระบบนี้ไม่ auto-publish ไม่ส่งข้อความผู้ขาย และไม่ข้าม Login, MFA หรือ CAPTCHA</p></div>
-            <button className="bb-button primary" disabled={busy || !snapshot.connected} onClick={saveRule}><Save size={17} />{busy ? "กำลังบันทึก..." : "บันทึกกฎ"}</button>
+            <button className="bb-button primary" disabled={previewMode || busy || !snapshot.connected} onClick={saveRule}><Save size={17} />{busy ? "กำลังบันทึก..." : "บันทึกกฎ"}</button>
             {message && <p className="bb-owner-case-status" role="status">{message}</p>}
           </div>
         </section>
