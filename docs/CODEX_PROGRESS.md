@@ -1170,3 +1170,12 @@ QNAP infrastructure implements the documented endpoints and runs the contract ag
 - QNAP must implement the stable authenticated customer/Owner inventory and media endpoints and synchronize the second publication batch.
 
 The repository now contains the maximum technically achievable V1 application. Remaining work is controlled production/operations activation, not a simulated integration.
+
+### Production delivery verification
+
+- Deployed tested application commit `89b3b53` to the existing separate Vercel project; the ChatGPT Site and QNAP deployment were not overwritten.
+- Production alias: `https://nkautotrade.com/buy`.
+- Vercel deployment `dpl_5LGtGpQ3m8HWU3CVTY2VuPXwLdJC`: Ready.
+- Production `/buy`, a real vehicle-detail route, and sync-status endpoint returned HTTP 200.
+- Mobile 390 x 844 production check: 16 Bangkok Metro records, no broken images, no horizontal overflow, English/Chinese/Thai switching passed, and no browser console errors.
+- Vercel production error-log scan for the deployment hour returned no errors.
