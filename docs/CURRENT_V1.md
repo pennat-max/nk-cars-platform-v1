@@ -304,7 +304,7 @@ Approved application storage direction:
 - The repository now includes the QNAP PostgreSQL sourcing-rule/audit/command/runtime/candidate schema, authenticated admin endpoints, separate worker-token endpoints, deterministic connector bridge, internal-only media persistence, and a bounded HTTPS ingress allowlist. Candidate ingestion can only create `NEEDS_REVIEW` records. These components remain fail-closed until the tested release is installed on QNAP and production identity/ingress/worker authorization is activated.
 - QNAP full stack commit `f9793f15189b6eaf356dae03f92ee5dc94478c71` was deployed on 2026-08-27 and the Data API is healthy. A QNAP-only `NK_HERMES_WORKER_TOKEN` is configured and distinct from `NK_INTERNAL_API_TOKEN`.
 - The installed Hermes container is running, but its current free inference provider has returned rate-limit errors and its browser profile/connector runtime is not connected. The application must continue to report `not_configured` or the real safe error state; it must not claim that automated sourcing ran.
-- The requested Phetchaburi Hermes pilot is blocked by current QNAP rule validation, which only permits Bangkok Metro locations. No Facebook search, candidate retention, publication, seller message, payment, or purchase was performed during the activation attempt.
+- Phetchaburi is approved as a narrow Hermes pilot sourcing location. Bangkok Metro remains the default customer Browse and Owner sourcing scope. The pilot remains `NEEDS_REVIEW` only and does not authorize publication, seller messaging, reservation, purchase, or payment.
 
 Do not switch production architecture to QNAP until backup, recovery, security, networking, and deployment controls are documented and tested.
 

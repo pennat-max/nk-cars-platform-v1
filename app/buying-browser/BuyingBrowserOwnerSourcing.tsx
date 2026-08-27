@@ -37,6 +37,7 @@ const LOCATION_LABELS: Record<string, string> = {
   "Samut Prakan": "สมุทรปราการ",
   "Samut Sakhon": "สมุทรสาคร",
   "Nakhon Pathom": "นครปฐม",
+  Phetchaburi: "เพชรบุรี",
 };
 
 function editableRule(rule: SourcingRuleRecord): SourcingRuleInput {

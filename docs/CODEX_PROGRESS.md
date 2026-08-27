@@ -1405,3 +1405,16 @@ The repository now contains the maximum technically achievable V1 application. R
 - No seller was contacted.
 - No reservation, purchase, payment, or external commitment was made.
 - No token, password, cookie, or browser profile was committed to GitHub.
+
+## 2026-08-27 - Phetchaburi Hermes pilot validation
+
+### Completed
+
+- Added Phetchaburi as a narrow Owner-approved sourcing location for the Hermes activation pilot while preserving Bangkok Metro as the default sourcing and customer Browse scope.
+- Updated the QNAP Data API sourcing-rule validator, application sourcing-rule parser, Owner sourcing UI labels, and candidate location alias matching.
+- Kept candidate ingestion constrained to `NEEDS_REVIEW`, `customer_record = NULL`, `facebook_marketplace_worker`, and internal-only media/evidence.
+
+### Verification
+
+- `node --test tests/sourcing-automation-service.test.mjs`: passed 13/13.
+- Local full build was not run on the Windows workstation because `bash` is not available in PATH; QNAP Docker build remains the production build verification path.

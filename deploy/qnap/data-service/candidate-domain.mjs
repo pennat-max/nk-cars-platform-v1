@@ -171,6 +171,7 @@ const LOCATION_ALIASES = new Map([
   ["Samut Prakan", ["samut prakan", "สมุทรปราการ"]],
   ["Samut Sakhon", ["samut sakhon", "สมุทรสาคร"]],
   ["Nakhon Pathom", ["nakhon pathom", "นครปฐม"]],
+  ["Phetchaburi", ["phetchaburi", "เพชรบุรี"]],
 ]);
 
 export function candidateMatchesRule(candidate, rule) {

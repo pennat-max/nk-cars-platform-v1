@@ -274,3 +274,14 @@ Decision:
 - The Data API revalidates the candidate against the snapshotted Owner rule, including brand, year, price, keywords, pickup evidence, and Bangkok Metro location, instead of trusting the browser worker result.
 - Permitted Facebook image URLs are downloaded with bounded size/type/redirect rules, decoded and re-encoded as JPEG, and written only to the internal QNAP media root. Missing media leaves an explicit review limitation and never blocks preservation of the candidate record.
 - Worker, browser, and Data API credentials remain separate. The bridge stops on login/MFA/CAPTCHA/checkpoint/rate-limit conditions and cannot send seller messages, reserve, pay, purchase, or bypass source controls.
+
+## 2026-08-27 - Phetchaburi Hermes pilot scope
+
+Status: APPROVED FOR PILOT ONLY
+
+Decision:
+- Add Phetchaburi as an allowed Owner sourcing-rule location for the first Hermes QNAP activation pilot.
+- Keep Bangkok Metro as the default customer Browse scope and default Owner sourcing rule.
+- This approval does not open All Thailand sourcing or customer publication.
+- The pilot remains limited to `NEEDS_REVIEW` candidate retention only.
+- Seller messaging, reservation, purchase, payment, and automatic customer publication remain prohibited.

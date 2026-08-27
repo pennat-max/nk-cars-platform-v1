@@ -7,6 +7,7 @@ export const BANGKOK_METRO_LOCATIONS = new Set([
   "Samut Prakan",
   "Samut Sakhon",
   "Nakhon Pathom",
+  "Phetchaburi",
 ]);
 
 export const SOURCING_WEEKDAYS = new Set(["mon", "tue", "wed", "thu", "fri", "sat", "sun"]);

@@ -227,7 +227,8 @@ test("Owner sourcing rules deterministically bound year, daily volume, area, sch
   assert.equal(normalized.brand, "Toyota");
   assert.equal(normalized.yearFrom, 2020);
   assert.equal(normalized.dailyLimit, 10);
-  assert.equal(normalized.locations.length, 6);
+  assert.equal(normalized.locations.length, 7);
+  assert.deepEqual(normalizeSourcingRuleInput({ ...draft, locations: ["Phetchaburi"] }).locations, ["Phetchaburi"]);
   assert.deepEqual(normalizeHermesCommand({ action: "run_now", ruleId: null }), { action: "run_now", ruleId: null });
   assert.throws(() => normalizeSourcingRuleInput({ ...draft, dailyLimit: 51 }), /invalid_daily_limit/);
   assert.throws(() => normalizeSourcingRuleInput({ ...draft, yearFrom: 2024, yearTo: 2020 }), /invalid_year_to/);

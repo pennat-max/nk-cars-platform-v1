@@ -115,6 +115,7 @@ async function withService(run) {
 
 test("sourcing domain enforces approved scope and deterministic daily limits", () => {
   assert.deepEqual(normalizeSourcingRule(validRule), validRule);
+  assert.deepEqual(normalizeSourcingRule({ ...validRule, locations: ["Phetchaburi"] }).locations, ["Phetchaburi"]);
   assert.throws(() => normalizeSourcingRule({ ...validRule, dailyLimit: 51 }), /invalid_daily_limit/);
   assert.throws(() => normalizeSourcingRule({ ...validRule, locations: ["Chiang Mai"] }), /invalid_locations/);
   assert.throws(() => normalizeSourcingRule({ ...validRule, sourceAdapter: "hidden_scraper" }), /invalid_source_rule_scope/);
@@ -137,6 +138,7 @@ test("candidate ingestion normalizes confidential review data and enforces the a
   assert.equal(candidate.internalRecord.sourceUrl, candidatePayload.candidate.source.source_url);
   assert.deepEqual(candidateMatchesRule(candidate, validRule), { matches: true, failures: [] });
   assert.equal(candidateMatchesRule({ ...candidate, location: "Chiang Mai" }, validRule).matches, false);
+  assert.equal(candidateMatchesRule({ ...candidate, location: "Phetchaburi, Thailand" }, { ...validRule, locations: ["Phetchaburi"] }).matches, true);
   assert.throws(() => normalizeCandidateSubmission({ ...candidatePayload, candidate: { ...candidatePayload.candidate, source: { ...candidatePayload.candidate.source, source_url: "https://example.com/marketplace/item/1" } } }), /invalid_candidate_source_url/);
 });
 

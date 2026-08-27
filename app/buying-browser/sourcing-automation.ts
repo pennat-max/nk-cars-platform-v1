@@ -5,6 +5,7 @@ export const BANGKOK_METRO_LOCATIONS = [
   "Samut Prakan",
   "Samut Sakhon",
   "Nakhon Pathom",
+  "Phetchaburi",
 ] as const;
 
 export const SOURCING_WEEKDAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
