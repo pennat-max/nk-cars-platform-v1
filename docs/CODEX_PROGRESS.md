@@ -1377,3 +1377,31 @@ The repository now contains the maximum technically achievable V1 application. R
 - Google sign-in returned HTTP 503 while the gateway is unconfigured, an unknown provider returned HTTP 400, and the production Account remained honestly fail-closed with no provider buttons.
 - Mobile 390 x 844 production Account verification passed with no horizontal overflow, broken images, or browser console errors.
 - Vercel deployment error-log scan returned no errors.
+
+## 2026-08-27 - QNAP Hermes activation attempt
+
+### Completed
+
+- Deployed QNAP full data stack from `codex/app` commit `f9793f15189b6eaf356dae03f92ee5dc94478c71`.
+- Ran the idempotent sourcing migrations `020_sourcing_automation.sql` and `030_candidate_ingestion.sql` through `deploy/qnap/deploy-full.sh`.
+- Verified the QNAP full stack is healthy at `http://192.168.0.132:4332/buy`.
+- Verified running QNAP containers include `tony-nk-cars-postgres`, `tony-nk-cars-data`, `tony-nk-cars-full`, and `tony-nk-cars-backup` on release image tag `f9793f15189b6eaf356dae03f92ee5dc94478c71`.
+- Created a pre-activation PostgreSQL backup at `/share/CACHEDEV6_DATA/nk-cars/backups/postgres/nk-cars-before-hermes-20260827T154249Z.dump` with a matching `.sha256`.
+- Added a QNAP-only `NK_HERMES_WORKER_TOKEN` to `/share/CACHEDEV6_DATA/nk-cars/.env.full`; it is configured, has file permission `600`, and is distinct from `NK_INTERNAL_API_TOKEN`.
+- Verified Data API health inside the private container network returned `{"status":"ok"}`.
+- Verified the admin sourcing snapshot returns `connected: true`, no rules, queue depth `0`, and honest `not_configured` Hermes/browser profile state.
+- Verified PostgreSQL port `5432` and Data API port `3001` are not open on the LAN from the operator workstation.
+
+### Safe blockers
+
+- The requested first rule `Toyota Revo 2022 - Phetchaburi pilot` was not created because the deployed QNAP validation rejects `Phetchaburi` with `invalid_locations`; current source allows only Bangkok Metro locations.
+- The marketplace connector/browser profile runtime is not active on QNAP. `127.0.0.1:4317` is closed, the `hermes` container has no NK connector/worker environment configured, and the app image does not include Chrome/Chromium for an interactive Facebook profile.
+- The existing `hermes` container remains separate from the QNAP worker bridge and is still showing free-provider rate-limit errors in logs.
+- Because the connector/profile runtime is absent and the Phetchaburi rule is invalid under current validation, no real Facebook Marketplace search was run and no candidate vehicle was retained.
+
+### Safety confirmation
+
+- No customer publication was created.
+- No seller was contacted.
+- No reservation, purchase, payment, or external commitment was made.
+- No token, password, cookie, or browser profile was committed to GitHub.
