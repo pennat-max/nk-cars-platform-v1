@@ -301,3 +301,43 @@ Verification:
 - Vehicle Detail loaded 12 image elements and retained customer-safe source redaction.
 
 The public URL is an account-less Cloudflare Quick Tunnel with no access control or uptime guarantee. It is a review URL, not a production identity/data cutover. ChatGPT Site D1 data and authentication have not moved to QNAP.
+
+## 16. Full QNAP Data Stack - 2026-08-27
+
+The current application and reviewed inventory now run side-by-side on QNAP from Git commit `5e2be613e34e`. The previous ports `4330` and `4331`, their tunnels, and the existing ChatGPT Site remain available as rollback/reference points.
+
+Architecture:
+
+```text
+Public review -> Cloudflare Quick Tunnel -> nk-cars-edge -> tony-nk-cars-full:3000
+Customer web -> nk-cars-private -> tony-nk-cars-data:3001 -> tony-nk-cars-postgres:5432
+Daily backup -> tony-nk-cars-backup -> /share/CACHEDEV6_DATA/nk-cars/backups/postgres
+```
+
+- LAN URL: `http://192.168.0.132:4332/buy`
+- Temporary public review URL: `https://desktop-tampa-unnecessary-provinces.trycloudflare.com/buy`
+- Release: `/share/CACHEDEV6_DATA/nk-cars/releases/5e2be613e34e`
+- PostgreSQL data: `/share/CACHEDEV6_DATA/nk-cars/data/postgres`
+- Customer-visible media: `/share/CACHEDEV6_DATA/nk-cars/media/customer-visible`
+- Internal-only media: `/share/CACHEDEV6_DATA/nk-cars/media/internal-only`
+- Backups: `/share/CACHEDEV6_DATA/nk-cars/backups/postgres`
+
+Imported and verified:
+
+- 20 inventory vehicles: 10 `APPROVED`, 10 `NEEDS_REVIEW`.
+- 368 media records: 64 `CUSTOMER_VISIBLE`, 304 `INTERNAL_ONLY`.
+- 73 customer-media files, including the active reviewed galleries and retained POC/reference assets.
+- 137 Google Drive private-evidence files and 167 repository private-evidence files.
+- Browse reads approved inventory through the authenticated internal QNAP Data API; PostgreSQL and the Data API publish no host ports.
+- Public `/buy` and a customer-visible image return HTTP 200.
+- Mobile 390 x 844 Browse loaded all 6 filtered cover images; Vehicle Detail loaded all 14 rendered images.
+- A post-import PostgreSQL backup passed SHA-256 verification and restored into an isolated test database with 20 vehicles and 368 media rows.
+
+Not migrated or activated:
+
+- ChatGPT authentication headers and the existing Cloudflare D1 workspace remain on the ChatGPT Site.
+- Existing signed-in Saved items, Vehicle Cases, quotations, PI records, and audit history were not imported because a complete non-truncated D1 export and an approved replacement authentication boundary are not available.
+- The temporary public tunnel has no access control or stable URL guarantee and must not carry confidential customer, seller, financial, or internal-only data.
+- No Facebook, seller messaging, payment, paid AI, or other real external action was activated.
+
+Security note: QNAP-only database/API secrets are random, stored outside Git in a mode-600 environment file, and were not printed or copied into this document. The QNAP administrator password disclosed in chat must be rotated.

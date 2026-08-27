@@ -1007,3 +1007,35 @@ Started Milestone 1: Next.js shell and visual parity.
 
 - ChatGPT authentication headers and Cloudflare D1 data remain on the existing ChatGPT Site.
 - Moving signed-in Cases, Owner approvals, quotations, PI records, and audit history requires an approved QNAP authentication boundary, PostgreSQL adapter, D1 export/import, backup, and restore test before cutover.
+
+## 2026-08-27 - QNAP Inventory, Media, PostgreSQL, And Backup Migration
+
+### Completed
+
+- Preserved the existing ChatGPT Site and QNAP ports `4330`/`4331` as rollback/reference deployments.
+- Deployed commit `5e2be613e34e` side-by-side on QNAP port `4332` with isolated PostgreSQL, authenticated internal Data API, customer web, and daily backup services.
+- Migrated the Google staging export and Drive/repository media snapshot: 20 vehicles and 368 media records, with internal-only media excluded from the public web mount.
+- Switched QNAP Browse inventory reads to PostgreSQL through the Source Adapter boundary while retaining Google/repository fallbacks.
+- Split QNAP networking into private data and public web edge networks so PostgreSQL/Data API stay internal while the web port is reachable.
+- Fixed portable backup checksums and verified a complete post-import restore in an isolated temporary database.
+- Created a temporary QNAP public review URL: `https://desktop-tampa-unnecessary-provinces.trycloudflare.com/buy`.
+
+### Verification
+
+- QNAP containers `tony-nk-cars-postgres`, `tony-nk-cars-data`, and `tony-nk-cars-full`: healthy.
+- Inventory: 10 approved + 10 needs review; media: 64 customer-visible + 304 internal-only.
+- Public Browse and image requests: HTTP 200.
+- iPhone-size 390 x 844 Browse: 6/6 covers loaded; Vehicle Detail: 14/14 images loaded.
+- Backup SHA-256: passed; restore result: 20 vehicles and 368 media rows.
+- `npm.cmd test`: production build and 54/54 tests passed; TypeScript `--noEmit`, lint (0 errors, 13 existing image warnings), and `git diff --check` passed.
+
+### Owner Blockers
+
+- A production QNAP account/authentication boundary must be approved before migrating signed-in customer/Owner workflows away from ChatGPT authentication.
+- A complete non-truncated Cloudflare D1 export is required before importing existing Saved items, Vehicle Cases, quotations, PI records, and audit history. No partial state was imported.
+- A stable domain/Cloudflare Named Tunnel with access policy requires Owner-controlled Cloudflare authorization. The current Quick Tunnel is review-only.
+- Rotate the QNAP administrator password because it was disclosed in chat; it was not stored in Git or application configuration.
+
+### Next Recommended Step
+
+Approve and configure the production identity boundary and stable tunnel, then add a PostgreSQL workspace adapter and perform a verified D1 export/import before any traffic cutover. Until then, use QNAP for the migrated inventory/media review while the existing ChatGPT Site remains the authoritative signed-in workspace.

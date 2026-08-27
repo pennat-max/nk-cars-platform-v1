@@ -468,3 +468,31 @@ BB-V1D is blocked on approved production project/configuration and must not depl
 ### Next Smallest Safe Milestone
 
 `BB-V1D-06 - Authorized Issuer And Finance Setup` is blocked pending Owner-approved legal issuer details and Finance/payment policy. No further commercial activation should be coded with invented data.
+
+## QNAP Migration Gap Update - 2026-08-27
+
+### Closed Infrastructure Gaps
+
+- QNAP now has isolated PostgreSQL persistence, a least-privilege internal Data API, persistent customer/internal media roots, automated daily backups, and a tested restore path.
+- Reviewed inventory is no longer limited to a code snapshot on the QNAP deployment: 10 approved vehicles are served from PostgreSQL and 10 additional vehicles remain fail-closed as needs review.
+- Customer-visible and internal-only media have separate storage/mount boundaries; the public web container cannot mount internal evidence.
+
+### Remaining V1 Cutover Gaps
+
+- **Identity:** ChatGPT authentication cannot be copied to QNAP. Customer and Owner identities need an approved QNAP-compatible provider and least-privilege role policy.
+- **Workspace migration:** the PostgreSQL schema is ready, but existing D1 workspace/event/audit rows require a complete verified export. Truncated state must not be imported.
+- **Workspace runtime:** QNAP inventory is live in PostgreSQL, but authenticated Saved/Case/quotation/PI persistence still uses the ChatGPT D1 path when running on the ChatGPT Site and device-local fallback in the unauthenticated QNAP review.
+- **Stable ingress:** the account-less Quick Tunnel is temporary and unauthenticated. Production requires an Owner-authorized stable domain/tunnel and access policy.
+- **Secrets/integrations:** no OpenAI, Facebook, seller messaging, payment, or Google service-account secret was moved or activated.
+
+### V1-V5 Classification
+
+- **V1:** production identity, PostgreSQL workspace adapter, verified D1 import, stable ingress, and cutover/rollback rehearsal remain before QNAP can replace the signed-in ChatGPT Site.
+- **V2:** dealer/source network and trust/matching automation remain unchanged.
+- **V3:** payment, purchase approval, deposits/refunds, procurement finance, and Purchase Fund remain disabled.
+- **V4:** secured vehicle, inspection execution, repair, export/shipping, delivery, and after-sales remain future work.
+- **V5:** full audit expansion, 360 views, task/KPI, risk, reporting, forecast, and command center remain future work.
+
+### Smallest Safe Next Milestone
+
+`QNAP-V1-02 - Identity And Workspace Adapter`: select an Owner-approved identity boundary, implement the PostgreSQL workspace API with the existing revision/audit rules, import a complete D1 export into a staging namespace, and prove customer/Owner isolation before changing any production URL.

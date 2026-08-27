@@ -72,7 +72,9 @@ services:
       timeout: 10s
       start_period: 45s
       retries: 8
-    networks: [nk-cars-private]
+    networks:
+      - nk-cars-private
+      - nk-cars-edge
 
   nk-cars-backup:
     image: postgres:17-alpine
@@ -99,3 +101,5 @@ networks:
   nk-cars-private:
     name: nk-cars-private
     internal: true
+  nk-cars-edge:
+    name: nk-cars-edge
