@@ -1134,6 +1134,7 @@ test("customer pricing component renders amount-only NK fee labels and inclusion
   assert.match(component, /platformTransactionFee/);
   assert.match(component, /buyingServiceFee/);
   assert.match(component, /whatsIncluded/);
+  assert.match(component, /chooseDestinationFirst/);
   assert.doesNotMatch(component, /commissionRate|% service fee|10%/i);
 });
 

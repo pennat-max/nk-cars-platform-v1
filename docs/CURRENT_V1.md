@@ -218,6 +218,7 @@ Inspection/travel rule approved on 2026-08-28:
 
 Customer shipping plan rule approved on 2026-08-28:
 - Vehicle Case pricing lets the customer select destination country/port and shipment quantity from 1 to 3 cars.
+- The destination country is required before a shipping estimate can be calculated. If the customer changes only the car quantity without a destination, the Export / Shipping line prompts them to choose the country first.
 - The customer screen may show public-source indicative ocean freight ranges as a pre-booking estimate only. The customer-facing planning range keeps the public benchmark low end and adds a 15% planning buffer to the upper end so customers understand possible booking movement. These estimates can move up or down at actual booking.
 - Main export/ocean freight remains Pending for final quotation readiness until NK confirms the current route price from an Owner-approved freight rate table, provider quote, or API. Customer pricing may still display the selected route's planning range directly on the Export / Shipping line with an estimate label.
 - If the customer selects 3 cars in one shipment, the customer-facing Export / Shipping estimate includes the approved THB 22,000 Rushing/loading/stuffing service charge and explains the approximate per-car share using the customer FX rate.

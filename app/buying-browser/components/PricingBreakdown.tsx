@@ -24,12 +24,13 @@ const shippingCopy: Record<CustomerLanguage, {
   estimateSuffix: string;
   loadingService: string;
   loadingServiceNote: (totalUsd: number, perCarUsd: number) => string;
+  chooseDestinationFirst: string;
 }> = {
   en: {
     title: "Destination and shipping estimate",
     country: "Destination country",
     quantity: "Cars in this shipment",
-    choose: "Choose country",
+    choose: "Choose country to calculate",
     rule: "You can plan 1 to 3 cars in one shipment. The range below is for planning only; final freight is confirmed when NK books the route.",
     freightPending: "Export / Shipping remains Pending until NK confirms the live forwarder or booking rate. The final rate can move up or down.",
     loadingFee: "3-car container loading / stuffing fee",
@@ -42,12 +43,13 @@ const shippingCopy: Record<CustomerLanguage, {
     estimateSuffix: "est.",
     loadingService: "3-car Rushing / loading service",
     loadingServiceNote: (totalUsd, perCarUsd) => `THB 22,000 service is included above: USD ${totalUsd.toLocaleString("en-US")} total, about USD ${perCarUsd.toLocaleString("en-US")} per car when shared by 3 cars.`,
+    chooseDestinationFirst: "Choose country first",
   },
   "zh-CN": {
     title: "目的地和运费估算",
     country: "目的地国家",
     quantity: "本次运输车辆数",
-    choose: "选择国家",
+    choose: "选择国家后计算",
     rule: "客户可计划每次运输 1 至 3 辆车。以下范围仅供计划使用；最终运费以 NK 实际订舱确认为准。",
     freightPending: "Export / Shipping 仍为 Pending，直到 NK 确认实时货代或订舱价格。最终价格可能上调或下调。",
     loadingFee: "3 辆车装柜 / 装载费",
@@ -60,12 +62,13 @@ const shippingCopy: Record<CustomerLanguage, {
     estimateSuffix: "估算",
     loadingService: "3 辆车 Rushing / 装柜服务费",
     loadingServiceNote: (totalUsd, perCarUsd) => `THB 22,000 服务费已包含在上方估算内：总计 USD ${totalUsd.toLocaleString("en-US")}，3 辆车分摊约每辆 USD ${perCarUsd.toLocaleString("en-US")}。`,
+    chooseDestinationFirst: "请先选择国家",
   },
   th: {
     title: "ปลายทางและค่าชิปปิ้งประมาณการ",
     country: "ประเทศปลายทาง",
     quantity: "จำนวนรถในรอบส่งนี้",
-    choose: "เลือกประเทศ",
+    choose: "เลือกประเทศเพื่อคำนวณ",
     rule: "ลูกค้าสามารถวางแผนส่งได้ 1 ถึง 3 คันต่อรอบ ช่วงราคาด้านล่างใช้เพื่อวางแผนเท่านั้น ราคาจริงยืนยันตอน NK booking เส้นทางจริง",
     freightPending: "ยอด Export / Shipping ยังเป็น Pending จนกว่า NK จะยืนยันราคาจริงจาก forwarder หรือ booking ราคาจริงอาจขึ้นหรือลงได้",
     loadingFee: "ค่าบรรจุ / ชิ่งตู้สำหรับ 3 คัน",
@@ -78,6 +81,7 @@ const shippingCopy: Record<CustomerLanguage, {
     estimateSuffix: "ประมาณการ",
     loadingService: "ค่าบริการ Rushing / ชิ่งตู้ 3 คัน",
     loadingServiceNote: (totalUsd, perCarUsd) => `รวมค่าบริการ 22,000 บาทไว้ในยอดด้านบนแล้ว คิดเป็น USD ${totalUsd.toLocaleString("en-US")} ทั้งตู้ หรือประมาณ USD ${perCarUsd.toLocaleString("en-US")} ต่อคันเมื่อหาร 3 คัน`,
+    chooseDestinationFirst: "เลือกประเทศก่อน",
   },
 };
 
@@ -125,6 +129,7 @@ export default function PricingBreakdown({ vehicleCase }: { vehicleCase: Vehicle
   const updateQuantity = (vehicleQuantity: number) => updateCaseShippingPlan(vehicleCase.id, { destinationCountry: shippingCountry, vehicleQuantity });
   const displayedLineAmount = (line: { key: string; amountThb: number | null }) => {
     if (line.key === "shipping" && line.amountThb === null && planningShipment) return `${planningShipment} ${text.estimateSuffix}`;
+    if (line.key === "shipping" && line.amountThb === null && !shippingPlan.destinationCountry) return text.chooseDestinationFirst;
     return line.amountThb === null ? t("pending") : formatUsdFromThb(line.amountThb);
   };
   const displayedLineClass = (line: { key: string; amountThb: number | null; status: string }) => (
