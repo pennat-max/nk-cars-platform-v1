@@ -810,18 +810,23 @@ test("shipping plan records destination and adds only approved three-car loading
     planningFreightUsdHigh: 7900,
     planningShipmentUsdLow: 5729,
     planningShipmentUsdHigh: 8529,
+    planningPerVehicleUsdLow: 1910,
+    planningPerVehicleUsdHigh: 2843,
     planningBufferRate: SHIPPING_PLANNING_BUFFER_RATE,
     indicativeFreightSource: "Public 40ft Kenya market benchmarks; verify Thailand route before booking.",
     freightRateStatus: "Pending - rate source required",
   });
-  assert.equal(shippingPlanForSelection("Kenya", 2).planningShipmentUsdHigh, 7900);
+  assert.equal(shippingPlanForSelection("Kenya", 1).planningPerVehicleUsdHigh, 7900);
+  assert.equal(shippingPlanForSelection("Kenya", 2).planningPerVehicleUsdHigh, 3950);
   assert.equal(shippingPlanForSelection("Tanzania", 1).planningFreightUsdHigh, 10700);
   assert.deepEqual({
     low: shippingPlanForSelection("Tanzania", 3).planningShipmentUsdLow,
     high: shippingPlanForSelection("Tanzania", 3).planningShipmentUsdHigh,
+    perCarLow: shippingPlanForSelection("Tanzania", 3).planningPerVehicleUsdLow,
+    perCarHigh: shippingPlanForSelection("Tanzania", 3).planningPerVehicleUsdHigh,
     loadingTotal: shippingPlanForSelection("Tanzania", 3).containerLoadingFeeUsd,
     loadingPerCar: shippingPlanForSelection("Tanzania", 3).containerLoadingPerVehicleUsd,
-  }, { low: 9929, high: 11329, loadingTotal: 629, loadingPerCar: 210 });
+  }, { low: 9929, high: 11329, perCarLow: 3310, perCarHigh: 3776, loadingTotal: 629, loadingPerCar: 210 });
   const listing = presentCustomerListing(source);
   const vehicleCase = createVehicleCase(listing, [], "customer-1", "2026-08-23T10:00:00.000Z").caseRecord;
   const planned = applyCustomerShippingSelection(vehicleCase, { destinationCountry: "Kenya", vehicleQuantity: 3 }, "2026-08-23T10:05:00.000Z");

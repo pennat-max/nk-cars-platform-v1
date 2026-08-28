@@ -175,6 +175,10 @@ function customerUsdFromThb(valueThb) {
   return Math.round(valueThb / CUSTOMER_FX_THB_PER_USD);
 }
 
+function perVehicleEstimate(valueUsd, quantity) {
+  return valueUsd === null || valueUsd === undefined ? null : Math.round(valueUsd / quantity);
+}
+
 export function shippingPlanForSelection(destinationCountry, vehicleQuantity = 1) {
   const destination = shippingDestinationForCountry(destinationCountry);
   const quantity = normalizeShippingVehicleQuantity(vehicleQuantity);
@@ -184,6 +188,8 @@ export function shippingPlanForSelection(destinationCountry, vehicleQuantity = 1
   const containerLoadingFeeUsd = containerLoadingFeeThb ? customerUsdFromThb(containerLoadingFeeThb) : 0;
   const containerLoadingPerVehicleUsd = containerLoadingFeeThb ? customerUsdFromThb(containerLoadingFeeThb / quantity) : 0;
   const planningFreightUsdHigh = planningFreightHigh(indicativeFreightUsdHigh);
+  const planningShipmentUsdLow = indicativeFreightUsdLow === null ? null : indicativeFreightUsdLow + containerLoadingFeeUsd;
+  const planningShipmentUsdHigh = planningFreightUsdHigh === null ? null : planningFreightUsdHigh + containerLoadingFeeUsd;
   return {
     destinationCountry: destination?.country || null,
     destinationPort: destination?.port || null,
@@ -195,8 +201,10 @@ export function shippingPlanForSelection(destinationCountry, vehicleQuantity = 1
     indicativeFreightUsdHigh,
     planningFreightUsdLow: indicativeFreightUsdLow,
     planningFreightUsdHigh,
-    planningShipmentUsdLow: indicativeFreightUsdLow === null ? null : indicativeFreightUsdLow + containerLoadingFeeUsd,
-    planningShipmentUsdHigh: planningFreightUsdHigh === null ? null : planningFreightUsdHigh + containerLoadingFeeUsd,
+    planningShipmentUsdLow,
+    planningShipmentUsdHigh,
+    planningPerVehicleUsdLow: perVehicleEstimate(planningShipmentUsdLow, quantity),
+    planningPerVehicleUsdHigh: perVehicleEstimate(planningShipmentUsdHigh, quantity),
     planningBufferRate: SHIPPING_PLANNING_BUFFER_RATE,
     indicativeFreightSource: destination?.estimateSource ?? null,
     freightRateStatus: destination ? "Pending - rate source required" : "Pending - destination required",
