@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   CUSTOMER_FX_THB_PER_USD,
   DEFAULT_FILTERS,
+  SHIPPING_PLANNING_BUFFER_RATE,
   THREE_CAR_CONTAINER_LOADING_FEE_THB,
   addCaseQuestion,
   applyCustomerShippingSelection,
@@ -803,9 +804,13 @@ test("shipping plan records destination and adds only approved three-car loading
     containerLoadingFeeThb: THREE_CAR_CONTAINER_LOADING_FEE_THB,
     indicativeFreightUsdLow: 5100,
     indicativeFreightUsdHigh: 6800,
+    planningFreightUsdLow: 5100,
+    planningFreightUsdHigh: 7900,
+    planningBufferRate: SHIPPING_PLANNING_BUFFER_RATE,
     indicativeFreightSource: "Public 40ft Kenya market benchmarks; verify Thailand route before booking.",
     freightRateStatus: "Pending - rate source required",
   });
+  assert.equal(shippingPlanForSelection("Tanzania", 1).planningFreightUsdHigh, 10700);
   const listing = presentCustomerListing(source);
   const vehicleCase = createVehicleCase(listing, [], "customer-1", "2026-08-23T10:00:00.000Z").caseRecord;
   const planned = applyCustomerShippingSelection(vehicleCase, { destinationCountry: "Kenya", vehicleQuantity: 3 }, "2026-08-23T10:05:00.000Z");

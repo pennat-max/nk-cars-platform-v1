@@ -20,6 +20,7 @@ export const NEARBY_BANGKOK_LOCATIONS = Object.freeze([
 export const BANGKOK_INSPECTION_FEE_THB = 5000;
 export const OUTSIDE_BANGKOK_INSPECTION_RATE_THB_PER_KM = 20;
 export const THREE_CAR_CONTAINER_LOADING_FEE_THB = 22000;
+export const SHIPPING_PLANNING_BUFFER_RATE = 0.15;
 export const SHIPPING_DESTINATIONS = Object.freeze([
   { country: "Kenya", port: "Mombasa", estimateUsdLow: 5100, estimateUsdHigh: 6800, estimateSource: "Public 40ft Kenya market benchmarks; verify Thailand route before booking." },
   { country: "Tanzania", port: "Dar es Salaam", estimateUsdLow: 9300, estimateUsdHigh: 9300, estimateSource: "Public Thailand to Dar es Salaam 40ft quote sample; verify before booking." },
@@ -164,16 +165,27 @@ export function shippingDestinationForCountry(country) {
   return SHIPPING_DESTINATIONS.find((item) => item.country.toLowerCase() === normalized) || null;
 }
 
+function planningFreightHigh(estimateHigh) {
+  return estimateHigh === null || estimateHigh === undefined
+    ? null
+    : Math.ceil((estimateHigh * (1 + SHIPPING_PLANNING_BUFFER_RATE)) / 100) * 100;
+}
+
 export function shippingPlanForSelection(destinationCountry, vehicleQuantity = 1) {
   const destination = shippingDestinationForCountry(destinationCountry);
   const quantity = normalizeShippingVehicleQuantity(vehicleQuantity);
+  const indicativeFreightUsdLow = destination?.estimateUsdLow ?? null;
+  const indicativeFreightUsdHigh = destination?.estimateUsdHigh ?? null;
   return {
     destinationCountry: destination?.country || null,
     destinationPort: destination?.port || null,
     vehicleQuantity: quantity,
     containerLoadingFeeThb: quantity === 3 ? THREE_CAR_CONTAINER_LOADING_FEE_THB : 0,
-    indicativeFreightUsdLow: destination?.estimateUsdLow ?? null,
-    indicativeFreightUsdHigh: destination?.estimateUsdHigh ?? null,
+    indicativeFreightUsdLow,
+    indicativeFreightUsdHigh,
+    planningFreightUsdLow: indicativeFreightUsdLow,
+    planningFreightUsdHigh: planningFreightHigh(indicativeFreightUsdHigh),
+    planningBufferRate: SHIPPING_PLANNING_BUFFER_RATE,
     indicativeFreightSource: destination?.estimateSource ?? null,
     freightRateStatus: destination ? "Pending - rate source required" : "Pending - destination required",
   };

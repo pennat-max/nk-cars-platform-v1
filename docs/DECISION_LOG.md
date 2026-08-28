@@ -345,7 +345,7 @@ Decision:
 - Inspection/travel pricing is now deterministic: Bangkok Metro starts at THB 5,000, and outside Bangkok Metro uses configured distance from Bangkok x THB 20 per km with THB 5,000 as the current minimum charge.
 - Unknown vehicle locations remain Pending until NK configures or confirms the location. AI must not estimate inspection distance or fee.
 - Customer Vehicle Case pricing now lets the customer choose destination country/port and shipment quantity from 1 to 3 cars.
-- Customer screens may show public-source indicative ocean freight ranges as pre-booking estimates only. They can move up or down at actual booking.
+- Customer screens may show public-source indicative ocean freight ranges as pre-booking estimates only. The customer-facing planning range keeps the public benchmark low end and adds a 15% planning buffer to the upper end so the possible booking movement is visible.
 - Main export/ocean freight is still Pending until NK records an Owner-approved freight table, provider quote, or API result for the selected route.
 - Selecting 3 cars adds the approved THB 22,000 container loading/stuffing charge as a customer-visible pricing line.
 - This does not book shipping, send supplier/customer messages, confirm freight availability, accept payment, purchase a vehicle, or activate QNAP/Hermes behavior.
