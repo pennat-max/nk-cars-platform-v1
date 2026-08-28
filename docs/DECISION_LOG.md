@@ -336,3 +336,15 @@ Decision:
 - NK-specific controls remain where required: NK header, search/filter/sort, Save heart, customer-safe NK Selection state, Paste Link, Ask NK AI, and bottom navigation.
 - This is an inspired layout treatment only, not a Facebook embed, proxy, login, scraping, or source-access change.
 - No Vehicle Case workflow, pricing math, inspection behavior, QNAP/Hermes activation, seller messaging, payment, purchase, or publication behavior changes are authorized by this visual update.
+
+## 2026-08-28 - Inspection and customer shipping-plan pricing rules
+
+Status: APPROVED AND IMPLEMENTED
+
+Decision:
+- Inspection/travel pricing is now deterministic: Bangkok is THB 5,000, and outside Bangkok uses configured distance from Bangkok x THB 20 per km.
+- Unknown vehicle locations remain Pending until NK configures or confirms the location. AI must not estimate inspection distance or fee.
+- Customer Vehicle Case pricing now lets the customer choose destination country/port and shipment quantity from 1 to 3 cars.
+- Main export/ocean freight is still Pending until NK records an Owner-approved freight table, provider quote, or API result for the selected route.
+- Selecting 3 cars adds the approved THB 22,000 container loading/stuffing charge as a customer-visible pricing line.
+- This does not book shipping, send supplier/customer messages, confirm freight availability, accept payment, purchase a vehicle, or activate QNAP/Hermes behavior.

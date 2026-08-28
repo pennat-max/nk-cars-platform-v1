@@ -3,7 +3,9 @@ import test from "node:test";
 import {
   CUSTOMER_FX_THB_PER_USD,
   DEFAULT_FILTERS,
+  THREE_CAR_CONTAINER_LOADING_FEE_THB,
   addCaseQuestion,
+  applyCustomerShippingSelection,
   assessQuotationReadiness,
   calculatePricing,
   customerUsdToThb,
@@ -16,6 +18,7 @@ import {
   requestAvailability,
   requestInspection,
   requestQuotation,
+  shippingPlanForSelection,
 } from "../app/buying-browser/domain.mjs";
 import { detectSourceLanguage, localizeAvailability, localizeListingSummary, normalizeLanguage, translate } from "../app/buying-browser/i18n.mjs";
 import { normalizeCustomerImageContentType, parseGoogleStagingValues, readBoundedResponseBytes } from "../app/buying-browser/source-adapters/google-staging-parser.mjs";
@@ -785,9 +788,43 @@ test("customer USD display uses one deterministic preview FX rate", () => {
 });
 
 test("inspection quote uses deterministic configured location zones", () => {
-  assert.deepEqual(inspectionQuoteForLocation("Bangkok, Thailand"), { region: "Bangkok Metro", baseFeeThb: 2900, travelFeeThb: 600, totalThb: 3500, status: "Quote Ready" });
-  assert.deepEqual(inspectionQuoteForLocation("Nakhon Pathom, Thailand"), { region: "Bangkok Metro", baseFeeThb: 2900, travelFeeThb: 600, totalThb: 3500, status: "Quote Ready" });
+  assert.deepEqual(inspectionQuoteForLocation("Bangkok, Thailand"), { region: "Bangkok", baseFeeThb: 5000, travelFeeThb: 0, totalThb: 5000, status: "Quote Ready" });
+  assert.deepEqual(inspectionQuoteForLocation("Nakhon Pathom, Thailand"), { region: "Outside Bangkok - 58 km", baseFeeThb: 0, travelFeeThb: 1160, totalThb: 1160, status: "Quote Ready" });
   assert.equal(inspectionQuoteForLocation("Unknown province"), null);
+});
+
+test("shipping plan records destination and adds only approved three-car loading fee", () => {
+  assert.deepEqual(shippingPlanForSelection("Kenya", 3), {
+    destinationCountry: "Kenya",
+    destinationPort: "Mombasa",
+    vehicleQuantity: 3,
+    containerLoadingFeeThb: THREE_CAR_CONTAINER_LOADING_FEE_THB,
+    freightRateStatus: "Pending - rate source required",
+  });
+  const listing = presentCustomerListing(source);
+  const vehicleCase = createVehicleCase(listing, [], "customer-1", "2026-08-23T10:00:00.000Z").caseRecord;
+  const planned = applyCustomerShippingSelection(vehicleCase, { destinationCountry: "Kenya", vehicleQuantity: 3 }, "2026-08-23T10:05:00.000Z");
+  assert.equal(planned.shippingDestinationCountry, "Kenya");
+  assert.equal(planned.shippingDestinationPort, "Mombasa");
+  assert.equal(planned.shippingVehicleQuantity, 3);
+  assert.equal(planned.shippingContainerLoadingFeeThb, 22000);
+  assert.equal(planned.exportShippingThb, null, "main ocean freight stays pending until an approved rate source is used");
+  const replanned = applyCustomerShippingSelection(planned, { destinationCountry: "Tanzania", vehicleQuantity: 1 }, "2026-08-23T10:06:00.000Z");
+  assert.equal(replanned.messages.filter((item) => item.id.includes("-shipping-plan-")).length, 1);
+  assert.equal(replanned.timeline.filter((item) => item.id.includes("-shipping-plan-timeline-")).length, 1);
+  const pricing = calculatePricing({
+    vehiclePriceThb: 500000,
+    platformTransactionRate: 6,
+    buyingServiceRate: 4,
+    inspectionTravelThb: planned.inspectionQuote.totalThb,
+    domesticTransportThb: null,
+    repairModificationThb: null,
+    exportShippingThb: planned.exportShippingThb,
+    containerLoadingFeeThb: planned.shippingContainerLoadingFeeThb,
+    otherAgreedThb: null,
+  });
+  assert.equal(pricing.lines.find((line) => line.key === "containerLoading")?.amountThb, 22000);
+  assert.equal(pricing.lines.find((line) => line.key === "shipping")?.status, "Pending");
 });
 
 test("Vehicle Case deduplicates save and records honest pending workflows", () => {

@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useEffectEvent, useMemo, useRef, useState, type ReactNode } from "react";
-import { addCaseQuestion, createVehicleCase, initialBuyingBrowserState, requestAvailability, requestInspection, requestQuotation } from "./domain.mjs";
+import { addCaseQuestion, applyCustomerShippingSelection, createVehicleCase, initialBuyingBrowserState, requestAvailability, requestInspection, requestQuotation } from "./domain.mjs";
 import { normalizeLanguage } from "./i18n.mjs";
 import { loadPricingSettings } from "./pricing-settings";
 import { clearPreviewMedia, hydratePreviewMedia, persistPreviewMedia, stateForLocalStorage } from "./preview-media";
@@ -25,6 +25,7 @@ type BuyingBrowserContextValue = {
   requestCaseAvailability: (caseId: string) => void;
   requestCaseInspection: (caseId: string) => void;
   requestCaseQuotation: (caseId: string) => void;
+  updateCaseShippingPlan: (caseId: string, selection: { destinationCountry: string; vehicleQuantity: number }) => void;
   acceptCaseQuotation: (caseId: string, quotationNumber: string) => Promise<void>;
   askCaseQuestion: (caseId: string, question: string) => void;
   addImportedListing: (listing: CustomerListing, sourceCapture?: SourceCapture) => void;
@@ -286,6 +287,10 @@ export function BuyingBrowserProvider({
     updateCase(caseId, (record) => requestQuotation(record, new Date(), language));
   }
 
+  function updateCaseShippingPlan(caseId: string, selection: { destinationCountry: string; vehicleQuantity: number }) {
+    updateCase(caseId, (record) => applyCustomerShippingSelection(record, selection, new Date()));
+  }
+
   async function acceptCaseQuotation(caseId: string, quotationNumber: string) {
     if (!durableAccount) throw new Error("authentication_required");
     const response = await fetch("/api/buying-browser/quotation/accept", {
@@ -334,6 +339,7 @@ export function BuyingBrowserProvider({
     requestCaseAvailability,
     requestCaseInspection,
     requestCaseQuotation,
+    updateCaseShippingPlan,
     acceptCaseQuotation,
     askCaseQuestion,
     addImportedListing,

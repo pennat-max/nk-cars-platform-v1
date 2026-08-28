@@ -211,6 +211,17 @@ Do not apply NK percentage fees to pass-through costs unless an approved future 
 
 All important calculations must be deterministic.
 
+Inspection/travel rule approved on 2026-08-28:
+- Bangkok vehicle inspection is THB 5,000.
+- Outside Bangkok inspection/travel uses configured distance from Bangkok x THB 20 per km.
+- Unknown locations remain Pending until NK configures or confirms the location; AI must not estimate the distance or fee.
+
+Customer shipping plan rule approved on 2026-08-28:
+- Vehicle Case pricing lets the customer select destination country/port and shipment quantity from 1 to 3 cars.
+- Main export/ocean freight remains Pending until NK confirms the current route price from an Owner-approved freight rate table, provider quote, or API.
+- If the customer selects 3 cars in one shipment, the pricing snapshot adds the approved THB 22,000 container loading/stuffing charge.
+- The customer selection records only the shipping plan. It does not book shipping, send a message, confirm freight, accept payment, or purchase a vehicle.
+
 ## 10. Language support
 
 Customer-facing V1 supports:
@@ -352,6 +363,8 @@ Public entry behavior: `https://nkautotrade.com/` redirects directly to `/buy`. 
 Owner visual review route: `/preview/marketplace-style` is an isolated, noindex visual preview for a lighter Marketplace-style mobile Browse/Detail direction. It does not mutate workspace data and does not activate real messaging, payment, QNAP, Hermes, or production sourcing behavior.
 
 Customer mobile visual direction: the active `/buy` customer screens now use an Owner-approved Facebook Marketplace-inspired mobile Browse layout on small phones: white feed background, dense two-column image grid, square photos, minimal/no heavy card frame, price-first typography, simple listing title/location text, and lighter search/filter chips. The earlier readability pass remains for non-feed customer surfaces: Vehicle Detail keeps the shorter mobile source-price copy, top-level Check Availability / Ask NK AI / Request Inspection actions, no bottom-navigation overlap, and larger specification/summary text. My Cases, Account, chat, pricing, quotation, and PI customer surfaces keep larger mobile text and touch targets. The underlying Vehicle Case, pricing, inspection, localization, source adapter, and safety boundaries remain unchanged.
+
+Pricing update: Vehicle Case now applies the approved inspection/travel rule of THB 5,000 in Bangkok and configured outside-Bangkok distance x THB 20/km. Customer pricing also includes a destination country/port and 1-3 car shipping planner. Selecting 3 cars adds the approved THB 22,000 container loading/stuffing line, while the main Export/Shipping line remains Pending until Owner-confirmed freight pricing is recorded.
 
 Identity/workspace activation checkpoint:
 - The application now supports a provider-neutral QNAP identity gateway without collecting passwords in NK forms.

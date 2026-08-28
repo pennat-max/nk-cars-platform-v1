@@ -45,6 +45,10 @@ export function ownerCaseMaterialSnapshot(caseRecord) {
     domesticTransportThb: caseRecord.domesticTransportThb ?? null,
     repairModificationThb: caseRecord.repairModificationThb ?? null,
     exportShippingThb: caseRecord.exportShippingThb ?? null,
+    shippingDestinationCountry: caseRecord.shippingDestinationCountry ?? null,
+    shippingDestinationPort: caseRecord.shippingDestinationPort ?? null,
+    shippingVehicleQuantity: caseRecord.shippingVehicleQuantity ?? 1,
+    shippingContainerLoadingFeeThb: caseRecord.shippingContainerLoadingFeeThb ?? null,
     otherAgreedThb: caseRecord.otherAgreedThb ?? null,
   };
 }

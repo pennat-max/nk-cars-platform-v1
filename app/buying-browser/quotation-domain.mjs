@@ -10,6 +10,10 @@ export function quotationMaterialKey(caseRecord) {
     domesticTransportThb: caseRecord.domesticTransportThb ?? null,
     repairModificationThb: caseRecord.repairModificationThb ?? null,
     exportShippingThb: caseRecord.exportShippingThb ?? null,
+    shippingDestinationCountry: caseRecord.shippingDestinationCountry ?? null,
+    shippingDestinationPort: caseRecord.shippingDestinationPort ?? null,
+    shippingVehicleQuantity: caseRecord.shippingVehicleQuantity ?? 1,
+    shippingContainerLoadingFeeThb: caseRecord.shippingContainerLoadingFeeThb ?? null,
     otherAgreedThb: caseRecord.otherAgreedThb ?? null,
   });
 }
@@ -41,6 +45,7 @@ export function issueQuotation(caseRecord, quotationNumber, now = new Date()) {
     domesticTransportThb: caseRecord.domesticTransportThb,
     repairModificationThb: caseRecord.repairModificationThb,
     exportShippingThb: caseRecord.exportShippingThb,
+    containerLoadingFeeThb: caseRecord.shippingContainerLoadingFeeThb,
     otherAgreedThb: caseRecord.otherAgreedThb,
   });
   if (pricing.pendingCount > 0) throw new Error("quotation_not_ready");

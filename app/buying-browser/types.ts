@@ -132,6 +132,10 @@ export type VehicleCase = {
   domesticTransportThb: number | null;
   repairModificationThb: number | null;
   exportShippingThb: number | null;
+  shippingDestinationCountry?: string | null;
+  shippingDestinationPort?: string | null;
+  shippingVehicleQuantity?: 1 | 2 | 3;
+  shippingContainerLoadingFeeThb?: number | null;
   otherAgreedThb: number | null;
   ownerVerification?: {
     status: "Owner Verified";

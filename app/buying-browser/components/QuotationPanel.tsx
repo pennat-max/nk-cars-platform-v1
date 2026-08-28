@@ -27,7 +27,7 @@ export default function QuotationPanel({ vehicleCase }: { vehicleCase: VehicleCa
   if (!quotation) return null;
   const text = copy[language];
   const status = currentQuotationStatus(quotation, new Date());
-  const labels: Record<string, string> = { vehicle: t("vehiclePrice"), platformTransaction: t("platformTransactionFee"), buyingService: t("buyingServiceFee"), inspection: t("inspectionTravel"), transport: t("domesticTransport"), repair: t("repairModification"), shipping: t("exportShipping"), other: t("otherAgreedCharges") };
+  const labels: Record<string, string> = { vehicle: t("vehiclePrice"), platformTransaction: t("platformTransactionFee"), buyingService: t("buyingServiceFee"), inspection: t("inspectionTravel"), transport: t("domesticTransport"), repair: t("repairModification"), shipping: t("exportShipping"), containerLoading: "3-car container loading / stuffing", other: t("otherAgreedCharges") };
 
   async function accept() {
     setSaving(true);

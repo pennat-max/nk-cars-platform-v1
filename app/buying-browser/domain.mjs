@@ -17,6 +17,20 @@ export const NEARBY_BANGKOK_LOCATIONS = Object.freeze([
   "Chachoengsao",
   "Chon Buri",
 ]);
+export const BANGKOK_INSPECTION_FEE_THB = 5000;
+export const OUTSIDE_BANGKOK_INSPECTION_RATE_THB_PER_KM = 20;
+export const THREE_CAR_CONTAINER_LOADING_FEE_THB = 22000;
+export const SHIPPING_DESTINATIONS = Object.freeze([
+  { country: "Kenya", port: "Mombasa" },
+  { country: "Tanzania", port: "Dar es Salaam" },
+  { country: "Zambia", port: "Dar es Salaam" },
+  { country: "Malawi", port: "Beira" },
+  { country: "Zimbabwe", port: "Maputo" },
+  { country: "Mozambique", port: "Maputo" },
+  { country: "Ghana", port: "Tema" },
+  { country: "Uganda", port: "Mombasa" },
+  { country: "South Africa", port: "Durban" },
+]);
 
 export function formatCustomerUsd(value) {
   if (value === null || value === undefined) return "Pending";
@@ -43,13 +57,33 @@ export const DEFAULT_FILTERS = Object.freeze({
   sort: "recommended",
 });
 
-const INSPECTION_REGIONS = [
-  { name: "Bangkok Metro", locations: BANGKOK_METRO_LOCATIONS, base: 2900, travel: 600 },
-  { name: "Central Thailand", locations: ["Ayutthaya", "Chachoengsao", "Saraburi", "Suphan Buri"], base: 2900, travel: 1200 },
-  { name: "Eastern Thailand", locations: ["Chon Buri", "Rayong", "Pattaya", "Chanthaburi"], base: 2900, travel: 1600 },
-  { name: "Northern Thailand", locations: ["Chiang Mai", "Chiang Rai", "Phitsanulok", "Lampang"], base: 2900, travel: 3100 },
-  { name: "Northeastern Thailand", locations: ["Khon Kaen", "Nakhon Ratchasima", "Udon Thani", "Ubon Ratchathani"], base: 2900, travel: 3100 },
-  { name: "Southern Thailand", locations: ["Songkhla", "Surat Thani", "Phuket", "Nakhon Si Thammarat"], base: 2900, travel: 4100 },
+const INSPECTION_LOCATIONS = [
+  { location: "Bangkok", region: "Bangkok", distanceKm: 0 },
+  { location: "Nonthaburi", region: "Outside Bangkok", distanceKm: 18 },
+  { location: "Pathum Thani", region: "Outside Bangkok", distanceKm: 42 },
+  { location: "Samut Prakan", region: "Outside Bangkok", distanceKm: 32 },
+  { location: "Samut Sakhon", region: "Outside Bangkok", distanceKm: 39 },
+  { location: "Nakhon Pathom", region: "Outside Bangkok", distanceKm: 58 },
+  { location: "Ayutthaya", region: "Outside Bangkok", distanceKm: 81 },
+  { location: "Chachoengsao", region: "Outside Bangkok", distanceKm: 72 },
+  { location: "Saraburi", region: "Outside Bangkok", distanceKm: 108 },
+  { location: "Suphan Buri", region: "Outside Bangkok", distanceKm: 110 },
+  { location: "Chon Buri", region: "Outside Bangkok", distanceKm: 85 },
+  { location: "Pattaya", region: "Outside Bangkok", distanceKm: 150 },
+  { location: "Rayong", region: "Outside Bangkok", distanceKm: 179 },
+  { location: "Chanthaburi", region: "Outside Bangkok", distanceKm: 245 },
+  { location: "Nakhon Ratchasima", region: "Outside Bangkok", distanceKm: 260 },
+  { location: "Khon Kaen", region: "Outside Bangkok", distanceKm: 450 },
+  { location: "Udon Thani", region: "Outside Bangkok", distanceKm: 565 },
+  { location: "Ubon Ratchathani", region: "Outside Bangkok", distanceKm: 630 },
+  { location: "Phitsanulok", region: "Outside Bangkok", distanceKm: 377 },
+  { location: "Lampang", region: "Outside Bangkok", distanceKm: 600 },
+  { location: "Chiang Mai", region: "Outside Bangkok", distanceKm: 700 },
+  { location: "Chiang Rai", region: "Outside Bangkok", distanceKm: 785 },
+  { location: "Surat Thani", region: "Outside Bangkok", distanceKm: 645 },
+  { location: "Nakhon Si Thammarat", region: "Outside Bangkok", distanceKm: 780 },
+  { location: "Phuket", region: "Outside Bangkok", distanceKm: 840 },
+  { location: "Songkhla", region: "Outside Bangkok", distanceKm: 950 },
 ];
 
 const numberOrNull = (value) => {
@@ -106,9 +140,71 @@ export function filterListings(listings, filters = DEFAULT_FILTERS) {
 
 export function inspectionQuoteForLocation(location) {
   const normalized = String(location || "").toLowerCase();
-  const region = INSPECTION_REGIONS.find((item) => item.locations.some((candidate) => normalized.includes(candidate.toLowerCase())));
-  if (!region) return null;
-  return { region: region.name, baseFeeThb: region.base, travelFeeThb: region.travel, totalThb: region.base + region.travel, status: "Quote Ready" };
+  const matched = INSPECTION_LOCATIONS.find((item) => normalized.includes(item.location.toLowerCase()));
+  if (!matched) return null;
+  const isBangkok = matched.location === "Bangkok";
+  const totalThb = isBangkok ? BANGKOK_INSPECTION_FEE_THB : matched.distanceKm * OUTSIDE_BANGKOK_INSPECTION_RATE_THB_PER_KM;
+  return {
+    region: isBangkok ? "Bangkok" : `${matched.region} - ${matched.distanceKm} km`,
+    baseFeeThb: isBangkok ? BANGKOK_INSPECTION_FEE_THB : 0,
+    travelFeeThb: isBangkok ? 0 : totalThb,
+    totalThb,
+    status: "Quote Ready",
+  };
+}
+
+export function normalizeShippingVehicleQuantity(value) {
+  const parsed = Math.trunc(Number(value));
+  return [1, 2, 3].includes(parsed) ? parsed : 1;
+}
+
+export function shippingDestinationForCountry(country) {
+  const normalized = String(country || "").trim().toLowerCase();
+  return SHIPPING_DESTINATIONS.find((item) => item.country.toLowerCase() === normalized) || null;
+}
+
+export function shippingPlanForSelection(destinationCountry, vehicleQuantity = 1) {
+  const destination = shippingDestinationForCountry(destinationCountry);
+  const quantity = normalizeShippingVehicleQuantity(vehicleQuantity);
+  return {
+    destinationCountry: destination?.country || null,
+    destinationPort: destination?.port || null,
+    vehicleQuantity: quantity,
+    containerLoadingFeeThb: quantity === 3 ? THREE_CAR_CONTAINER_LOADING_FEE_THB : 0,
+    freightRateStatus: destination ? "Pending - rate source required" : "Pending - destination required",
+  };
+}
+
+export function applyCustomerShippingSelection(caseRecord, selection, now = new Date()) {
+  const createdAt = safeTime(now);
+  const plan = shippingPlanForSelection(selection?.destinationCountry, selection?.vehicleQuantity);
+  const priorShippingMessagePrefix = `${caseRecord.id}-shipping-plan-`;
+  const priorShippingTimelinePrefix = `${caseRecord.id}-shipping-plan-timeline-`;
+  return {
+    ...caseRecord,
+    updatedAt: createdAt,
+    shippingDestinationCountry: plan.destinationCountry,
+    shippingDestinationPort: plan.destinationPort,
+    shippingVehicleQuantity: plan.vehicleQuantity,
+    shippingContainerLoadingFeeThb: plan.containerLoadingFeeThb,
+    messages: [...caseRecord.messages.filter((item) => !String(item.id).startsWith(priorShippingMessagePrefix)), {
+      id: `${caseRecord.id}-shipping-plan-${createdAt}`,
+      sender: "System",
+      text: plan.destinationCountry
+        ? `Customer selected ${plan.vehicleQuantity} vehicle${plan.vehicleQuantity === 1 ? "" : "s"} for ${plan.destinationCountry} via ${plan.destinationPort}. Ocean freight remains pending until NK uses an approved rate source.`
+        : "Customer cleared the shipping destination. Ocean freight remains pending.",
+      createdAt,
+      delivery: "Recorded",
+    }],
+    timeline: [...caseRecord.timeline.filter((item) => !String(item.id).startsWith(priorShippingTimelinePrefix)), {
+      id: `${caseRecord.id}-shipping-plan-timeline-${createdAt}`,
+      title: "Shipping plan selected",
+      detail: plan.destinationCountry
+        ? `${plan.destinationCountry} / ${plan.destinationPort}; ${plan.vehicleQuantity} vehicle${plan.vehicleQuantity === 1 ? "" : "s"}. Freight rate pending approved source.`
+        : "Shipping destination cleared. Freight rate pending approved source.",
+      createdAt,
+    }],
+  };
 }
 
 export function calculatePricing(input) {
@@ -125,6 +221,7 @@ export function calculatePricing(input) {
     { key: "transport", amountThb: numberOrNull(input.domesticTransportThb) },
     { key: "repair", amountThb: numberOrNull(input.repairModificationThb) },
     { key: "shipping", amountThb: numberOrNull(input.exportShippingThb) },
+    ...(numberOrNull(input.containerLoadingFeeThb) ? [{ key: "containerLoading", amountThb: numberOrNull(input.containerLoadingFeeThb) }] : []),
     { key: "other", amountThb: numberOrNull(input.otherAgreedThb) },
   ].map((line) => ({ ...line, status: line.amountThb === null ? "Pending" : "Known" }));
   return { platformTransactionRate, buyingServiceRate, platformTransactionAmountThb: platformTransactionAmount, buyingServiceAmountThb: buyingServiceAmount, totalNkFeeAmountThb: vehiclePrice === null ? null : platformTransactionAmount + buyingServiceAmount, knownSubtotalThb: lines.reduce((total, line) => total + (line.amountThb ?? 0), 0), pendingCount: lines.filter((line) => line.amountThb === null).length, lines };
@@ -225,7 +322,7 @@ export function createVehicleCase(listing, existingCases, customerId, now = new 
   const platformTransactionRate = Number.isFinite(Number(pricingSettings.platformTransactionRate)) ? Math.max(0, Number(pricingSettings.platformTransactionRate)) : DEFAULT_PLATFORM_TRANSACTION_RATE;
   const buyingServiceRate = Number.isFinite(Number(pricingSettings.buyingServiceRate)) ? Math.max(0, Number(pricingSettings.buyingServiceRate)) : DEFAULT_BUYING_SERVICE_RATE;
   const caseRecord = {
-    id: caseId, customerId, listingId: listing.id, sourceReference: listing.sourceReference, sourceCaptureId, createdAt, updatedAt: createdAt, status: "Saved", availability: "Availability Not Yet Confirmed", vehicle: { ...listing, availability: "Availability Not Yet Confirmed" }, actualVehiclePurchasePriceThb: null, platformTransactionRate, buyingServiceRate, inspectionQuote: quote, domesticTransportThb: null, repairModificationThb: null, exportShippingThb: null, otherAgreedThb: null, quotationRequest: null, translationHistory: [],
+    id: caseId, customerId, listingId: listing.id, sourceReference: listing.sourceReference, sourceCaptureId, createdAt, updatedAt: createdAt, status: "Saved", availability: "Availability Not Yet Confirmed", vehicle: { ...listing, availability: "Availability Not Yet Confirmed" }, actualVehiclePurchasePriceThb: null, platformTransactionRate, buyingServiceRate, inspectionQuote: quote, domesticTransportThb: null, repairModificationThb: null, exportShippingThb: null, shippingDestinationCountry: null, shippingDestinationPort: null, shippingVehicleQuantity: 1, shippingContainerLoadingFeeThb: null, otherAgreedThb: null, quotationRequest: null, translationHistory: [],
     messages: [{ id: `${caseId}-welcome`, sender: "NK AI", text: `I created ${caseId} for this ${listing.title}. Availability and the current seller price have not been verified yet.`, createdAt, delivery: "Local preview" }],
     timeline: [{ id: `${caseId}-saved`, title: "Vehicle saved", detail: sourceCaptureId ? "External source link captured internally and customer-safe listing data saved as an NK Vehicle Case." : "Customer-safe source result saved as an NK Vehicle Case.", createdAt }],
   };
@@ -298,7 +395,7 @@ export function buildGroundedAssistantReply(caseRecord, question, language = "en
   if (selected !== "en") {
     if (/available|availability|still there|seller|还在|可售|ผู้ขาย|ยังอยู่/.test(text)) return selected === "zh-CN" ? `车辆可售状态尚未确认。当前案件状态为“${caseRecord.availability}”。我不会猜测或把车辆描述为可售。` : `ยังไม่ได้ยืนยันว่ารถยังอยู่ สถานะปัจจุบันคือ “${caseRecord.availability}” ระบบจะไม่คาดเดาหรือแสดงว่ารถยังอยู่`;
     if (/price|cost|fee|total|commission|价格|费用|最低|ราคา|ค่าใช้จ่าย/.test(text)) {
-      const pricing = calculatePricing({ vehiclePriceThb: caseRecord.actualVehiclePurchasePriceThb ?? vehicle.observedPriceThb, platformTransactionRate: caseRecord.platformTransactionRate, buyingServiceRate: caseRecord.buyingServiceRate, inspectionTravelThb: caseRecord.inspectionQuote?.totalThb ?? null, domesticTransportThb: caseRecord.domesticTransportThb, repairModificationThb: caseRecord.repairModificationThb, exportShippingThb: caseRecord.exportShippingThb, otherAgreedThb: caseRecord.otherAgreedThb });
+      const pricing = calculatePricing({ vehiclePriceThb: caseRecord.actualVehiclePurchasePriceThb ?? vehicle.observedPriceThb, platformTransactionRate: caseRecord.platformTransactionRate, buyingServiceRate: caseRecord.buyingServiceRate, inspectionTravelThb: caseRecord.inspectionQuote?.totalThb ?? null, domesticTransportThb: caseRecord.domesticTransportThb, repairModificationThb: caseRecord.repairModificationThb, exportShippingThb: caseRecord.exportShippingThb, containerLoadingFeeThb: caseRecord.shippingContainerLoadingFeeThb, otherAgreedThb: caseRecord.otherAgreedThb });
       const feeText = `${translate(selected, "platformTransactionFee")} ${formatCustomerUsd(pricing.platformTransactionAmountThb)} + ${translate(selected, "buyingServiceFee")} ${formatCustomerUsd(pricing.buyingServiceAmountThb)}`;
       return selected === "zh-CN" ? `当前已知小计为 ${formatCustomerUsd(pricing.knownSubtotalThb)}，其中包含 ${feeText}。${pricing.pendingCount} 项费用仍待确认，未计入小计。最终费用按实际车辆购买价格重新计算。` : `ยอดย่อยที่ทราบปัจจุบันคือ ${formatCustomerUsd(pricing.knownSubtotalThb)} รวม ${feeText} ยังมีค่าใช้จ่ายรอยืนยัน ${pricing.pendingCount} รายการที่ยังไม่รวม และค่าบริการจะคำนวณใหม่จากราคาซื้อรถจริง`;
     }
@@ -308,7 +405,7 @@ export function buildGroundedAssistantReply(caseRecord, question, language = "en
   }
   if (/available|availability|still there|seller/.test(text)) return caseRecord.availability === "Verified Available" ? "This case has a recorded Verified Available status. Open the case timeline for the verification time and evidence." : `Availability is not confirmed. The current case state is “${caseRecord.availability}”. I will not guess or present the vehicle as available.`;
   if (/price|cost|fee|total|commission/.test(text)) {
-    const pricing = calculatePricing({ vehiclePriceThb: caseRecord.actualVehiclePurchasePriceThb ?? vehicle.observedPriceThb, platformTransactionRate: caseRecord.platformTransactionRate, buyingServiceRate: caseRecord.buyingServiceRate, inspectionTravelThb: caseRecord.inspectionQuote?.totalThb ?? null, domesticTransportThb: caseRecord.domesticTransportThb, repairModificationThb: caseRecord.repairModificationThb, exportShippingThb: caseRecord.exportShippingThb, otherAgreedThb: caseRecord.otherAgreedThb });
+    const pricing = calculatePricing({ vehiclePriceThb: caseRecord.actualVehiclePurchasePriceThb ?? vehicle.observedPriceThb, platformTransactionRate: caseRecord.platformTransactionRate, buyingServiceRate: caseRecord.buyingServiceRate, inspectionTravelThb: caseRecord.inspectionQuote?.totalThb ?? null, domesticTransportThb: caseRecord.domesticTransportThb, repairModificationThb: caseRecord.repairModificationThb, exportShippingThb: caseRecord.exportShippingThb, containerLoadingFeeThb: caseRecord.shippingContainerLoadingFeeThb, otherAgreedThb: caseRecord.otherAgreedThb });
     return `The known subtotal is ${formatCustomerUsd(pricing.knownSubtotalThb)}, including ${translate("en", "platformTransactionFee")} ${formatCustomerUsd(pricing.platformTransactionAmountThb)} and ${translate("en", "buyingServiceFee")} ${formatCustomerUsd(pricing.buyingServiceAmountThb)}. ${pricing.pendingCount} cost line${pricing.pendingCount === 1 ? " is" : "s are"} pending and excluded. NK service amounts recalculate from the actual vehicle purchase price.`;
   }
   if (/inspection|inspect|condition/.test(text)) return !caseRecord.inspectionQuote ? "The vehicle location does not match a configured inspection zone yet. NK must confirm the location before quoting; I will not estimate the fee." : `The configured inspection and travel preview is ${formatCustomerUsd(caseRecord.inspectionQuote.totalThb)} for ${caseRecord.inspectionQuote.region}. Current status: ${caseRecord.inspectionQuote.status}.`;

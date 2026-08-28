@@ -27,7 +27,7 @@ export default function ProformaInvoiceScreen({ caseId }: { caseId?: string }) {
   if (!vehicleCase?.proformaInvoice) return <section className="bb-empty-state"><h1>PI not found</h1><p>A PI appears only after an accepted quotation and Owner issue.</p><Link className="bb-button primary" href={caseId ? `/buy/cases/${encodeURIComponent(caseId)}` : "/buy/cases"}>{text.back}</Link></section>;
   const invoice = vehicleCase.proformaInvoice;
   const status = currentProformaInvoiceStatus(invoice, new Date());
-  const labels: Record<string, string> = { vehicle: t("vehiclePrice"), platformTransaction: t("platformTransactionFee"), buyingService: t("buyingServiceFee"), inspection: t("inspectionTravel"), transport: t("domesticTransport"), repair: t("repairModification"), shipping: t("exportShipping"), other: t("otherAgreedCharges") };
+  const labels: Record<string, string> = { vehicle: t("vehiclePrice"), platformTransaction: t("platformTransactionFee"), buyingService: t("buyingServiceFee"), inspection: t("inspectionTravel"), transport: t("domesticTransport"), repair: t("repairModification"), shipping: t("exportShipping"), containerLoading: "3-car container loading / stuffing", other: t("otherAgreedCharges") };
   return <div className="bb-pi-document-page">
     <div className="bb-pi-document-actions"><Link className="bb-button secondary" href={`/buy/cases/${encodeURIComponent(vehicleCase.id)}`}><ArrowLeft size={17} />{text.back}</Link><button className="bb-button primary" onClick={() => window.print()}><Printer size={17} />{text.print}</button></div>
     <article className="bb-pi-document" data-pi-document>
