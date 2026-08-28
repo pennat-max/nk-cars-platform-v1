@@ -66,6 +66,8 @@ export function parseQnapCustomerListing(value) {
     translationState: value.translationState,
     evidenceLabels: [...value.evidenceLabels],
     demo: false,
+    visibleOnNk: value.visibleOnNk !== false && value.visible_on_nk !== false,
+    visibleOnHispeed: value.visibleOnHispeed !== false && value.visible_on_hispeed !== false,
   };
 }
 

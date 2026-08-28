@@ -1,4 +1,4 @@
-import { DEFAULT_FILTERS, filterListings } from "../domain.mjs";
+import { DEFAULT_FILTERS, filterListings, listingVisibleForChannel } from "../domain.mjs";
 import type { SourceAdapterStatus } from "../types";
 import type { BuyingBrowserSourceAdapter, LinkImportCapability, SourceSearchRequest, SourceSearchResponse } from "./contracts";
 import { capturedCustomerListings } from "./captured-customer-data";
@@ -49,13 +49,13 @@ export class CustomerMarketplaceAdapter implements BuyingBrowserSourceAdapter {
         adapterId: "qnap-postgres",
         mode: "live",
         observedAt: qnapSnapshot.observedAt,
-        results: filterListings(qnapSnapshot.listings, request.filters || DEFAULT_FILTERS).slice(0, Math.max(1, Math.min(request.limit, 50))),
+        results: filterListings(qnapSnapshot.listings.filter((listing) => listingVisibleForChannel(listing, request.channel || "nk")), request.filters || DEFAULT_FILTERS).slice(0, Math.max(1, Math.min(request.limit, 50))),
       };
     }
     const snapshot = googleStagingMigrationBridgeEnabled()
       ? await getGoogleStagingSnapshot().catch(() => null)
       : null;
-    const listings = snapshot?.listings || capturedCustomerListings;
+    const listings = (snapshot?.listings || capturedCustomerListings).filter((listing) => listingVisibleForChannel(listing, request.channel || "nk"));
     return {
       adapterId: this.id,
       mode: snapshot ? "live" : "snapshot",

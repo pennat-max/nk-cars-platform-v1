@@ -167,6 +167,11 @@ export function filterListings(listings, filters = DEFAULT_FILTERS) {
   return sorted;
 }
 
+export function listingVisibleForChannel(listing, channel = "nk") {
+  if (channel === "hispeed") return listing?.visibleOnHispeed !== false;
+  return listing?.visibleOnNk !== false;
+}
+
 export function inspectionQuoteForLocation(location) {
   const normalized = String(location || "").toLowerCase();
   const matched = INSPECTION_LOCATIONS.find((item) => normalized.includes(item.location.toLowerCase()));
@@ -396,6 +401,7 @@ export function createExternalSourceCapture(listing, input, now = new Date()) {
     captureMethod: ["web_share_target", "ios_share_extension", "ios_wkwebview", "android_webview", "windows_webview2", "web_browser_companion", "manual_evidence"].includes(input?.captureMethod) ? input.captureMethod : "external_share_link",
     importStatus,
     capturedAt: safeTime(now),
+    channel: input?.channel === "hispeed" ? "hispeed" : "nk",
     ...(input?.textEvidence ? { textEvidence: { ...input.textEvidence } } : {}),
   };
 }
@@ -407,7 +413,7 @@ export function createExternalSourceCapture(listing, input, now = new Date()) {
  * @param {Date|string} [now]
  * @param {string|null} [sourceCaptureId]
  */
-export function createVehicleCase(listing, existingCases, customerId, now = new Date(), sourceCaptureId = null, pricingSettings = {}) {
+export function createVehicleCase(listing, existingCases, customerId, now = new Date(), sourceCaptureId = null, pricingSettings = {}, channel = "nk") {
   const existing = existingCases.find((item) => item.listingId === listing.id);
   if (existing) {
     if (!sourceCaptureId || existing.sourceCaptureId === sourceCaptureId) return { caseRecord: existing, created: false };
@@ -427,8 +433,9 @@ export function createVehicleCase(listing, existingCases, customerId, now = new 
   const quote = inspectionQuoteForLocation(listing.generalLocation);
   const platformTransactionRate = Number.isFinite(Number(pricingSettings.platformTransactionRate)) ? Math.max(0, Number(pricingSettings.platformTransactionRate)) : DEFAULT_PLATFORM_TRANSACTION_RATE;
   const buyingServiceRate = Number.isFinite(Number(pricingSettings.buyingServiceRate)) ? Math.max(0, Number(pricingSettings.buyingServiceRate)) : DEFAULT_BUYING_SERVICE_RATE;
+  const caseChannel = channel === "hispeed" ? "hispeed" : "nk";
   const caseRecord = {
-    id: caseId, customerId, listingId: listing.id, sourceReference: listing.sourceReference, sourceCaptureId, createdAt, updatedAt: createdAt, status: "Saved", availability: "Availability Not Yet Confirmed", vehicle: { ...listing, availability: "Availability Not Yet Confirmed" }, actualVehiclePurchasePriceThb: null, platformTransactionRate, buyingServiceRate, inspectionQuote: quote, domesticTransportThb: null, repairModificationThb: null, exportShippingThb: null, shippingDestinationCountry: null, shippingDestinationPort: null, shippingVehicleQuantity: 1, shippingContainerLoadingFeeThb: null, otherAgreedThb: null, quotationRequest: null, translationHistory: [],
+    id: caseId, customerId, listingId: listing.id, sourceReference: listing.sourceReference, sourceCaptureId, createdAt, updatedAt: createdAt, status: "Saved", availability: "Availability Not Yet Confirmed", vehicle: { ...listing, availability: "Availability Not Yet Confirmed" }, actualVehiclePurchasePriceThb: null, platformTransactionRate, buyingServiceRate, inspectionQuote: quote, domesticTransportThb: null, repairModificationThb: null, exportShippingThb: null, shippingDestinationCountry: null, shippingDestinationPort: null, shippingVehicleQuantity: 1, shippingContainerLoadingFeeThb: null, otherAgreedThb: null, quotationRequest: null, translationHistory: [], channel: caseChannel,
     messages: [{ id: `${caseId}-welcome`, sender: "NK AI", text: `I created ${caseId} for this ${listing.title}. Availability and the current seller price have not been verified yet.`, createdAt, delivery: "Local preview" }],
     timeline: [{ id: `${caseId}-saved`, title: "Vehicle saved", detail: sourceCaptureId ? "External source link captured internally and customer-safe listing data saved as an NK Vehicle Case." : "Customer-safe source result saved as an NK Vehicle Case.", createdAt }],
   };
@@ -528,5 +535,5 @@ export function addCaseQuestion(caseRecord, question, now = new Date(), language
 }
 
 export function presentCustomerListing(source) {
-  return { id: source.id, adapterId: source.adapterId, sourceReference: source.sourceReference, title: source.title, summary: source.summary, brand: source.brand, model: source.model, year: source.year, grade: source.grade, engine: source.engine, transmission: source.transmission, drive: source.drive, body: source.body, mileageKm: source.mileageKm, color: source.color, observedPriceThb: source.observedPriceThb, observedAt: source.observedAt, generalLocation: source.generalLocation, imageUrls: [...source.imageUrls], availability: source.availability, translationState: source.translationState, evidenceLabels: [...source.evidenceLabels], demo: Boolean(source.demo) };
+  return { id: source.id, adapterId: source.adapterId, sourceReference: source.sourceReference, title: source.title, summary: source.summary, brand: source.brand, model: source.model, year: source.year, grade: source.grade, engine: source.engine, transmission: source.transmission, drive: source.drive, body: source.body, mileageKm: source.mileageKm, color: source.color, observedPriceThb: source.observedPriceThb, observedAt: source.observedAt, generalLocation: source.generalLocation, imageUrls: [...source.imageUrls], availability: source.availability, translationState: source.translationState, evidenceLabels: [...source.evidenceLabels], demo: Boolean(source.demo), visibleOnNk: source.visibleOnNk !== false, visibleOnHispeed: source.visibleOnHispeed !== false };
 }

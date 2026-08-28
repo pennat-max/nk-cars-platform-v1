@@ -16,6 +16,7 @@ import {
   filterListings,
   formatCustomerUsd,
   inspectionQuoteForLocation,
+  listingVisibleForChannel,
   presentCustomerListing,
   requestAvailability,
   requestInspection,
@@ -1189,5 +1190,63 @@ test("customer marketplace exposes twenty Owner-approved listings with only revi
   }
   for (const secret of ["facebook.com", "sellerName", "sellerPhone", "sourceUrl", "nk-capture-batch-2026-08-25", "Pranee Pra Jaideaw", "080 632 3247"]) {
     assert.doesNotMatch(moduleText, new RegExp(secret.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"));
+  }
+});
+
+test("multi-brand visibility defaults to shared inventory without duplicating vehicles", () => {
+  const listing = presentCustomerListing(source);
+  assert.equal(listing.id, source.id);
+  assert.equal(listingVisibleForChannel(listing, "nk"), true);
+  assert.equal(listingVisibleForChannel(listing, "hispeed"), true);
+  assert.equal(listingVisibleForChannel({ ...listing, visibleOnHispeed: false }, "hispeed"), false);
+  assert.equal(listingVisibleForChannel({ ...listing, visibleOnNk: false }, "nk"), false);
+  const hispeedCase = createVehicleCase(listing, [], "customer-1", "2026-08-29T03:00:00.000Z", null, {}, "hispeed").caseRecord;
+  assert.equal(hispeedCase.listingId, listing.id);
+  assert.equal(hispeedCase.sourceReference, listing.sourceReference);
+  assert.equal(hispeedCase.channel, "hispeed");
+});
+
+test("renders additive HiSpeed routes from the shared customer-safe inventory", async () => {
+  const workerUrl = new URL("../dist/server/index.js", import.meta.url);
+  workerUrl.searchParams.set("test", `hispeed-${process.pid}-${Date.now()}`);
+  const { default: worker } = await import(workerUrl.href);
+  const env = { ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) } };
+  const ctx = { waitUntil() {}, passThroughOnException() {} };
+  const routes = [
+    "/hispeed",
+    "/hispeed/saved",
+    "/hispeed/shipments",
+    "/hispeed/cases",
+    "/hispeed/cases/NK-CASE-2026-000001",
+    "/hispeed/account",
+    "/hispeed/vehicles/nk-market-2026-0825-01",
+  ];
+  for (const route of routes) {
+    const response = await worker.fetch(new Request(`http://localhost${route}`, { headers: { accept: "text/html" } }), env, ctx);
+    assert.equal(response.status, 200, route);
+    const html = await response.text();
+    assert.match(html, /data-hispeed-preview-v1/i, route);
+    assert.match(html, /HiSpeed/i, route);
+    assert.doesNotMatch(html, /facebook\.com\/marketplace\/item|sellerPhone|sourceUrl|internalNotes|Pranee Pra Jaideaw|080 632 3247/i, route);
+    if (route === "/hispeed") {
+      assert.match(html, /data-hispeed-vehicle-card/i);
+      assert.match(html, /从泰国采购优质车辆/);
+      assert.match(html, /曼谷都会区/);
+      assert.match(html, /THB 35 = USD 1/);
+    }
+    if (route === "/hispeed/vehicles/nk-market-2026-0825-01") {
+      assert.match(html, /data-hispeed-vehicle-detail/i);
+      assert.match(html, /确认车辆是否可购买/);
+      assert.match(html, /透明价格明细/);
+    }
+    if (route === "/hispeed/shipments") {
+      assert.match(html, /data-hispeed-shipment-planner/i);
+      assert.match(html, /Planning Estimate/i);
+      assert.match(html, /THB 25,000/);
+    }
+    if (route === "/hispeed/account") {
+      assert.match(html, /hispeed/i);
+      assert.match(html, /车辆与 NK Cars 使用同一底层车辆身份/);
+    }
   }
 });

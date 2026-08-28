@@ -416,6 +416,23 @@ Decision:
 - Empty slots link the customer back to Browse, Paste Link, or Ask NK AI so they can add more cars toward a three-car shipment.
 - This slot planner remains customer planning UI only. It does not create a confirmed grouped shipment, issue a final quotation, book freight, take payment, send external messages, or purchase vehicles without NK verification.
 
+## 2026-08-29 - HiSpeed multi-brand storefront preview
+
+Status: IMPLEMENTED AS ADDITIVE PREVIEW / NOT PRODUCTION-DNS ACTIVATED
+
+Decision:
+- Add HiSpeed as a second customer-facing brand/channel at `/hispeed` while keeping NK Cars `/buy` intact.
+- HiSpeed uses the same customer-safe inventory DTOs, QNAP/repository inventory adapter, Vehicle Case, pricing, inspection, shipping planner, quotation, and PI domain logic.
+- Do not duplicate vehicle inventory, create a new QNAP stack, create a new Hermes runtime, or fork pricing/shipping engines for HiSpeed.
+- Vehicle channel visibility is represented as backward-compatible presentation metadata: `visibleOnNk` / `visibleOnHispeed` in application DTOs, corresponding to future QNAP `visible_on_nk` / `visible_on_hispeed` fields. Missing values default to visible on both brands so existing records continue to work.
+- HiSpeed customer/case activity is marked with channel `hispeed` so reporting can distinguish customer origin without changing the underlying vehicle identity.
+- HiSpeed defaults to Simplified Chinese and uses a separate red/white marketplace-style presentation system, not a recolored NK Cars route.
+- Future `hispeed.nkautotrade.com` routing can point at the same app path, but DNS/domain changes still require Owner approval.
+
+Safety:
+- HiSpeed customer pages continue to exclude source URL, seller identity/contact, internal evidence, internal notes, source cost/margin, and private QNAP identifiers.
+- Real payment, real purchase, real seller messaging, QNAP infrastructure, Hermes runtime, and production DNS are unchanged.
+
 ## 2026-08-28 - Broader RHD-market destination coverage and transit disclosure
 
 Status: APPROVED AND IMPLEMENTED

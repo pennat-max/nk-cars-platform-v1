@@ -16,6 +16,8 @@ type BuyingBrowserContextValue = {
   hydrated: boolean;
   language: CustomerLanguage;
   workspaceSync: WorkspaceSyncStatus;
+  basePath: string;
+  channel: "nk" | "hispeed";
   setLanguage: (language: CustomerLanguage) => void;
   isSaved: (listingId: string) => boolean;
   toggleSaved: (listingId: string) => void;
@@ -59,6 +61,9 @@ export function BuyingBrowserProvider({
   seedCases = [],
   durableAccount = false,
   legacyCustomerId,
+  basePath = "/buy",
+  channel = "nk",
+  defaultLanguage = "en",
   children,
 }: {
   customer: CustomerIdentity;
@@ -67,19 +72,22 @@ export function BuyingBrowserProvider({
   seedCases?: VehicleCase[];
   durableAccount?: boolean;
   legacyCustomerId?: string;
+  basePath?: string;
+  channel?: "nk" | "hispeed";
+  defaultLanguage?: CustomerLanguage;
   children: ReactNode;
 }) {
   const [state, setState] = useState<BuyingBrowserState>(() => withSeedCases(initialBuyingBrowserState(), seedCases));
   const [hydrated, setHydrated] = useState(false);
-  const [language, setLanguageState] = useState<CustomerLanguage>("en");
+  const [language, setLanguageState] = useState<CustomerLanguage>(defaultLanguage);
   const [workspaceSync, setWorkspaceSync] = useState<WorkspaceSyncStatus>({
     mode: durableAccount ? "syncing" : "local",
     message: durableAccount ? "Connecting secure account workspace" : "Stored on this device only",
     updatedAt: null,
   });
-  const storageKey = useMemo(() => `nk-cars-buying-browser-v1:${customer.id}`, [customer.id]);
+  const storageKey = useMemo(() => channel === "nk" ? `nk-cars-buying-browser-v1:${customer.id}` : `nk-cars-buying-browser-v1:${channel}:${customer.id}`, [channel, customer.id]);
   const legacyStorageKey = useMemo(() => legacyCustomerId ? `nk-cars-buying-browser-v1:${legacyCustomerId}` : null, [legacyCustomerId]);
-  const languageStorageKey = useMemo(() => `nk-cars-language:${customer.id}`, [customer.id]);
+  const languageStorageKey = useMemo(() => channel === "nk" ? `nk-cars-language:${customer.id}` : `nk-cars-language:${channel}:${customer.id}`, [channel, customer.id]);
   const revisionRef = useRef(0);
   const serverReadyRef = useRef(false);
   const pendingServerStateRef = useRef<BuyingBrowserState | null>(null);
@@ -129,7 +137,7 @@ export function BuyingBrowserProvider({
     async function hydrate() {
       let nextState: BuyingBrowserState | null = null;
       try {
-        setLanguageState(normalizeLanguage(window.localStorage.getItem(languageStorageKey)) as CustomerLanguage);
+        setLanguageState(normalizeLanguage(window.localStorage.getItem(languageStorageKey) || defaultLanguage) as CustomerLanguage);
         const raw = window.localStorage.getItem(storageKey) || (legacyStorageKey ? window.localStorage.getItem(legacyStorageKey) : null);
         if (raw) {
           const parsed: unknown = JSON.parse(raw);
@@ -173,7 +181,7 @@ export function BuyingBrowserProvider({
     }
     void hydrate();
     return () => { cancelled = true; };
-  }, [durableAccount, languageStorageKey, legacyStorageKey, seedCases, storageKey]);
+  }, [defaultLanguage, durableAccount, languageStorageKey, legacyStorageKey, seedCases, storageKey]);
 
   useEffect(() => {
     document.documentElement.lang = language;
@@ -218,7 +226,7 @@ export function BuyingBrowserProvider({
   function saveAsCase(listing: CustomerListing, action?: "availability" | "inspection", explicitSourceCapture?: SourceCapture) {
     const existing = state.cases.find((item) => item.listingId === listing.id);
     const sourceCapture = explicitSourceCapture || state.sourceCaptures.find((item) => item.listingId === listing.id);
-    const { caseRecord } = createVehicleCase(listing, state.cases, customer.id, new Date(), sourceCapture?.id || null, loadPricingSettings());
+    const { caseRecord } = createVehicleCase(listing, state.cases, customer.id, new Date(), sourceCapture?.id || null, loadPricingSettings(), channel);
     const nextRecord = action === "availability" ? requestAvailability(caseRecord, new Date(), language) : action === "inspection" ? requestInspection(caseRecord, new Date(), language) : caseRecord;
     setState((current) => ({
       ...current,
@@ -330,6 +338,8 @@ export function BuyingBrowserProvider({
     hydrated,
     language,
     workspaceSync,
+    basePath,
+    channel,
     setLanguage,
     isSaved,
     toggleSaved,

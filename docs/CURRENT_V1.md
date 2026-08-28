@@ -388,6 +388,14 @@ Customer mobile visual direction: the active `/buy` customer screens now use an 
 
 Pricing update: Vehicle Case now applies the approved inspection/travel rule of THB 5,000 across the active Bangkok Metro operating group and configured outside-Bangkok-Metro distance x THB 20/km with the same THB 5,000 minimum. Customer pricing also includes a destination country/port and 1-3 car shipping planner. The shipping planner can show public-source indicative ocean-freight ranges plus a 15% upper-bound planning buffer. The customer-facing Export / Shipping line displays the midpoint per-car estimate as "about" while details retain the low/high range: 1 car uses the full route estimate, 2 cars divide by 2, and 3 cars divide by 3 plus the THB 25,000 Rushing/loading/stuffing charge divided by 3. The UI explains that 3 cars is the best value because freight and Rushing/loading are shared. The fill-the-shipment area now shows concrete shipment slots with existing Vehicle Cases and open add-car slots so the customer can understand how to complete a three-car plan. The footer can show an estimated total with selected shipping, but final quotation readiness remains Pending until Owner-confirmed freight pricing is recorded.
 
+HiSpeed preview checkpoint:
+- `/hispeed`, `/hispeed/vehicles/[id]`, `/hispeed/saved`, `/hispeed/shipments`, `/hispeed/cases`, `/hispeed/cases/[caseId]`, `/hispeed/cases/[caseId]/pi`, and `/hispeed/account` now provide an additive second-brand storefront.
+- HiSpeed defaults to Simplified Chinese, with English and Thai language switching, and uses a distinct red/white China-friendly marketplace UI.
+- HiSpeed reuses the same customer-safe inventory adapter, Vehicle Case, inspection, deterministic pricing, shipping planner, quotation, PI, and workspace contracts. `/buy` remains unchanged.
+- Application DTOs now support `visibleOnNk` and `visibleOnHispeed`, mapping to future QNAP `visible_on_nk` and `visible_on_hispeed`. Missing values default to visible on both brands for backward compatibility.
+- HiSpeed-created customer Cases are tagged with channel `hispeed` for reporting while preserving the same underlying vehicle listing identity.
+- No QNAP infrastructure, Hermes runtime, production DNS, seller messaging, purchase, payment, or destructive PostgreSQL schema/data change was made.
+
 Identity/workspace activation checkpoint:
 - The application now supports a provider-neutral QNAP identity gateway without collecting passwords in NK forms.
 - The identity gateway contract now supports allowlisted Google and Apple provider selection. The Account UI renders provider-specific actions only when the corresponding gateway providers are explicitly enabled.

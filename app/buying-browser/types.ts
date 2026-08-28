@@ -52,6 +52,8 @@ export type CustomerListing = {
   translationState: TranslationState;
   evidenceLabels: string[];
   demo: boolean;
+  visibleOnNk?: boolean;
+  visibleOnHispeed?: boolean;
 };
 
 export type BrowseFilters = {
@@ -112,6 +114,7 @@ export type SourceCapture = {
   importStatus: "imported" | "partial" | "evidence_only";
   capturedAt: string;
   textEvidence?: SourceTextEvidence;
+  channel?: "nk" | "hispeed";
 };
 
 export type VehicleCase = {
@@ -150,6 +153,7 @@ export type VehicleCase = {
   translationHistory: TranslationTrace[];
   messages: CaseMessage[];
   timeline: CaseTimelineItem[];
+  channel?: "nk" | "hispeed";
 };
 
 export type PricingLine = {
@@ -211,6 +215,7 @@ export type CustomerIdentity = {
   isPreview: boolean;
   signInPath?: string | null;
   signInProviders?: Array<{ provider: "google" | "apple"; path: string }>;
+  acquisitionChannel?: "nk" | "hispeed";
 };
 
 export type SourceAdapterStatus = {
