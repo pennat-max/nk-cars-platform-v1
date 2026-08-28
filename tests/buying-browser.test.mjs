@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   CUSTOMER_FX_THB_PER_USD,
   DEFAULT_FILTERS,
+  SHIPPING_DESTINATIONS,
   SHIPPING_PLANNING_BUFFER_RATE,
   THREE_CAR_CONTAINER_LOADING_FEE_THB,
   addCaseQuestion,
@@ -816,8 +817,16 @@ test("shipping plan records destination and adds only approved three-car loading
     planningPerVehicleUsdMid: 2405,
     planningBufferRate: SHIPPING_PLANNING_BUFFER_RATE,
     indicativeFreightSource: "Public 40ft Kenya market benchmarks; verify Thailand route before booking.",
+    routeType: "Direct port",
+    routeNote: "Port-country shipment. Inland delivery beyond the port is quoted separately when required.",
+    importNote: "Right-hand-drive market; final import eligibility still requires NK/local agent check.",
     freightRateStatus: "Pending - rate source required",
   });
+  assert.ok(SHIPPING_DESTINATIONS.length >= 30, "RHD/left-traffic shipping coverage should include broad country choices");
+  assert.equal(shippingPlanForSelection("Zambia", 1).routeType, "Transit / landlocked");
+  assert.match(shippingPlanForSelection("Zambia", 1).routeNote, /inland transit to Zambia/i);
+  assert.equal(shippingPlanForSelection("Australia", 1).planningPerVehicleUsdMid, null);
+  assert.match(shippingPlanForSelection("Australia", 1).importNote, /strict/i);
   assert.equal(shippingPlanForSelection("Kenya", 1).planningPerVehicleUsdHigh, 7900);
   assert.equal(shippingPlanForSelection("Kenya", 2).planningPerVehicleUsdHigh, 3950);
   assert.equal(shippingPlanForSelection("Tanzania", 1).planningFreightUsdHigh, 10700);

@@ -394,6 +394,17 @@ Decision:
 - Empty slots link the customer back to Browse, Paste Link, or Ask NK AI so they can add more cars toward a three-car shipment.
 - This slot planner remains customer planning UI only. It does not create a confirmed grouped shipment, issue a final quotation, book freight, take payment, send external messages, or purchase vehicles without NK verification.
 
+## 2026-08-28 - Broader RHD-market destination coverage and transit disclosure
+
+Status: APPROVED AND IMPLEMENTED
+
+Decision:
+- Expand customer shipping destination choices from a short route list into broader right-hand-drive / left-traffic target-market coverage.
+- A listed destination is routing/planning coverage only. It does not guarantee legal import eligibility for the selected vehicle.
+- If a destination is landlocked or normally requires transit, the customer UI must show the gateway/transit plan and explain that inland transit, border, clearing, and local delivery are separate until NK confirms an all-in route.
+- If no reliable public freight benchmark is available, the country remains selectable but the freight estimate stays Pending / NK quote required rather than inventing a number.
+- Strict-compliance markets such as Australia, New Zealand, Singapore, Japan, India, Malaysia, Hong Kong, Ireland, and the United Kingdom require import/compliance confirmation before final quotation.
+
 ## 2026-08-28 - QNAP Hermes pilot reached safe zero-candidate result
 
 Status: IMPLEMENTED OPERATIONS RUNBOOK; PILOT PROOF STILL INCOMPLETE

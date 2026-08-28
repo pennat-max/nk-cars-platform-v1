@@ -338,7 +338,17 @@ export default function PricingBreakdown({ vehicleCase }: { vehicleCase: Vehicle
             <strong>{choice.amount || t("pending")}</strong>
           </button>)}
         </section>}
-        {shippingPlan.destinationCountry && <dl><div><dt>{text.planningFreight}</dt><dd>{planningPerVehicleMid ? `${text.aboutPrefix} ${planningPerVehicleMid}` : t("pending")}<br />{planningPerVehicle && <small>{text.estimateRange}: {planningPerVehicle}. {text.shareNote(shippingPlan.vehicleQuantity)}</small>}</dd></div><div><dt>{text.fullShipment}</dt><dd>{planningShipment || t("pending")}</dd></div>{shippingPlan.containerLoadingFeeUsd > 0 && <div><dt>{text.loadingService}</dt><dd>{text.loadingServiceNote(shippingPlan.containerLoadingFeeUsd, shippingPlan.containerLoadingPerVehicleUsd)}</dd></div>}<div><dt>{text.marketBenchmark}</dt><dd>{marketBenchmark || t("pending")}</dd></div><div><dt>{text.sourcePrefix}</dt><dd>{marketBenchmark ? shippingPlan.indicativeFreightSource : text.noIndicativeFreight}</dd></div>{planningFreight && <div><dt>{`${bufferPercent}% buffer`}</dt><dd>{text.bufferNote}</dd></div>}</dl>}
+        {shippingPlan.destinationCountry && <dl>
+          <div><dt>{text.planningFreight}</dt><dd>{planningPerVehicleMid ? `${text.aboutPrefix} ${planningPerVehicleMid}` : t("pending")}<br />{planningPerVehicle && <small>{text.estimateRange}: {planningPerVehicle}. {text.shareNote(shippingPlan.vehicleQuantity)}</small>}</dd></div>
+          <div><dt>{text.fullShipment}</dt><dd>{planningShipment || t("pending")}</dd></div>
+          {shippingPlan.containerLoadingFeeUsd > 0 && <div><dt>{text.loadingService}</dt><dd>{text.loadingServiceNote(shippingPlan.containerLoadingFeeUsd, shippingPlan.containerLoadingPerVehicleUsd)}</dd></div>}
+          <div><dt>Route type</dt><dd>{shippingPlan.routeType || t("pending")}</dd></div>
+          <div><dt>Gateway / transit plan</dt><dd>{shippingPlan.routeNote || t("pending")}</dd></div>
+          <div><dt>Import eligibility</dt><dd>{shippingPlan.importNote || t("pending")}</dd></div>
+          <div><dt>{text.marketBenchmark}</dt><dd>{marketBenchmark || t("pending")}</dd></div>
+          <div><dt>{text.sourcePrefix}</dt><dd>{shippingPlan.indicativeFreightSource || text.noIndicativeFreight}</dd></div>
+          {planningFreight && <div><dt>{`${bufferPercent}% buffer`}</dt><dd>{text.bufferNote}</dd></div>}
+        </dl>}
         <section className="bb-shipping-fill">
           <header><b>{fillText.title}</b><span>{missingShipmentSlots ? fillText.missing : fillText.ready}</span></header>
           <dl>
