@@ -350,7 +350,7 @@ Decision:
 - Main export/ocean freight is still Pending for final quotation readiness until NK records an Owner-approved freight table, provider quote, or API result for the selected route. The customer-facing Export / Shipping line may show the selected route per-car planning range with an estimate label.
 - Customer-facing shipping estimates are per-car: 1 car uses the full shipping estimate, 2 cars divide the shipping estimate by 2, and 3 cars divide the shipping estimate by 3.
 - Customer-facing pricing uses the midpoint of the per-car planning range as the primary "about" number while keeping the low/high range visible in shipping details. The footer may show an estimated total with selected shipping, but other pending cost lines remain excluded and final quotation readiness is unchanged.
-- Selecting 3 cars adds the approved THB 22,000 Rushing/loading/stuffing charge into the customer-facing Export / Shipping estimate, divides it by 3, and explains the approximate per-car share using the customer FX rate.
+- Selecting 3 cars adds the approved THB 22,000 Rushing/loading/stuffing charge into the customer-facing Export / Shipping estimate, divides it by 3, and explains the approximate per-car share using the customer FX rate. The customer UI should make the shared-container logic visible before/while the quantity is selected, including a clear 3-car best-value label.
 - This does not book shipping, send supplier/customer messages, confirm freight availability, accept payment, purchase a vehicle, or activate QNAP/Hermes behavior.
 
 ## 2026-08-28 - Owner-managed Hermes browser profiles

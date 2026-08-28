@@ -224,7 +224,7 @@ Customer shipping plan rule approved on 2026-08-28:
 - Customer-facing shipping estimates are per-car: 1 car uses the full shipping estimate, 2 cars divide the shipping estimate by 2, and 3 cars divide the shipping estimate by 3.
 - The pricing line uses the midpoint of the per-car planning range as the primary "about" estimate, while the low/high planning range stays visible in the shipping details.
 - The footer may show an estimated total with selected shipping by adding the per-car midpoint estimate to the known subtotal. This is still not final quotation readiness; other pending cost lines remain excluded.
-- If the customer selects 3 cars in one shipment, the customer-facing Export / Shipping per-car estimate also includes the approved THB 22,000 Rushing/loading/stuffing service charge divided by 3 and explains the approximate per-car share using the customer FX rate.
+- If the customer selects 3 cars in one shipment, the customer-facing Export / Shipping per-car estimate also includes the approved THB 22,000 Rushing/loading/stuffing service charge divided by 3 and explains the approximate per-car share using the customer FX rate. The customer UI labels the 3-car option as best value and shows the shared-freight explanation immediately beside the quantity selector so the lower per-car estimate is not presented without context.
 - The customer selection records only the shipping plan. It does not book shipping, send a message, confirm freight, accept payment, or purchase a vehicle.
 
 ## 10. Language support

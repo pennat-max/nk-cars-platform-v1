@@ -165,6 +165,12 @@ export default function PricingBreakdown({ vehicleCase }: { vehicleCase: Vehicle
   };
   const updateCountry = (destinationCountry: string) => updateCaseShippingPlan(vehicleCase.id, { destinationCountry, vehicleQuantity: shippingQuantity });
   const updateQuantity = (vehicleQuantity: number) => updateCaseShippingPlan(vehicleCase.id, { destinationCountry: shippingCountry, vehicleQuantity });
+  const quantityOptionLabel = (count: number) => {
+    if (count !== 3) return String(count);
+    if (language === "th") return "3 - คุ้มสุด";
+    if (language === "zh-CN") return "3 - 最划算";
+    return "3 - Best value";
+  };
   const knownSubtotal = formatUsdFromThb(pricing.knownSubtotalThb);
   const estimatedTotalWithShipping = formatUsdAmount(
     shippingPlan.planningPerVehicleUsdMid === null || shippingPlan.planningPerVehicleUsdMid === undefined
@@ -189,8 +195,9 @@ export default function PricingBreakdown({ vehicleCase }: { vehicleCase: Vehicle
         <header><Ship size={17} /><div><b>{text.title}</b><small>{text.rule}</small></div></header>
         <div>
           <label><span>{text.country}</span><select disabled={shippingLocked} value={shippingCountry} onChange={(event) => updateCountry(event.target.value)}><option value="">{text.choose}</option>{SHIPPING_DESTINATIONS.map((item) => <option value={item.country} key={item.country}>{item.country} - {item.port}</option>)}</select></label>
-          <label><span>{text.quantity}</span><select disabled={shippingLocked} value={shippingQuantity} onChange={(event) => updateQuantity(Number(event.target.value))}>{[1, 2, 3].map((count) => <option value={count} key={count}>{count}</option>)}</select></label>
+          <label><span>{text.quantity}</span><select disabled={shippingLocked} value={shippingQuantity} onChange={(event) => updateQuantity(Number(event.target.value))}>{[1, 2, 3].map((count) => <option value={count} key={count}>{quantityOptionLabel(count)}</option>)}</select></label>
         </div>
+        <p><Info size={15} />{text.shareNote(shippingPlan.vehicleQuantity)}</p>
         {shippingPlan.destinationCountry && <dl><div><dt>{text.planningFreight}</dt><dd>{planningPerVehicleMid ? `${text.aboutPrefix} ${planningPerVehicleMid}` : t("pending")}<br />{planningPerVehicle && <small>{text.estimateRange}: {planningPerVehicle}. {text.shareNote(shippingPlan.vehicleQuantity)}</small>}</dd></div><div><dt>{text.fullShipment}</dt><dd>{planningShipment || t("pending")}</dd></div>{shippingPlan.containerLoadingFeeUsd > 0 && <div><dt>{text.loadingService}</dt><dd>{text.loadingServiceNote(shippingPlan.containerLoadingFeeUsd, shippingPlan.containerLoadingPerVehicleUsd)}</dd></div>}<div><dt>{text.marketBenchmark}</dt><dd>{marketBenchmark || t("pending")}</dd></div><div><dt>{text.sourcePrefix}</dt><dd>{marketBenchmark ? shippingPlan.indicativeFreightSource : text.noIndicativeFreight}</dd></div>{planningFreight && <div><dt>{`${bufferPercent}% buffer`}</dt><dd>{text.bufferNote}</dd></div>}</dl>}
         <p><Info size={15} />{shippingLocked ? text.locked : text.freightPending}</p>
       </section>
