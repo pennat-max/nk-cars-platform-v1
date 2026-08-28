@@ -1,0 +1,430 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex,nofollow" />
+    <title>NK Cars Shipment Quote Planner Preview</title>
+    <style>
+      :root {
+        --ink: #17212b;
+        --muted: #697580;
+        --line: #dfe6ea;
+        --soft: #f4f7f8;
+        --green: #08785a;
+        --blue: #1268bd;
+        --navy: #102b43;
+        --amber: #8a5a00;
+        --amber-bg: #fff5dc;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: #eef3f4;
+        color: var(--ink);
+        font-family: Arial, Helvetica, sans-serif;
+      }
+      button, select { font: inherit; }
+      .phone {
+        width: min(100%, 430px);
+        min-height: 100vh;
+        margin: 0 auto;
+        background: #fff;
+        padding-bottom: 86px;
+      }
+      .top {
+        position: sticky;
+        top: 0;
+        z-index: 4;
+        background: #fff;
+        border-bottom: 1px solid var(--line);
+      }
+      .bar {
+        height: 56px;
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        gap: 10px;
+        align-items: center;
+        padding: 9px 14px;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 22px;
+        font-weight: 850;
+      }
+      .brand span {
+        width: 34px;
+        height: 34px;
+        display: grid;
+        place-items: center;
+        border-radius: 7px;
+        background: var(--navy);
+        color: #fff;
+        font-size: 13px;
+        font-weight: 900;
+      }
+      .area { min-width: 0; color: var(--muted); font-size: 10px; font-weight: 800; }
+      .area b { display: block; color: var(--green); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .lang { border: 0; background: transparent; color: var(--blue); font-weight: 850; }
+      main { padding: 12px 12px 18px; }
+      .case-head {
+        display: grid;
+        grid-template-columns: 86px 1fr;
+        gap: 11px;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+      .case-head img {
+        width: 86px;
+        height: 76px;
+        object-fit: cover;
+        border-radius: 8px;
+      }
+      .kicker { margin: 0 0 4px; color: var(--blue); font-size: 10px; font-weight: 900; text-transform: uppercase; }
+      h1 { margin: 0; font-size: 20px; line-height: 1.1; letter-spacing: 0; }
+      .case-head p:last-child { margin: 5px 0 0; color: var(--muted); font-size: 12px; line-height: 1.35; }
+      .panel {
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        background: #fff;
+        overflow: hidden;
+        margin-bottom: 12px;
+      }
+      .panel > header {
+        padding: 13px;
+        border-bottom: 1px solid var(--line);
+        background: #f7faf9;
+      }
+      .panel > header h2 { margin: 2px 0 0; font-size: 20px; line-height: 1.15; }
+      .panel > header p { margin: 6px 0 0; color: var(--muted); font-size: 13px; line-height: 1.4; }
+      .selects {
+        display: grid;
+        grid-template-columns: 1fr 124px;
+        gap: 8px;
+        padding: 12px;
+        border-bottom: 1px solid var(--line);
+      }
+      label { display: block; min-width: 0; }
+      label span { display: block; margin-bottom: 5px; color: var(--muted); font-size: 10px; font-weight: 850; text-transform: uppercase; }
+      select {
+        width: 100%;
+        height: 43px;
+        border: 1px solid #ccd8dd;
+        border-radius: 8px;
+        background: #fff;
+        padding: 0 10px;
+        color: var(--ink);
+        font-size: 14px;
+        font-weight: 800;
+      }
+      .options {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 8px;
+        padding: 12px;
+        background: #fff;
+      }
+      .quote-option {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 10px;
+        align-items: center;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #fff;
+        padding: 11px;
+        text-align: left;
+        color: var(--ink);
+      }
+      .quote-option.active {
+        border-color: #92c8b9;
+        background: #f4fbf8;
+        box-shadow: 0 0 0 2px rgba(8, 120, 90, .08);
+      }
+      .quote-option strong { display: block; font-size: 15px; }
+      .quote-option small { display: block; margin-top: 3px; color: var(--muted); font-size: 12px; line-height: 1.35; }
+      .quote-option b { color: var(--green); font-size: 14px; white-space: nowrap; }
+      .quote-option .tag {
+        display: inline-flex;
+        margin-left: 6px;
+        padding: 3px 6px;
+        border-radius: 999px;
+        background: var(--amber-bg);
+        color: var(--amber);
+        font-size: 10px;
+        font-weight: 900;
+        vertical-align: middle;
+      }
+      .shipment {
+        padding: 12px;
+        border-top: 1px solid var(--line);
+        background: #fbfcfc;
+      }
+      .shipment-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 10px;
+      }
+      .shipment-head h2 { margin: 0; font-size: 17px; }
+      .shipment-head span {
+        color: var(--green);
+        font-size: 12px;
+        font-weight: 850;
+        text-align: right;
+      }
+      .slots {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+      }
+      .slot {
+        min-height: 112px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #fff;
+        overflow: hidden;
+      }
+      .slot img {
+        width: 100%;
+        height: 62px;
+        object-fit: cover;
+        display: block;
+      }
+      .slot div { padding: 7px; }
+      .slot b { display: block; font-size: 12px; line-height: 1.25; }
+      .slot small { display: block; margin-top: 3px; color: var(--muted); font-size: 10px; }
+      .slot.empty {
+        display: grid;
+        place-items: center;
+        padding: 9px;
+        border-style: dashed;
+        color: var(--muted);
+        text-align: center;
+        font-size: 11px;
+        font-weight: 800;
+      }
+      .actions {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 7px;
+        margin-top: 10px;
+      }
+      .actions a, .primary {
+        height: 38px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #c9ded6;
+        border-radius: 8px;
+        background: #fff;
+        color: var(--green);
+        text-decoration: none;
+        font-size: 12px;
+        font-weight: 850;
+        white-space: nowrap;
+      }
+      .summary { padding: 12px; }
+      .summary dl { margin: 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+      .summary dl div {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 10px;
+        border-bottom: 1px solid #edf1f2;
+      }
+      .summary dl div:last-child { border-bottom: 0; background: var(--navy); color: #fff; }
+      .summary dt { color: var(--muted); font-size: 11px; font-weight: 850; text-transform: uppercase; }
+      .summary dl div:last-child dt { color: rgba(255,255,255,.72); }
+      .summary dd { margin: 0; font-size: 14px; font-weight: 900; text-align: right; }
+      .summary dl div:last-child dd { font-size: 22px; }
+      .note {
+        display: flex;
+        gap: 7px;
+        align-items: flex-start;
+        margin: 10px 0 0;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.45;
+      }
+      .quote-now {
+        width: 100%;
+        height: 46px;
+        margin-top: 12px;
+        border: 0;
+        border-radius: 8px;
+        background: var(--green);
+        color: #fff;
+        font-size: 15px;
+        font-weight: 900;
+      }
+      .bottom {
+        position: fixed;
+        left: 50%;
+        bottom: 0;
+        width: min(100%, 430px);
+        transform: translateX(-50%);
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        border-top: 1px solid var(--line);
+        background: #fff;
+        padding: 6px 4px 12px;
+      }
+      .bottom a {
+        min-height: 48px;
+        display: grid;
+        place-items: center;
+        color: var(--muted);
+        text-decoration: none;
+        font-size: 11px;
+        font-weight: 800;
+      }
+      .bottom a.active { color: var(--green); }
+      @media (max-width: 370px) {
+        .selects { grid-template-columns: 1fr; }
+        .actions { grid-template-columns: 1fr; }
+        .slots { grid-template-columns: 1fr; }
+        .slot { min-height: auto; display: grid; grid-template-columns: 92px 1fr; }
+        .slot img { height: 76px; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="phone">
+      <header class="top">
+        <div class="bar">
+          <div class="brand"><span>NK</span> Cars</div>
+          <div class="area">DESTINATION <b>Zimbabwe - Maputo</b></div>
+          <button class="lang">EN</button>
+        </div>
+      </header>
+
+      <main>
+        <section class="case-head">
+          <img src="/vehicle-marketplace/owner-reviewed-2026-08-26/nk-mkt-03/eddd9efa1829617d.jpg" alt="Toyota Hilux Revo" />
+          <div>
+            <p class="kicker">Vehicle Case</p>
+            <h1>2020 Toyota Hilux Revo</h1>
+            <p>Choose how many cars NK should quote in this shipment.</p>
+          </div>
+        </section>
+
+        <section class="panel">
+          <header>
+            <p class="kicker">Shipment Quote Planner</p>
+            <h2>Quote now, or fill the container</h2>
+            <p>NK can quote 1, 2, or 3 cars. Adding cars shares the same container cost and lowers the estimated shipping per car.</p>
+          </header>
+
+          <div class="selects">
+            <label>
+              <span>Destination country</span>
+              <select aria-label="Destination country">
+                <option>Zimbabwe - Maputo</option>
+                <option>Kenya - Mombasa</option>
+                <option>Tanzania - Dar es Salaam</option>
+              </select>
+            </label>
+            <label>
+              <span>Quote size</span>
+              <select id="quote-size" aria-label="Quote size">
+                <option value="1">1 car</option>
+                <option value="2">2 cars</option>
+                <option value="3" selected>3 cars - Best value</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="options" role="group" aria-label="Quote choices">
+            <button class="quote-option" data-size="1" type="button">
+              <span><strong>Quote 1 car now</strong><small>Fastest. Uses the full shipping estimate for this car.</small></span>
+              <b>USD 4,550</b>
+            </button>
+            <button class="quote-option" data-size="2" type="button">
+              <span><strong>Quote 2 cars now</strong><small>Two cars share the freight, so the estimate is about half per car.</small></span>
+              <b>USD 2,275</b>
+            </button>
+            <button class="quote-option active" data-size="3" type="button">
+              <span><strong>Quote 3 cars <i class="tag">Best value</i></strong><small>Three cars share freight plus the THB 22,000 Rushing/loading service.</small></span>
+              <b>USD 1,727</b>
+            </button>
+          </div>
+
+          <section class="shipment" aria-label="Fill this shipment">
+            <div class="shipment-head">
+              <h2>Fill this shipment</h2>
+              <span id="slot-message">Add 1 more car to complete this 3-car quote.</span>
+            </div>
+            <div class="slots" id="slots"></div>
+            <div class="actions" id="actions">
+              <a href="/buy">Browse</a>
+              <a href="/buy/paste">Paste link</a>
+              <a href="/buy/ask">Ask NK AI</a>
+            </div>
+          </section>
+
+          <section class="summary">
+            <dl>
+              <div><dt>Known vehicle subtotal</dt><dd>USD 16,800</dd></div>
+              <div><dt>Estimated shipping per car</dt><dd id="ship-per-car">USD 1,727</dd></div>
+              <div><dt>Current estimated total</dt><dd id="total">USD 18,527</dd></div>
+            </dl>
+            <p class="note">i This is for planning only. Final freight can move up or down when NK confirms the live booking rate.</p>
+            <button class="quote-now" id="quote-button" type="button">Request quote for 3 cars - Best value</button>
+          </section>
+        </section>
+      </main>
+
+      <nav class="bottom" aria-label="Buying Browser navigation">
+        <a href="/buy">Browse</a>
+        <a href="/buy/saved">Saved</a>
+        <a class="active" href="/buy/cases">My Cases</a>
+        <a href="/buy/messages">Messages</a>
+        <a href="/buy/account">Account</a>
+      </nav>
+    </div>
+
+    <script>
+      const data = {
+        1: { ship: "USD 4,550", total: "USD 21,350", message: "Ready to request a quote for this 1-car shipment.", button: "Request quote for 1 car now" },
+        2: { ship: "USD 2,275", total: "USD 19,075", message: "You have 2 cars ready for this 2-car quote.", button: "Request quote for 2 cars now" },
+        3: { ship: "USD 1,727", total: "USD 18,527", message: "Add 1 more car to complete this 3-car quote.", button: "Request quote for 3 cars - Best value" },
+      };
+      const vehicles = [
+        { img: "/vehicle-marketplace/owner-reviewed-2026-08-26/nk-mkt-03/eddd9efa1829617d.jpg", title: "2020 Hilux Revo", price: "USD 15,143" },
+        { img: "/vehicle-marketplace/owner-reviewed-2026-08-26/nk-mkt-01/fd2aade7890beda0.jpg", title: "2020 Hilux Rocco", price: "USD 21,686" },
+      ];
+      const select = document.querySelector("#quote-size");
+      const slots = document.querySelector("#slots");
+      const actions = document.querySelector("#actions");
+      const buttons = document.querySelectorAll(".quote-option");
+      function render(size) {
+        const selected = data[size];
+        document.querySelector("#ship-per-car").textContent = selected.ship;
+        document.querySelector("#total").textContent = selected.total;
+        document.querySelector("#slot-message").textContent = selected.message;
+        document.querySelector("#quote-button").textContent = selected.button;
+        actions.style.display = size === 3 ? "grid" : "none";
+        slots.innerHTML = "";
+        for (let i = 0; i < size; i += 1) {
+          const vehicle = vehicles[i];
+          if (vehicle) {
+            slots.insertAdjacentHTML("beforeend", `<article class="slot"><img src="${vehicle.img}" alt="${vehicle.title}" /><div><b>${vehicle.title}</b><small>${vehicle.price}</small></div></article>`);
+          } else {
+            slots.insertAdjacentHTML("beforeend", `<article class="slot empty">Add car ${i + 1}<br />to share this shipment</article>`);
+          }
+        }
+        buttons.forEach((button) => button.classList.toggle("active", button.dataset.size === String(size)));
+        select.value = String(size);
+      }
+      select.addEventListener("change", (event) => render(Number(event.target.value)));
+      buttons.forEach((button) => button.addEventListener("click", () => render(Number(button.dataset.size))));
+      render(3);
+    </script>
+  </body>
+</html>
