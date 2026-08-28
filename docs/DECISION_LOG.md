@@ -366,6 +366,24 @@ Decision:
 - Connector profile control remains fail-closed unless a server-side connector admin URL and token are configured. Secrets and browser sessions stay out of GitHub.
 - This approval does not authorize publication, seller messaging, reservation, purchase, payment, CAPTCHA/MFA bypass, or rate-limit evasion.
 
+## 2026-08-28 - Three-car Rushing/loading fee updated
+
+Status: APPROVED AND IMPLEMENTED
+
+Decision:
+- The approved 3-car Rushing/loading/stuffing service charge is updated from THB 22,000 to THB 25,000.
+- At the current customer preview FX of THB 35.00 = USD 1, the customer-facing estimate displays this as about USD 714 total, or about USD 238 per car when divided across 3 cars.
+- The 1-car and 2-car shipping estimates do not include this Rushing/loading/stuffing service charge.
+
+## 2026-08-28 - Shipment quote planner direction approved
+
+Status: APPROVED AND IMPLEMENTED
+
+Decision:
+- Move the shipment quote planner preview direction into the active customer pricing UI.
+- Customer pricing should show quote-size choices for 1, 2, and 3 cars with estimated per-car shipping amounts and a 3-car best-value cue.
+- Selecting a quote size updates the planned shipment quantity and estimated total only. It does not issue a final quotation, book freight, accept payment, or create a confirmed grouped shipment without NK verification.
+
 ## 2026-08-28 - QNAP Hermes pilot reached safe zero-candidate result
 
 Status: IMPLEMENTED OPERATIONS RUNBOOK; PILOT PROOF STILL INCOMPLETE

@@ -19,7 +19,7 @@ export const NEARBY_BANGKOK_LOCATIONS = Object.freeze([
 ]);
 export const BANGKOK_INSPECTION_FEE_THB = 5000;
 export const OUTSIDE_BANGKOK_INSPECTION_RATE_THB_PER_KM = 20;
-export const THREE_CAR_CONTAINER_LOADING_FEE_THB = 22000;
+export const THREE_CAR_CONTAINER_LOADING_FEE_THB = 25000;
 export const SHIPPING_PLANNING_BUFFER_RATE = 0.15;
 export const SHIPPING_DESTINATIONS = Object.freeze([
   { country: "Kenya", port: "Mombasa", estimateUsdLow: 5100, estimateUsdHigh: 6800, estimateSource: "Public 40ft Kenya market benchmarks; verify Thailand route before booking." },

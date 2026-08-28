@@ -802,18 +802,18 @@ test("shipping plan records destination and adds only approved three-car loading
     destinationPort: "Mombasa",
     vehicleQuantity: 3,
     containerLoadingFeeThb: THREE_CAR_CONTAINER_LOADING_FEE_THB,
-    containerLoadingFeeUsd: 629,
-    containerLoadingPerVehicleUsd: 210,
+    containerLoadingFeeUsd: 714,
+    containerLoadingPerVehicleUsd: 238,
     indicativeFreightUsdLow: 5100,
     indicativeFreightUsdHigh: 6800,
     planningFreightUsdLow: 5100,
     planningFreightUsdHigh: 7900,
-    planningShipmentUsdLow: 5729,
-    planningShipmentUsdHigh: 8529,
-    planningPerVehicleUsdLow: 1910,
-    planningPerVehicleUsdHigh: 2843,
-    planningShipmentUsdMid: 7129,
-    planningPerVehicleUsdMid: 2377,
+    planningShipmentUsdLow: 5814,
+    planningShipmentUsdHigh: 8614,
+    planningPerVehicleUsdLow: 1938,
+    planningPerVehicleUsdHigh: 2871,
+    planningShipmentUsdMid: 7214,
+    planningPerVehicleUsdMid: 2405,
     planningBufferRate: SHIPPING_PLANNING_BUFFER_RATE,
     indicativeFreightSource: "Public 40ft Kenya market benchmarks; verify Thailand route before booking.",
     freightRateStatus: "Pending - rate source required",
@@ -829,14 +829,14 @@ test("shipping plan records destination and adds only approved three-car loading
     perCarMid: shippingPlanForSelection("Tanzania", 3).planningPerVehicleUsdMid,
     loadingTotal: shippingPlanForSelection("Tanzania", 3).containerLoadingFeeUsd,
     loadingPerCar: shippingPlanForSelection("Tanzania", 3).containerLoadingPerVehicleUsd,
-  }, { low: 9929, high: 11329, perCarLow: 3310, perCarHigh: 3776, perCarMid: 3543, loadingTotal: 629, loadingPerCar: 210 });
+  }, { low: 10014, high: 11414, perCarLow: 3338, perCarHigh: 3805, perCarMid: 3572, loadingTotal: 714, loadingPerCar: 238 });
   const listing = presentCustomerListing(source);
   const vehicleCase = createVehicleCase(listing, [], "customer-1", "2026-08-23T10:00:00.000Z").caseRecord;
   const planned = applyCustomerShippingSelection(vehicleCase, { destinationCountry: "Kenya", vehicleQuantity: 3 }, "2026-08-23T10:05:00.000Z");
   assert.equal(planned.shippingDestinationCountry, "Kenya");
   assert.equal(planned.shippingDestinationPort, "Mombasa");
   assert.equal(planned.shippingVehicleQuantity, 3);
-  assert.equal(planned.shippingContainerLoadingFeeThb, 22000);
+  assert.equal(planned.shippingContainerLoadingFeeThb, 25000);
   assert.equal(planned.exportShippingThb, null, "main ocean freight stays pending until an approved rate source is used");
   const replanned = applyCustomerShippingSelection(planned, { destinationCountry: "Tanzania", vehicleQuantity: 1 }, "2026-08-23T10:06:00.000Z");
   assert.equal(replanned.messages.filter((item) => item.id.includes("-shipping-plan-")).length, 1);
@@ -852,7 +852,7 @@ test("shipping plan records destination and adds only approved three-car loading
     containerLoadingFeeThb: planned.shippingContainerLoadingFeeThb,
     otherAgreedThb: null,
   });
-  assert.equal(pricing.lines.find((line) => line.key === "containerLoading")?.amountThb, 22000);
+  assert.equal(pricing.lines.find((line) => line.key === "containerLoading")?.amountThb, 25000);
   assert.equal(pricing.lines.find((line) => line.key === "shipping")?.status, "Pending");
 });
 

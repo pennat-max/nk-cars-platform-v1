@@ -58,9 +58,9 @@ const shippingCopy: Record<CustomerLanguage, {
     knownSubtotal: "Known subtotal",
     estimatedTotalNote: (knownTotal, shippingEstimate) => `${knownTotal} known subtotal + ${shippingEstimate} selected shipping estimate. Other pending costs are still excluded.`,
     loadingService: "3-car Rushing / loading service",
-    loadingServiceNote: (totalUsd, perCarUsd) => `THB 22,000 service is included above: USD ${totalUsd.toLocaleString("en-US")} total, about USD ${perCarUsd.toLocaleString("en-US")} per car when shared by 3 cars.`,
+    loadingServiceNote: (totalUsd, perCarUsd) => `THB 25,000 service is included above: USD ${totalUsd.toLocaleString("en-US")} total, about USD ${perCarUsd.toLocaleString("en-US")} per car when shared by 3 cars.`,
     chooseDestinationFirst: "Choose country first",
-    shareNote: (quantity) => quantity === 1 ? "1 car uses the full shipping estimate." : quantity === 2 ? "2 cars share the freight, so each car pays about half." : "Best value: 3 cars share the freight and the THB 22,000 Rushing/loading service.",
+    shareNote: (quantity) => quantity === 1 ? "1 car uses the full shipping estimate." : quantity === 2 ? "2 cars share the freight, so each car pays about half." : "Best value: 3 cars share the freight and the THB 25,000 Rushing/loading service.",
   },
   "zh-CN": {
     title: "目的地和运费估算",
@@ -85,9 +85,9 @@ const shippingCopy: Record<CustomerLanguage, {
     knownSubtotal: "已知小计",
     estimatedTotalNote: (knownTotal, shippingEstimate) => `${knownTotal} 已知小计 + ${shippingEstimate} 所选运费估算。其他待确认费用仍未包含。`,
     loadingService: "3 辆车 Rushing / 装柜服务费",
-    loadingServiceNote: (totalUsd, perCarUsd) => `THB 22,000 服务费已包含在上方估算内：总计 USD ${totalUsd.toLocaleString("en-US")}，3 辆车分摊约每辆 USD ${perCarUsd.toLocaleString("en-US")}。`,
+    loadingServiceNote: (totalUsd, perCarUsd) => `THB 25,000 服务费已包含在上方估算内：总计 USD ${totalUsd.toLocaleString("en-US")}，3 辆车分摊约每辆 USD ${perCarUsd.toLocaleString("en-US")}。`,
     chooseDestinationFirst: "请先选择国家",
-    shareNote: (quantity) => quantity === 1 ? "1 辆车按完整运费估算。" : quantity === 2 ? "2 辆车分摊运费，每辆约为一半。" : "最划算：3 辆车分摊运费和 THB 22,000 Rushing/装柜服务费。",
+    shareNote: (quantity) => quantity === 1 ? "1 辆车按完整运费估算。" : quantity === 2 ? "2 辆车分摊运费，每辆约为一半。" : "最划算：3 辆车分摊运费和 THB 25,000 Rushing/装柜服务费。",
   },
   th: {
     title: "ปลายทางและค่าชิปปิ้งประมาณการ",
@@ -112,9 +112,9 @@ const shippingCopy: Record<CustomerLanguage, {
     knownSubtotal: "ยอดย่อยที่ทราบ",
     estimatedTotalNote: (knownTotal, shippingEstimate) => `${knownTotal} ยอดย่อยที่ทราบ + ${shippingEstimate} ค่าชิปปิ้งประมาณการที่เลือกไว้ ยังไม่รวมรายการอื่นที่รอยืนยัน`,
     loadingService: "ค่าบริการ Rushing / ชิ่งตู้ 3 คัน",
-    loadingServiceNote: (totalUsd, perCarUsd) => `รวมค่าบริการ 22,000 บาทไว้ในยอดด้านบนแล้ว คิดเป็น USD ${totalUsd.toLocaleString("en-US")} ทั้งตู้ หรือประมาณ USD ${perCarUsd.toLocaleString("en-US")} ต่อคันเมื่อหาร 3 คัน`,
+    loadingServiceNote: (totalUsd, perCarUsd) => `รวมค่าบริการ 25,000 บาทไว้ในยอดด้านบนแล้ว คิดเป็น USD ${totalUsd.toLocaleString("en-US")} ทั้งตู้ หรือประมาณ USD ${perCarUsd.toLocaleString("en-US")} ต่อคันเมื่อหาร 3 คัน`,
     chooseDestinationFirst: "เลือกประเทศก่อน",
-    shareNote: (quantity) => quantity === 1 ? "1 คันคิดค่าชิปปิ้งเต็มจำนวน" : quantity === 2 ? "2 คันแชร์ค่าระวาง ค่าต่อคันจึงประมาณครึ่งหนึ่ง" : "คุ้มสุด: 3 คันแชร์ค่าระวางและแชร์ค่าบริการ Rushing/ชิ่งตู้ 22,000 บาท",
+    shareNote: (quantity) => quantity === 1 ? "1 คันคิดค่าชิปปิ้งเต็มจำนวน" : quantity === 2 ? "2 คันแชร์ค่าระวาง ค่าต่อคันจึงประมาณครึ่งหนึ่ง" : "คุ้มสุด: 3 คันแชร์ค่าระวางและแชร์ค่าบริการ Rushing/ชิ่งตู้ 25,000 บาท",
   },
 };
 
@@ -173,6 +173,22 @@ function shipmentFillCopy(language: CustomerLanguage, missingSlots: number) {
   };
 }
 
+function quoteChoiceCopy(language: CustomerLanguage, count: number) {
+  if (language === "th") {
+    if (count === 1) return { title: "Quote 1 คันตอนนี้", note: "เร็วสุด แต่คิดค่าชิปปิ้งเต็มต่อคัน" };
+    if (count === 2) return { title: "Quote 2 คันตอนนี้", note: "2 คันแชร์ค่าระวาง ค่าต่อคันลดลง", tag: null };
+    return { title: "Quote 3 คัน", note: "คุ้มสุด แชร์ค่าระวางและค่า Rushing 25,000 บาท", tag: "คุ้มสุด" };
+  }
+  if (language === "zh-CN") {
+    if (count === 1) return { title: "现在报价 1 辆车", note: "最快，但单车承担完整运费" };
+    if (count === 2) return { title: "现在报价 2 辆车", note: "2 辆车分摊运费，单车成本降低", tag: null };
+    return { title: "报价 3 辆车", note: "最划算：分摊运费和 THB 25,000 Rushing 服务费", tag: "最划算" };
+  }
+  if (count === 1) return { title: "Quote 1 car now", note: "Fastest. Uses the full shipping estimate for this car." };
+  if (count === 2) return { title: "Quote 2 cars now", note: "Two cars share the freight, so cost per car drops.", tag: null };
+  return { title: "Quote 3 cars", note: "Best value: shares freight plus the THB 25,000 Rushing service.", tag: "Best value" };
+}
+
 export default function PricingBreakdown({ vehicleCase }: { vehicleCase: VehicleCase }) {
   const { t } = useI18n();
   const { language, state, updateCaseShippingPlan } = useBuyingBrowser();
@@ -229,6 +245,14 @@ export default function PricingBreakdown({ vehicleCase }: { vehicleCase: Vehicle
   const missingShipmentSlots = Math.max(0, shipmentTarget - shipmentVehicleCount);
   const fillText = shipmentFillCopy(language, missingShipmentSlots);
   const fillCarUnit = (count: number) => language === "en" ? (count === 1 ? "car" : "cars") : fillText.car;
+  const quoteChoices = [1, 2, 3].map((count) => {
+    const optionPlan = shippingPlanForSelection(shippingCountry, count);
+    return {
+      count,
+      ...quoteChoiceCopy(language, count),
+      amount: formatUsdAmount(optionPlan.planningPerVehicleUsdMid),
+    };
+  });
   const displayedLineAmount = (line: { key: string; amountThb: number | null }) => {
     if (line.key === "shipping" && line.amountThb === null && planningPerVehicleMid) return `${text.aboutPrefix} ${planningPerVehicleMid} ${text.perCarSuffix}`;
     if (line.key === "shipping" && line.amountThb === null && !shippingPlan.destinationCountry) return text.chooseDestinationFirst;
@@ -250,6 +274,12 @@ export default function PricingBreakdown({ vehicleCase }: { vehicleCase: Vehicle
           <label><span>{text.quantity}</span><select disabled={shippingLocked} value={shippingQuantity} onChange={(event) => updateQuantity(Number(event.target.value))}>{[1, 2, 3].map((count) => <option value={count} key={count}>{quantityOptionLabel(count)}</option>)}</select></label>
         </div>
         <p><Info size={15} />{text.shareNote(shippingPlan.vehicleQuantity)}</p>
+        {shippingPlan.destinationCountry && <section className="bb-shipping-options" aria-label="Shipment quote options">
+          {quoteChoices.map((choice) => <button key={choice.count} type="button" className={choice.count === shippingPlan.vehicleQuantity ? "active" : ""} disabled={shippingLocked} onClick={() => updateQuantity(choice.count)}>
+            <span><b>{choice.title}{choice.tag && <i>{choice.tag}</i>}</b><small>{choice.note}</small></span>
+            <strong>{choice.amount || t("pending")}</strong>
+          </button>)}
+        </section>}
         {shippingPlan.destinationCountry && <dl><div><dt>{text.planningFreight}</dt><dd>{planningPerVehicleMid ? `${text.aboutPrefix} ${planningPerVehicleMid}` : t("pending")}<br />{planningPerVehicle && <small>{text.estimateRange}: {planningPerVehicle}. {text.shareNote(shippingPlan.vehicleQuantity)}</small>}</dd></div><div><dt>{text.fullShipment}</dt><dd>{planningShipment || t("pending")}</dd></div>{shippingPlan.containerLoadingFeeUsd > 0 && <div><dt>{text.loadingService}</dt><dd>{text.loadingServiceNote(shippingPlan.containerLoadingFeeUsd, shippingPlan.containerLoadingPerVehicleUsd)}</dd></div>}<div><dt>{text.marketBenchmark}</dt><dd>{marketBenchmark || t("pending")}</dd></div><div><dt>{text.sourcePrefix}</dt><dd>{marketBenchmark ? shippingPlan.indicativeFreightSource : text.noIndicativeFreight}</dd></div>{planningFreight && <div><dt>{`${bufferPercent}% buffer`}</dt><dd>{text.bufferNote}</dd></div>}</dl>}
         <section className="bb-shipping-fill">
           <header><b>{fillText.title}</b><span>{missingShipmentSlots ? fillText.missing : fillText.ready}</span></header>
