@@ -319,11 +319,15 @@ export default function PricingBreakdown({ vehicleCase }: { vehicleCase: Vehicle
   const displayedLineClass = (line: { key: string; amountThb: number | null; status: string }) => (
     line.key === "shipping" && line.amountThb === null && planningPerVehicle ? "estimate" : line.status === "Pending" ? "pending" : ""
   );
+  const displayedLineStatus = (line: { key: string; amountThb: number | null; status: string }) => {
+    if (line.key === "shipping" && line.amountThb === null && planningPerVehicle) return "Estimate";
+    return line.status === "Pending" ? "Not calculated yet" : "Confirmed";
+  };
   return (
     <div className="bb-pricing-tool">
       <header><div><p className="bb-kicker">{t("transparentPricing")}</p><h2>{t("workingPriceStructure")}</h2></div></header>
       <div className="bb-price-lines">
-        {pricing.lines.map((line) => <div key={line.key}><span>{line.status === "Known" ? <Check size={15} /> : <Clock3 size={15} />}<b>{labels[line.key] || line.key}</b></span><strong className={displayedLineClass(line)}>{displayedLineAmount(line)}</strong></div>)}
+        {pricing.lines.map((line) => <div key={line.key}><span>{line.status === "Known" ? <Check size={15} /> : <Clock3 size={15} />}<b>{labels[line.key] || line.key}</b><em className={displayedLineClass(line)}>{displayedLineStatus(line)}</em></span><strong className={displayedLineClass(line)}>{displayedLineAmount(line)}</strong></div>)}
       </div>
       <section className="bb-shipping-planner" aria-label={text.title}>
         <header><Ship size={17} /><div><b>{text.title}</b><small>{text.rule}</small></div></header>

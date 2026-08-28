@@ -943,7 +943,7 @@ test("renders additive Buying Browser routes without customer source leakage", a
   const { default: worker } = await import(workerUrl.href);
   const env = { ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) } };
   const ctx = { waitUntil() {}, passThroughOnException() {} };
-  const routes = ["/buy", "/buy/browser", "/buy/browse", "/buy/saved", "/buy/paste", "/buy/share", "/buy/ask", "/buy/cases", "/buy/cases/NK-CASE-2026-000001", "/buy/cases/NK-CASE-2026-000001/pi", "/buy/inspections", "/buy/messages", "/buy/account", "/buy/vehicle/nk-market-2026-0825-01", "/buy/vehicle/nk-market-2026-0825-05"];
+  const routes = ["/buy", "/buy/browser", "/buy/browse", "/buy/saved", "/buy/shipments", "/buy/paste", "/buy/share", "/buy/ask", "/buy/cases", "/buy/cases/NK-CASE-2026-000001", "/buy/cases/NK-CASE-2026-000001/pi", "/buy/inspections", "/buy/messages", "/buy/account", "/buy/vehicle/nk-market-2026-0825-01", "/buy/vehicle/nk-market-2026-0825-05"];
   for (const route of routes) {
     const response = await worker.fetch(new Request(`http://localhost${route}`, { headers: { accept: "text/html" } }), env, ctx);
     assert.equal(response.status, 200, route);

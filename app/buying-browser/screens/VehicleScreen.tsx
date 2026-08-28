@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ArrowLeft, Bot, CheckCircle2, ChevronLeft, ChevronRight, ClipboardCheck, Clock3, Gauge, Heart, MapPin, ShieldCheck, ShoppingBag, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useBuyingBrowser } from "../BuyingBrowserProvider";
-import { customerFxDisclosure, formatDateTime, formatMileage, formatUsdFromThb } from "../format";
+import { customerFxDisclosure, formatDateTime, formatMileage, formatThb, formatUsdFromThb } from "../format";
 import { useI18n } from "../use-i18n";
 import VehiclePhoto from "../components/VehiclePhoto";
 
@@ -91,6 +91,11 @@ export default function VehicleScreen({ sourceId }: { sourceId?: string }) {
     window.location.assign(`/buy/cases/${encodeURIComponent(caseId)}`);
   }
 
+  function startShipment() {
+    saveAsCase(listing!);
+    window.setTimeout(() => window.location.assign("/buy/shipments"), 80);
+  }
+
   return (
     <>
       <Link className="bb-back-link" href="/buy"><ArrowLeft size={18} />{t("browseVehicles")}</Link>
@@ -110,7 +115,13 @@ export default function VehicleScreen({ sourceId }: { sourceId?: string }) {
           <div className="bb-status-row"><span className="bb-status-chip market">{listing.demo ? "Demo" : t("nkSelection")}</span><span className="bb-status-chip pending"><Clock3 size={13} />{availabilityLabel(listing.availability)}</span></div>
           <h1>{listing.title}</h1>
           <p className="bb-grade">{listing.grade} · {listing.color}</p>
-          <strong className="bb-vehicle-price">{formatUsdFromThb(listing.observedPriceThb)}</strong>
+          <strong className="bb-vehicle-price">{formatThb(listing.observedPriceThb)}</strong>
+          <div className="bb-vehicle-key-facts" aria-label="Vehicle key facts">
+            <div><small>USD estimate</small><b>{formatUsdFromThb(listing.observedPriceThb)}</b></div>
+            <div><small>{t("transmission")}</small><b>{listing.transmission}</b></div>
+            <div><small>{t("drive")}</small><b>{listing.drive}</b></div>
+            <div><small>Last checked</small><b>{formatDateTime(listing.observedAt)}</b></div>
+          </div>
           <p className="bb-price-caption"><span className="bb-price-caption-short">{mobilePriceCaption}</span><span className="bb-price-caption-full">{t("observedPriceCaption", { date: formatDateTime(listing.observedAt), fx: customerFxDisclosure() })}</span></p>
           <div className="bb-detail-primary-actions">
             <button className="primary" onClick={() => openCase("availability")}><Gauge size={19} /><span><b>{t("checkAvailability")}</b><small>{t("recommendedFirstStep")}</small></span></button>
@@ -144,10 +155,11 @@ export default function VehicleScreen({ sourceId }: { sourceId?: string }) {
 
       <section className="bb-next-actions">
         <div className="bb-section-heading"><div><p className="bb-kicker">{t("continueThroughNk")}</p><h2>{t("chooseNext")}</h2></div></div>
-        <div data-vehicle-actions-v2>
-          <button onClick={() => openCase("inspection")}><ClipboardCheck size={22} /><span><b>{t("requestInspection")}</b><small>{t("inspectionInsideCase")}</small></span><ChevronRight size={18} /></button>
-          <button className="bb-buy-action" onClick={() => openCase()}><ShoppingBag size={22} /><span><b>{t("buyThroughNk")}</b><small>{existingCase ? t("continueExistingCase") : t("createCaseNoCommitment")}</small></span><ChevronRight size={18} /></button>
-        </div>
+          <div data-vehicle-actions-v2>
+            <button onClick={() => openCase("inspection")}><ClipboardCheck size={22} /><span><b>{t("requestInspection")}</b><small>{t("inspectionInsideCase")}</small></span><ChevronRight size={18} /></button>
+            <button onClick={startShipment}><ShoppingBag size={22} /><span><b>Start a shipment</b><small>Plan to ship 1, 2, or 3 cars together.</small></span><ChevronRight size={18} /></button>
+            <button className="bb-buy-action" onClick={() => openCase()}><ShoppingBag size={22} /><span><b>{t("buyThroughNk")}</b><small>{existingCase ? t("continueExistingCase") : t("createCaseNoCommitment")}</small></span><ChevronRight size={18} /></button>
+          </div>
       </section>
     </>
   );

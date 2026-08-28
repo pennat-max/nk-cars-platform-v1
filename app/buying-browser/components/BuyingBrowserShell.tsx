@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FolderKanban, Globe2, Heart, MapPin, MessageSquare, Search, UserRound } from "lucide-react";
+import { FolderKanban, Globe2, Heart, MapPin, Search, Ship, UserRound } from "lucide-react";
 import { customerInitials } from "../format";
 import { useBuyingBrowser } from "../BuyingBrowserProvider";
 import { useI18n } from "../use-i18n";
@@ -10,8 +10,8 @@ import type { BuyingBrowserView, CustomerLanguage } from "../types";
 const primaryNavItems = [
   { key: "browse", labelKey: "browse", href: "/buy", icon: Search },
   { key: "saved", labelKey: "saved", href: "/buy/saved", icon: Heart },
+  { key: "shipments", labelKey: "shipments", href: "/buy/shipments", icon: Ship },
   { key: "cases", labelKey: "myCases", href: "/buy/cases", icon: FolderKanban },
-  { key: "messages", labelKey: "messages", href: "/buy/messages", icon: MessageSquare },
 ] as const;
 const mobileNavItems = [...primaryNavItems, { key: "account", labelKey: "account", href: "/buy/account", icon: UserRound }] as const;
 
@@ -19,6 +19,7 @@ function activeKey(view: BuyingBrowserView) {
   if (view === "source" || view === "web-browser" || view === "vehicle" || view === "paste" || view === "share" || view === "ask") return "browse";
   if (view === "case" || view === "pi") return "cases";
   if (view === "inspections") return "cases";
+  if (view === "shipments") return "shipments";
   return view;
 }
 

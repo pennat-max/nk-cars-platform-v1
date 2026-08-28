@@ -1,16 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, Bot, CheckCircle2, ClipboardCheck, Clock3, Database, ExternalLink, FolderKanban, Gauge, Heart, Info, LockKeyhole, MessageSquare, RotateCcw, Send, Settings2, ShieldCheck, UserRound, WifiOff } from "lucide-react";
+import { ArrowLeft, Bot, CheckCircle2, ClipboardCheck, Clock3, Database, ExternalLink, FolderKanban, Gauge, Heart, Info, LockKeyhole, MessageSquare, Plus, RotateCcw, Send, Settings2, ShieldCheck, Ship, UserRound, WifiOff } from "lucide-react";
 import { FormEvent, useMemo, useState } from "react";
 import { useBuyingBrowser } from "../BuyingBrowserProvider";
-import { formatDateTime, formatUsdFromThb } from "../format";
+import { CUSTOMER_FX_THB_PER_USD, formatDateTime, formatThb, formatUsdFromThb } from "../format";
+import { SHIPPING_DESTINATIONS, shippingPlanForSelection } from "../domain.mjs";
 import { useI18n } from "../use-i18n";
 import PricingBreakdown from "../components/PricingBreakdown";
 import CommercialReadiness from "../components/CommercialReadiness";
 import QuotationPanel from "../components/QuotationPanel";
 import ProformaInvoicePanel from "../components/ProformaInvoicePanel";
 import VehiclePhoto from "../components/VehiclePhoto";
+
+function usdAmount(value: number | null | undefined) {
+  return value === null || value === undefined ? "Not calculated yet" : `USD ${value.toLocaleString("en-US")}`;
+}
 
 export function CasesScreen() {
   const { state } = useBuyingBrowser();
@@ -25,6 +30,96 @@ export function CasesScreen() {
           <div><small>{item.id}</small><h2>{item.vehicle.title}</h2><p>{item.vehicle.generalLocation}, {t("thailand")} - {formatUsdFromThb(item.vehicle.observedPriceThb)}</p><span className={item.availability === "Availability Check Requested" ? "bb-status-chip requested" : "bb-status-chip pending"}><Clock3 size={13} />{availabilityLabel(item.availability)}</span></div>
           <strong>{item.inspectionQuote ? (item.inspectionQuote.status === "Quote Ready" ? t("inspectionQuoteReady") : t("inspectionAwaitingProvider")) : t("inspectionLocationPending")}</strong>
         </Link>)}
+      </section>
+    </>
+  );
+}
+
+export function ShipmentsScreen() {
+  const { hydrated, state, updateCaseShippingPlan, requestCaseQuotation } = useBuyingBrowser();
+  const { t } = useI18n();
+  const primaryCase = state.cases[0];
+  const selectedCountry = primaryCase?.shippingDestinationCountry || "";
+  const selectedQuantity = primaryCase?.shippingVehicleQuantity || Math.min(3, Math.max(1, state.cases.length || 1));
+  const plan = shippingPlanForSelection(selectedCountry, selectedQuantity);
+  const oneCarPlan = shippingPlanForSelection(selectedCountry, 1);
+  const selectedCases = state.cases.slice(0, selectedQuantity);
+  const slots = Array.from({ length: selectedQuantity }, (_, index) => selectedCases[index] || null);
+  const perCarMid = plan.planningPerVehicleUsdMid;
+  const oneCarMid = oneCarPlan.planningPerVehicleUsdMid;
+  const savingPerCar = perCarMid !== null && oneCarMid !== null ? Math.max(0, oneCarMid - perCarMid) : null;
+  const rushingUsd = Math.round(25000 / CUSTOMER_FX_THB_PER_USD);
+  const rushingPerCarUsd = Math.round((25000 / 3) / CUSTOMER_FX_THB_PER_USD);
+
+  function updateShipment(destinationCountry: string, vehicleQuantity = selectedQuantity) {
+    if (!primaryCase) return;
+    updateCaseShippingPlan(primaryCase.id, { destinationCountry, vehicleQuantity });
+  }
+
+  function requestQuote() {
+    for (const item of selectedCases) requestCaseQuotation(item.id);
+  }
+
+  if (!hydrated) return <section className="bb-loading-state"><span /><p>Loading shipment planner...</p></section>;
+
+  if (!state.cases.length) return (
+    <section className="bb-empty-state">
+      <Ship size={32} />
+      <h1>Build a shipment</h1>
+      <p>Save a vehicle or open a Vehicle Case first. Then NK can plan 1 to 3 cars in one shipment.</p>
+      <Link className="bb-button primary" href="/buy">{t("browseVehicles")}</Link>
+    </section>
+  );
+
+  return (
+    <>
+      <section className="bb-page-heading bb-shipment-heading">
+        <div><p className="bb-kicker">Shipment planner</p><h1>Build a shipment</h1><p>Choose 1, 2, or 3 cars. Three cars usually gives the best per-car shipping estimate.</p></div>
+        <Link className="bb-button secondary" href="/buy/saved"><Plus size={17} />Add from Saved</Link>
+      </section>
+
+      <section className="bb-shipment-workbench" data-shipment-planner-v1>
+        <div className="bb-shipment-controls">
+          <label><span>Destination</span><select value={selectedCountry} onChange={(event) => updateShipment(event.target.value)}><option value="">Choose country</option>{SHIPPING_DESTINATIONS.map((item) => <option value={item.country} key={item.country}>{item.country} - {item.port}</option>)}</select></label>
+          <label><span>Cars in this shipment</span><select value={selectedQuantity} onChange={(event) => updateShipment(selectedCountry, Number(event.target.value))}>{[1, 2, 3].map((count) => <option value={count} key={count}>{count}{count === 3 ? " - best value" : ""}</option>)}</select></label>
+        </div>
+
+        <section className="bb-shipment-cost-strip" aria-label="Shipping estimate summary">
+          <div><small>Full shipment estimate</small><strong>{usdAmount(plan.planningShipmentUsdMid)}</strong><span>Planning only</span></div>
+          <div><small>Per car estimate</small><strong>{usdAmount(perCarMid)}</strong><span>{selectedQuantity} car{selectedQuantity === 1 ? "" : "s"} sharing</span></div>
+          <div><small>Savings vs 1 car</small><strong>{savingPerCar === null ? "Choose destination" : `USD ${savingPerCar.toLocaleString("en-US")}`}</strong><span>Per car estimate</span></div>
+        </section>
+
+        <section className="bb-shipment-slot-list" aria-label="Shipment vehicle slots">
+          {slots.map((item, index) => item ? (
+            <article key={item.id} className="filled">
+              <VehiclePhoto listing={item.vehicle} />
+              <div><small>Car {index + 1}</small><b>{item.vehicle.year ?? "Year pending"} {item.vehicle.brand} {item.vehicle.model}</b><span>{formatThb(item.vehicle.observedPriceThb)} / {formatUsdFromThb(item.vehicle.observedPriceThb)} est.</span></div>
+              <Link href={`/buy/cases/${encodeURIComponent(item.id)}`}>Open case</Link>
+            </article>
+          ) : (
+            <article key={`empty-${index}`} className="empty">
+              <span>{index + 1}</span>
+              <div><small>Open slot</small><b>Add Car {index + 1}</b><p>Find another car to share the shipment cost.</p></div>
+              <Link href="/buy/saved">Add car</Link>
+            </article>
+          ))}
+        </section>
+
+        <section className="bb-shipment-explain">
+          <b>How this estimate works</b>
+          <p>1 car uses the full shipment freight. 2 cars split the freight by 2. 3 cars split the freight plus the THB 25,000 Rushing/loading service.</p>
+          <dl>
+            <div><dt>Rushing service</dt><dd>THB 25,000 = about USD {rushingUsd.toLocaleString("en-US")} per shipment, or USD {rushingPerCarUsd.toLocaleString("en-US")} per car when shared by 3 cars.</dd></div>
+            <div><dt>Route note</dt><dd>{plan.routeNote || "Choose a destination to see the port or transit plan."}</dd></div>
+            <div><dt>Transit / inland</dt><dd>{plan.routeType?.toLowerCase().includes("transit") ? "Ocean freight is to the gateway port only. Inland destination cost is not included yet." : "Local port, clearing, registration, or inland destination cost is not included yet."}</dd></div>
+          </dl>
+        </section>
+
+        <footer className="bb-shipment-request">
+          <p><Info size={15} />Shipping remains a Planning Estimate until NK confirms the live forwarder or booking rate. Confirmed totals stay separate from estimate totals.</p>
+          <button className="bb-button primary" disabled={!selectedCountry} onClick={requestQuote}>Request quote</button>
+        </footer>
       </section>
     </>
   );

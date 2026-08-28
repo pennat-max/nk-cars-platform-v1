@@ -3,7 +3,7 @@ export const SUPPORTED_LANGUAGES = Object.freeze(["en", "zh-CN", "th"]);
 const dictionaries = {
   en: {
     language: "Language", english: "English", chinese: "简体中文", thai: "ไทย",
-    browse: "Browse", saved: "Saved", myCases: "My Cases", inspections: "Inspections", messages: "Messages",
+    browse: "Browse", saved: "Saved", shipments: "Shipments", myCases: "My Cases", inspections: "Inspections", messages: "Messages",
     vehiclePrice: "Vehicle Price", platformTransactionFee: "NK Platform & Transaction Fee", buyingServiceFee: "NK Buying Service",
     inspectionTravel: "Inspection & Travel", domesticTransport: "Domestic Transport", repairModification: "Repair / Modification",
     exportShipping: "Export / Shipping", otherAgreedCharges: "Other Agreed Charges", total: "Total", knownSubtotal: "Current total / subtotal",
@@ -51,7 +51,7 @@ const dictionaries = {
   },
   "zh-CN": {
     language: "语言", english: "English", chinese: "简体中文", thai: "ไทย",
-    browse: "浏览", saved: "已保存", myCases: "我的案件", inspections: "验车", messages: "消息",
+    browse: "浏览", saved: "已保存", shipments: "运输", myCases: "我的案件", inspections: "验车", messages: "消息",
     vehiclePrice: "车辆价格", platformTransactionFee: "NK 平台及交易服务费", buyingServiceFee: "NK 购车服务费",
     inspectionTravel: "验车及出行费用", domesticTransport: "泰国内陆运输", repairModification: "维修 / 改装",
     exportShipping: "出口 / 海运费用", otherAgreedCharges: "其他约定费用", total: "总计", knownSubtotal: "当前总计 / 小计",
@@ -99,7 +99,7 @@ const dictionaries = {
   },
   th: {
     language: "ภาษา", english: "English", chinese: "简体中文", thai: "ไทย",
-    browse: "ค้นหารถ", saved: "บันทึกแล้ว", myCases: "เคสของฉัน", inspections: "ตรวจสภาพ", messages: "ข้อความ",
+    browse: "ค้นหารถ", saved: "บันทึกแล้ว", shipments: "จัดส่ง", myCases: "เคสของฉัน", inspections: "ตรวจสภาพ", messages: "ข้อความ",
     vehiclePrice: "ราคารถ", platformTransactionFee: "ค่าบริการแพลตฟอร์มและธุรกรรม NK", buyingServiceFee: "ค่าบริการจัดซื้อรถ NK",
     inspectionTravel: "ค่าตรวจรถและเดินทาง", domesticTransport: "ค่าขนส่งภายในประเทศไทย", repairModification: "ค่าซ่อม / ดัดแปลง",
     exportShipping: "ค่าขนส่งออก / ค่าระวาง", otherAgreedCharges: "ค่าใช้จ่ายอื่นที่ตกลงกัน", total: "ยอดรวม", knownSubtotal: "ยอดรวม / ยอดย่อยปัจจุบัน",

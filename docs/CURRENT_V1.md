@@ -116,12 +116,16 @@ Primary actions:
 - Check Availability
 - Request Inspection
 
-Suggested customer navigation:
-**Browse | Saved | My Cases | Messages | Account**
+Approved customer navigation:
+**Browse | Saved | Shipments | My Cases | Account**
+
+Messages/conversation are shown inside Vehicle Case context rather than as a primary customer navigation item.
 
 V1 Browse defaults to **Bangkok Metro** to reduce inspection/travel time and cost. The operating group currently includes Bangkok, Nonthaburi, Pathum Thani, Samut Prakan, Samut Sakhon, and Nakhon Pathom. Nearby provinces and All Thailand remain available through filters; they are not the default customer view.
 
 Inspection remains a first-class Vehicle Case workflow but is no longer a separate primary mobile navigation destination. Customers access inspection status and requests from My Cases. Vehicle detail presents Check Availability as the recommended first step, keeps Ask NK AI beside it, and keeps Save as a familiar photo-level heart action.
+
+Owner-approved marketplace UI direction: Browse is mobile-first and uses a two-column vehicle grid on small phones, with larger readable text, image-first vehicle cards, THB price primary, USD estimate secondary, and only key facts on the card. Saved vehicles act as a shortlist where customers can select multiple vehicles and add them to a shipment plan. The customer shipment planner guides 1, 2, or 3 cars per shipment, shows full-shipment and per-car planning estimates, explains that 3 cars share freight plus the THB 25,000 Rushing/loading service, and keeps shipping estimates separate from confirmed totals.
 
 Customer location/destination country is separate from Search Location. Do not use the overseas customer's physical location as the Thai Marketplace search area.
 

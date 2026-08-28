@@ -195,6 +195,7 @@ export type BuyingBrowserView =
   | "share"
   | "cases"
   | "case"
+  | "shipments"
   | "pi"
   | "inspections"
   | "messages"

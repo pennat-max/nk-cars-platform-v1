@@ -4,7 +4,7 @@ import BuyingBrowserShell from "./components/BuyingBrowserShell";
 import { BuyingBrowserProvider } from "./BuyingBrowserProvider";
 import AskScreen from "./screens/AskScreen";
 import BrowseScreen from "./screens/BrowseScreen";
-import { AccountScreen, CaseDetailScreen, CasesScreen, InspectionsScreen, MessagesScreen } from "./screens/CaseScreens";
+import { AccountScreen, CaseDetailScreen, CasesScreen, InspectionsScreen, MessagesScreen, ShipmentsScreen } from "./screens/CaseScreens";
 import PasteScreen from "./screens/PasteScreen";
 import SourceLaunchScreen from "./screens/SourceLaunchScreen";
 import VehicleScreen from "./screens/VehicleScreen";
@@ -46,6 +46,7 @@ export default function BuyingBrowserApp({
         {view === "ask" && <AskScreen />}
         {view === "cases" && <CasesScreen />}
         {view === "case" && <CaseDetailScreen caseId={caseId} />}
+        {view === "shipments" && <ShipmentsScreen />}
         {view === "pi" && <ProformaInvoiceScreen caseId={caseId} />}
         {view === "inspections" && <InspectionsScreen />}
         {view === "messages" && <MessagesScreen />}

@@ -218,6 +218,28 @@ Decision:
 - QNAP PostgreSQL is the target durable workspace store for Saved vehicles, Vehicle Cases, conversations, verification, quotation, and PI records.
 - Application business rules remain deterministic and are revalidated at the adapter boundary. QNAP must enforce the same ownership, Revision, transaction, document-numbering, and append-only audit rules.
 - The existing ChatGPT Site/D1 identity and workspace path remains rollback support and is not destructively migrated or removed.
+
+## 2026-08-29 - Owner-approved marketplace UX refresh
+
+Status: APPROVED FOR REVIEW SITE IMPLEMENTATION
+
+Decision:
+- Customer mobile navigation is Browse, Saved, Shipments, My Cases, and Account.
+- Messages/conversation move into Vehicle Case context rather than remaining a primary customer navigation item.
+- Browse should behave like a fast mobile marketplace: two vehicle cards per row on phones, 3-4 columns on larger screens, image-first cards, larger readable typography, and card content limited to price, key specs, location, reviewed/status badge, and Save.
+- Saved vehicles become a shortlist that can support multi-select, comparison, and adding selected vehicles to a shipment.
+- Shipment planning becomes a first-class customer flow for 1, 2, or 3 cars, with clear full-shipment and per-car planning estimates, savings messaging, and Request quote action.
+- Shipping estimates remain Planning Estimates only and must stay separate from confirmed/final totals.
+
+Shipping presentation rule:
+- 1 car = shipment freight / 1.
+- 2 cars = shipment freight / 2.
+- 3 cars = (shipment freight + THB 25,000 Rushing/loading service) / 3.
+- Use the configured FX rate. At the current configured preview FX of THB 35 = USD 1, THB 25,000 is approximately USD 714 per shipment or USD 238 per car when shared by 3 cars.
+
+Boundaries:
+- This approval is for presentation/UX and customer-visible flow only.
+- Do not change QNAP infrastructure, Hermes runtime, Facebook automation, real payments, seller messages, destructive production data, or customer/internal privacy boundaries.
 - Activating production identity/runtime secrets remains an Owner-controlled security action after the infrastructure endpoints are implemented and tested.
 
 ## 2026-08-27 - Google and Apple customer sign-in

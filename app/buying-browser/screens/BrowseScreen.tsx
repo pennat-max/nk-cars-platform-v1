@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowUpDown, Bot, Link2, MapPin, RotateCcw, Search, SlidersHorizontal, X } from "lucide-react";
+import { ArrowUpDown, Bot, Link2, MapPin, RotateCcw, Search, Ship, SlidersHorizontal, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useBuyingBrowser } from "../BuyingBrowserProvider";
 import { DEFAULT_FILTERS, filterListings } from "../domain.mjs";
@@ -15,10 +15,11 @@ const locations = [...metroLocations, "Nearby Provinces", "All Thailand", "Chon 
 const yearOptions = ["", "2014", "2018", "2019", "2020", "2021", "2022", "2023", "2024", "2025"];
 
 export default function BrowseScreen({ savedOnly = false }: { savedOnly?: boolean }) {
-  const { listings, state, sourceStatus } = useBuyingBrowser();
+  const { listings, state, sourceStatus, saveAsCase } = useBuyingBrowser();
   const { language, t } = useI18n();
   const [filters, setFilters] = useState<BrowseFilters>({ ...DEFAULT_FILTERS });
   const [filterOpen, setFilterOpen] = useState(false);
+  const [selectedSavedIds, setSelectedSavedIds] = useState<string[]>([]);
   const sourceListings = savedOnly ? listings.filter((item) => state.savedListingIds.includes(item.id)) : listings;
   const domainFilters = useMemo(() => ({ ...filters, priceMin: customerUsdInputToThb(filters.priceMin), priceMax: customerUsdInputToThb(filters.priceMax) }), [filters]);
   const visibleListings = useMemo(() => filterListings(sourceListings, domainFilters), [domainFilters, sourceListings]);
@@ -37,6 +38,17 @@ export default function BrowseScreen({ savedOnly = false }: { savedOnly?: boolea
     setFilters((current) => ({ ...current, [key]: value }));
   }
 
+  function toggleSavedSelection(listingId: string) {
+    setSelectedSavedIds((current) => current.includes(listingId) ? current.filter((id) => id !== listingId) : [...current, listingId]);
+  }
+
+  function addSelectedToShipment() {
+    const selected = visibleListings.filter((item) => selectedSavedIds.includes(item.id)).slice(0, 3);
+    if (!selected.length) return;
+    for (const listing of selected) saveAsCase(listing);
+    window.setTimeout(() => window.location.assign("/buy/shipments"), 80);
+  }
+
   const marketplaceHeading = language === "zh-CN" ? "为你推荐" : language === "th" ? "รถที่เหมาะกับคุณ" : "Today's picks";
   const priceStatus = language === "zh-CN" ? "价格待核实" : language === "th" ? "ราคายังไม่ยืนยัน" : "Price not verified";
   const reviewedVehiclesLabel = language === "zh-CN" ? `${visibleListings.length} 台已审核车辆` : language === "th" ? `รถที่ตรวจแล้ว ${visibleListings.length} คัน` : `${visibleListings.length} reviewed vehicles`;
@@ -46,6 +58,11 @@ export default function BrowseScreen({ savedOnly = false }: { savedOnly?: boolea
       {savedOnly && <section className="bb-page-heading bb-browse-heading">
         <div><p className="bb-kicker">NK Cars · {t("thailand")}</p><h1>{savedOnly ? t("savedVehicles") : t("browseVehicles")}</h1></div>
         <span className="bb-result-count">{visibleListings.length} {t("results")}</span>
+      </section>}
+      {savedOnly && <section className="bb-shortlist-bar" aria-label="Saved vehicle shortlist actions">
+        <div><b>Shortlist</b><span>{selectedSavedIds.length ? `${selectedSavedIds.length} selected` : "Select cars to compare or build a shipment"}</span></div>
+        <button className="bb-button secondary" disabled={selectedSavedIds.length < 2}>Compare</button>
+        <button className="bb-button primary" disabled={!selectedSavedIds.length} onClick={addSelectedToShipment}><Ship size={17} />Add selected to shipment</button>
       </section>}
 
       <section className={savedOnly ? "bb-marketplace-toolbar saved" : "bb-marketplace-toolbar"} aria-label="Vehicle search and filters" data-browse-marketplace-v2={!savedOnly ? true : undefined}>
@@ -68,7 +85,7 @@ export default function BrowseScreen({ savedOnly = false }: { savedOnly?: boolea
         </div>}
       </section>
 
-      {visibleListings.length ? <section className="bb-listing-grid" aria-label="Vehicle results">{visibleListings.map((listing) => <ListingCard key={listing.id} listing={listing} />)}</section> : <section className="bb-empty-state"><Search size={30} /><h2>{savedOnly ? t("noSaved") : t("noMatches")}</h2><button className="bb-button secondary" onClick={() => setFilters({ ...DEFAULT_FILTERS })}><RotateCcw size={17} />{t("resetFilters")}</button></section>}
+      {visibleListings.length ? <section className="bb-listing-grid" aria-label="Vehicle results">{visibleListings.map((listing) => <ListingCard key={listing.id} listing={listing} selectable={savedOnly} selected={selectedSavedIds.includes(listing.id)} onSelect={toggleSavedSelection} />)}</section> : <section className="bb-empty-state"><Search size={30} /><h2>{savedOnly ? t("noSaved") : t("noMatches")}</h2><button className="bb-button secondary" onClick={() => setFilters({ ...DEFAULT_FILTERS })}><RotateCcw size={17} />{t("resetFilters")}</button></section>}
 
       {filterOpen && <div className="bb-filter-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setFilterOpen(false); }}>
         <section className="bb-filter-sheet" role="dialog" aria-modal="true" aria-label="Vehicle filters">
