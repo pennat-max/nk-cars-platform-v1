@@ -376,3 +376,4 @@ Decision:
 - The pilot run on 2026-08-28 successfully reached QNAP Data API and the authorized Facebook profile, then completed safely with `0` vehicles retained and `0` duplicates.
 - Because no candidate vehicle ID was created, the activation request is not complete. Hermes must not be reported as proven for real sourcing until one qualifying Toyota Revo 2022 Phetchaburi candidate is retained as `NEEDS_REVIEW`.
 - No publish, seller message, reservation, purchase, or payment command is authorized by this runbook or this result.
+- Direct Owner-supplied Facebook URLs may be tested through the same backup-first, worker-token, audited-command boundary, but QNAP remains the final rule validator. The 2026-08-28 direct URL attempt was stopped safely because the supplied listing normalized as year `2024` with no confirmed Phetchaburi location, which does not satisfy the approved `Toyota Revo 2022 - Phetchaburi` pilot rule.
