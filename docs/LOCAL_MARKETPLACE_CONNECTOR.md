@@ -159,6 +159,27 @@ The fixture does not contact Facebook or use an account.
 
 An authorized live smoke test requires the Owner to complete the manual profile login. It must stop rather than bypass any Facebook verification request.
 
+## QNAP Hermes Pilot Runbook
+
+From the Owner PC, the QNAP pilot helper can run one review-only command:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\run-hermes-qnap-pilot.ps1
+```
+
+The script prompts for the QNAP SSH credential locally, backs up PostgreSQL first, opens a loopback-only tunnel to the QNAP Data API container, starts the local connector with a temporary token, runs one worker command, writes a sanitized result to `%TEMP%\nk-hermes-qnap-pilot-result.json`, and then stops local connector/tunnel resources.
+
+Latest live result on 2026-08-28:
+
+- Backup: `/share/CACHEDEV6_DATA/nk-cars/backups/postgres/nk-cars-before-hermes-profile-pilot-20260828T100000Z.dump`
+- Browser profile: `ready`
+- Hermes state: `ready`
+- Worker command: `41a8edb0-b823-4a0a-b34f-0ad0c326e1c9`
+- Retained for review: `0`
+- Duplicates skipped: `0`
+
+The path is working, but the required pilot proof remains incomplete because no new vehicle reached `NEEDS_REVIEW`.
+
 ## Production Gate
 
 The hosted ChatGPT Site cannot call `127.0.0.1` on the Owner PC. A later production connection requires:

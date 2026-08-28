@@ -63,6 +63,13 @@ test("normalizes hard search requirements and customer-safe candidates", () => {
   assert.doesNotMatch(customerJson, /Internal Seller|facebook|081-234-5678|765000|Bangkok/i);
   assert.match(customerJson, /Availability and final price require NK verification/);
   assert.deepEqual(candidateMatchesRequest(candidate, request), { matches: true, failures: [] });
+
+  const canonicalOnly = normalizeCandidate({
+    canonical_url: "https://www.facebook.com/marketplace/item/987654321/",
+    title: "2022 Toyota Hilux Revo pickup",
+    listing_text: "Toyota Revo pickup",
+  });
+  assert.equal(canonicalOnly.source.source_url, "https://www.facebook.com/marketplace/item/987654321/");
 });
 
 test("runs searches one at a time and records safe telemetry", async () => {

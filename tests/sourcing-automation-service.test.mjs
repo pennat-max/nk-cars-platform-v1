@@ -262,7 +262,7 @@ test("deterministic QNAP worker bridge claims, searches, retains candidates, and
     if (pathname.endsWith("/heartbeat")) return Response.json({ accepted: true });
     if (pathname.includes("/v1/search-runs/run_")) {
       runPolls += 1;
-      return Response.json({ status: "completed", candidates: [candidatePayload.candidate] });
+      return Response.json({ status: "completed", listings_found: 3, candidate_count: 1, rejected: 2, candidates: [candidatePayload.candidate] });
     }
     if (pathname.endsWith("/sourcing/candidates")) return Response.json({ status: "retained", vehicleId: "nk-auto-test", media: { stored: 1, failed: 0 } }, { status: 201 });
     if (pathname.endsWith("/complete")) return Response.json({ accepted: true });
@@ -270,11 +270,21 @@ test("deterministic QNAP worker bridge claims, searches, retains candidates, and
   };
   const config = { qnapUrl: "http://qnap.internal", qnapToken: workerToken, connectorUrl: "http://127.0.0.1:4317", connectorToken: "connector-token-that-is-at-least-32-characters", workerId: "hermes-qnap", profileId: "fb-buyer-01", pollIntervalMs: 30_000 };
   const result = await runQnapWorkerOnce(config, fetchImpl);
-  assert.deepEqual(result, { status: "completed", commandId, retained: 1, duplicates: 0 });
+  assert.deepEqual(result, {
+    status: "completed",
+    commandId,
+    retained: 1,
+    duplicates: 0,
+    listingsFound: 3,
+    connectorCandidates: 1,
+    rejected: 2,
+    retainedVehicleIds: ["nk-auto-test"],
+  });
   assert.equal(runPolls, 1);
   assert.equal(calls.find((call) => call.pathname.endsWith("/sourcing/candidates")).body.ruleId, ruleId);
   const completion = calls.find((call) => call.pathname.endsWith("/complete")).body;
   assert.equal(completion.processedIncrement, 0, "candidate retention is the sole daily counter authority");
+  assert.match(completion.message, /3 listings inspected, 1 connector candidates/);
 });
 
 test("Data API can deploy before worker authorization without exposing worker endpoints", async () => {

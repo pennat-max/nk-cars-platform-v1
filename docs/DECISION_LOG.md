@@ -365,3 +365,14 @@ Decision:
 - The account owner must enter Facebook credentials directly in the authorized browser/runtime screen. If that cannot be reached remotely, use an approved remote desktop/browser-screen channel rather than credential collection.
 - Connector profile control remains fail-closed unless a server-side connector admin URL and token are configured. Secrets and browser sessions stay out of GitHub.
 - This approval does not authorize publication, seller messaging, reservation, purchase, payment, CAPTCHA/MFA bypass, or rate-limit evasion.
+
+## 2026-08-28 - QNAP Hermes pilot reached safe zero-candidate result
+
+Status: IMPLEMENTED OPERATIONS RUNBOOK; PILOT PROOF STILL INCOMPLETE
+
+Decision:
+- Keep the local QNAP Hermes pilot runbook in GitHub without secrets so the same reversible process can be rerun from the Owner PC.
+- The runbook must prompt locally for QNAP SSH credentials, create a PostgreSQL backup first, use QNAP-stored tokens only at runtime, and tear down local connector/tunnel state after the run.
+- The pilot run on 2026-08-28 successfully reached QNAP Data API and the authorized Facebook profile, then completed safely with `0` vehicles retained and `0` duplicates.
+- Because no candidate vehicle ID was created, the activation request is not complete. Hermes must not be reported as proven for real sourcing until one qualifying Toyota Revo 2022 Phetchaburi candidate is retained as `NEEDS_REVIEW`.
+- No publish, seller message, reservation, purchase, or payment command is authorized by this runbook or this result.

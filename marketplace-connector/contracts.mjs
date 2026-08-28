@@ -159,7 +159,7 @@ function customerSummary(facts) {
 }
 
 export function normalizeCandidate(listing, context = {}) {
-  const sourceUrl = cleanText(listing.source_url, 3_000);
+  const sourceUrl = cleanText(listing.source_url || listing.canonical_url || listing.final_url, 3_000);
   const title = cleanText(listing.title, 500);
   const description = cleanText(listing.description, 30_000);
   const listingText = cleanText(listing.listing_text, 30_000) || [title, description].filter(Boolean).join(" ");

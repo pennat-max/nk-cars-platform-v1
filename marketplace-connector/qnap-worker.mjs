@@ -136,6 +136,10 @@ export async function runQnapWorkerOnce(config, fetchImpl = fetch) {
     if (!entries.length) throw new Error("command_rule_snapshot_missing");
     let retained = 0;
     let duplicates = 0;
+    let listingsFound = 0;
+    let connectorCandidates = 0;
+    let rejected = 0;
+    const retainedVehicleIds = [];
     for (const entry of entries) {
       const queued = await jsonRequest(fetchImpl, `${config.connectorUrl}/v1/search-runs`, config.connectorToken, {
         method: "POST",
@@ -144,6 +148,9 @@ export async function runQnapWorkerOnce(config, fetchImpl = fetch) {
       const run = await waitForRun(fetchImpl, config, queued.run_id, command.id);
       if (run.status === "login_required") throw new Error("facebook_login_required");
       if (run.status !== "completed") throw new Error(run.error_code || `search_${run.status}`);
+      listingsFound += Number(run.listings_found) || 0;
+      connectorCandidates += Number(run.candidate_count) || (Array.isArray(run.candidates) ? run.candidates.length : 0);
+      rejected += Number(run.rejected) || 0;
       for (const candidate of run.candidates || []) {
         try {
           const ingested = await jsonRequest(fetchImpl, `${config.qnapUrl}/v1/worker/sourcing/candidates`, config.qnapToken, {
@@ -151,7 +158,10 @@ export async function runQnapWorkerOnce(config, fetchImpl = fetch) {
             headers: { "x-nk-worker-id": config.workerId },
             body: JSON.stringify({ commandId: command.id, ruleId: entry.id, candidate }),
           });
-          if (ingested.status === "retained") retained += 1;
+          if (ingested.status === "retained") {
+            retained += 1;
+            if (typeof ingested.vehicleId === "string" && ingested.vehicleId) retainedVehicleIds.push(ingested.vehicleId);
+          }
           if (ingested.status === "duplicate") duplicates += 1;
         } catch (error) {
           if (error instanceof Error && error.message === "daily_limit_reached") break;
@@ -160,8 +170,14 @@ export async function runQnapWorkerOnce(config, fetchImpl = fetch) {
         }
       }
     }
-    await complete(fetchImpl, config, command.id, { state: "ready", browserProfileState: "ready", processedIncrement: 0, message: `Sourcing completed: ${retained} retained for review, ${duplicates} duplicates skipped.`, safeErrorCode: null });
-    return { status: "completed", commandId: command.id, retained, duplicates };
+    await complete(fetchImpl, config, command.id, {
+      state: "ready",
+      browserProfileState: "ready",
+      processedIncrement: 0,
+      message: `Sourcing completed: ${retained} retained for review, ${duplicates} duplicates skipped. ${listingsFound} listings inspected, ${connectorCandidates} connector candidates.`,
+      safeErrorCode: null,
+    });
+    return { status: "completed", commandId: command.id, retained, duplicates, listingsFound, connectorCandidates, rejected, retainedVehicleIds };
   } catch (error) {
     const code = error instanceof Error && /^[a-z0-9_:-]{1,100}$/i.test(error.message) ? error.message : "worker_failed";
     const loginRequired = code === "facebook_login_required" || code === "login_required";
@@ -184,6 +200,6 @@ export async function runQnapWorker(config = loadQnapWorkerConfig(), fetchImpl =
   }
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   await runQnapWorker();
 }
