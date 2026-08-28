@@ -21,6 +21,7 @@ const shippingCopy: Record<CustomerLanguage, {
   bufferNote: string;
   noIndicativeFreight: string;
   sourcePrefix: string;
+  estimateSuffix: string;
 }> = {
   en: {
     title: "Destination and shipping estimate",
@@ -36,6 +37,7 @@ const shippingCopy: Record<CustomerLanguage, {
     bufferNote: "Upper range includes a planning buffer. Final booking may be higher or lower.",
     noIndicativeFreight: "No reliable public route estimate found yet. NK quote is required before final pricing.",
     sourcePrefix: "Source",
+    estimateSuffix: "est.",
   },
   "zh-CN": {
     title: "目的地和运费估算",
@@ -51,6 +53,7 @@ const shippingCopy: Record<CustomerLanguage, {
     bufferNote: "区间上限包含计划缓冲。实际订舱价格可能更高或更低。",
     noIndicativeFreight: "尚未找到可靠的公开路线估算。最终定价前需要 NK 报价。",
     sourcePrefix: "来源",
+    estimateSuffix: "估算",
   },
   th: {
     title: "ปลายทางและค่าชิปปิ้งประมาณการ",
@@ -66,6 +69,7 @@ const shippingCopy: Record<CustomerLanguage, {
     bufferNote: "ปลายบนของช่วงราคานี้รวม buffer สำหรับวางแผน ราคาจริงตอน booking อาจสูงหรือต่ำกว่าได้",
     noIndicativeFreight: "ยังไม่พบราคาประมาณการสาธารณะที่น่าเชื่อถือสำหรับเส้นทางนี้ ต้องให้ NK ขอราคาก่อนออกยอดสุดท้าย",
     sourcePrefix: "แหล่งข้อมูล",
+    estimateSuffix: "ประมาณการ",
   },
 };
 
@@ -110,11 +114,18 @@ export default function PricingBreakdown({ vehicleCase }: { vehicleCase: Vehicle
   };
   const updateCountry = (destinationCountry: string) => updateCaseShippingPlan(vehicleCase.id, { destinationCountry, vehicleQuantity: shippingQuantity });
   const updateQuantity = (vehicleQuantity: number) => updateCaseShippingPlan(vehicleCase.id, { destinationCountry: shippingCountry, vehicleQuantity });
+  const displayedLineAmount = (line: { key: string; amountThb: number | null }) => {
+    if (line.key === "shipping" && line.amountThb === null && planningFreight) return `${planningFreight} ${text.estimateSuffix}`;
+    return line.amountThb === null ? t("pending") : formatUsdFromThb(line.amountThb);
+  };
+  const displayedLineClass = (line: { key: string; amountThb: number | null; status: string }) => (
+    line.key === "shipping" && line.amountThb === null && planningFreight ? "estimate" : line.status === "Pending" ? "pending" : ""
+  );
   return (
     <div className="bb-pricing-tool">
       <header><div><p className="bb-kicker">{t("transparentPricing")}</p><h2>{t("workingPriceStructure")}</h2></div></header>
       <div className="bb-price-lines">
-        {pricing.lines.map((line) => <div key={line.key}><span>{line.status === "Known" ? <Check size={15} /> : <Clock3 size={15} />}<b>{labels[line.key] || line.key}</b></span><strong className={line.status === "Pending" ? "pending" : ""}>{line.amountThb === null ? t("pending") : formatUsdFromThb(line.amountThb)}</strong></div>)}
+        {pricing.lines.map((line) => <div key={line.key}><span>{line.status === "Known" ? <Check size={15} /> : <Clock3 size={15} />}<b>{labels[line.key] || line.key}</b></span><strong className={displayedLineClass(line)}>{displayedLineAmount(line)}</strong></div>)}
       </div>
       <section className="bb-shipping-planner" aria-label={text.title}>
         <header><Ship size={17} /><div><b>{text.title}</b><small>{text.rule}</small></div></header>
