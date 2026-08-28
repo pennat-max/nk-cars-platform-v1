@@ -1143,6 +1143,8 @@ test("customer pricing component renders amount-only NK fee labels and inclusion
   assert.match(component, /buyingServiceFee/);
   assert.match(component, /whatsIncluded/);
   assert.match(component, /chooseDestinationFirst/);
+  assert.match(component, /bb-shipment-slots/);
+  assert.match(component, /shipmentSlots/);
   assert.doesNotMatch(component, /commissionRate|% service fee|10%/i);
 });
 

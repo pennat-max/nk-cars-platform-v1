@@ -384,6 +384,16 @@ Decision:
 - Customer pricing should show quote-size choices for 1, 2, and 3 cars with estimated per-car shipping amounts and a 3-car best-value cue.
 - Selecting a quote size updates the planned shipment quantity and estimated total only. It does not issue a final quotation, book freight, accept payment, or create a confirmed grouped shipment without NK verification.
 
+## 2026-08-28 - Fill-three-car shipment slots
+
+Status: APPROVED AND IMPLEMENTED
+
+Decision:
+- Customer pricing should make the "fill the shipment" path concrete instead of showing only a numeric prompt.
+- The Vehicle Case pricing UI now shows shipment slots for the selected 1/2/3-car target: existing Vehicle Cases, open add-car slots, and a current planned set total for the cases already in the plan.
+- Empty slots link the customer back to Browse, Paste Link, or Ask NK AI so they can add more cars toward a three-car shipment.
+- This slot planner remains customer planning UI only. It does not create a confirmed grouped shipment, issue a final quotation, book freight, take payment, send external messages, or purchase vehicles without NK verification.
+
 ## 2026-08-28 - QNAP Hermes pilot reached safe zero-candidate result
 
 Status: IMPLEMENTED OPERATIONS RUNBOOK; PILOT PROOF STILL INCOMPLETE

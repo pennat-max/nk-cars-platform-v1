@@ -7,6 +7,7 @@ import { useBuyingBrowser } from "../BuyingBrowserProvider";
 import { CUSTOMER_FX_THB_PER_USD, customerFxDisclosure, formatUsdFromThb } from "../format";
 import { useI18n } from "../use-i18n";
 import type { CustomerLanguage, VehicleCase } from "../types";
+import VehiclePhoto from "./VehiclePhoto";
 
 const shippingCopy: Record<CustomerLanguage, {
   title: string;
@@ -189,6 +190,53 @@ function quoteChoiceCopy(language: CustomerLanguage, count: number) {
   return { title: "Quote 3 cars", note: "Best value: shares freight plus the THB 25,000 Rushing service.", tag: "Best value" };
 }
 
+function shipmentSlotCopy(language: CustomerLanguage) {
+  if (language === "th") return {
+    title: "รถในรอบส่งนี้",
+    filled: "คันที่",
+    empty: "ช่องว่าง",
+    openCase: "เปิดเคส",
+    add: "เติมรถ",
+    addHint: "เลือกรถอีกคันเพื่อแชร์ค่าตู้",
+    groupTotal: "ยอดรวมของรถที่มีในแผนตอนนี้",
+    currentSet: "รวมจาก Vehicle Case ที่มีอยู่ในแผนนี้เท่านั้น",
+  };
+  if (language === "zh-CN") return {
+    title: "本次运输车辆",
+    filled: "车辆",
+    empty: "空位",
+    openCase: "打开案件",
+    add: "添加车辆",
+    addHint: "再选一辆车来分摊集装箱成本",
+    groupTotal: "当前计划车辆合计",
+    currentSet: "仅包含当前计划里的 Vehicle Case",
+  };
+  return {
+    title: "Cars in this shipment",
+    filled: "Car",
+    empty: "Open slot",
+    openCase: "Open case",
+    add: "Add car",
+    addHint: "Choose another vehicle to share the container cost.",
+    groupTotal: "Current planned set total",
+    currentSet: "Only the Vehicle Cases currently in this plan are included.",
+  };
+}
+
+function knownCaseSubtotalThb(vehicleCase: VehicleCase) {
+  return calculatePricing({
+    vehiclePriceThb: vehicleCase.actualVehiclePurchasePriceThb ?? vehicleCase.vehicle.observedPriceThb,
+    platformTransactionRate: vehicleCase.platformTransactionRate,
+    buyingServiceRate: vehicleCase.buyingServiceRate,
+    inspectionTravelThb: vehicleCase.inspectionQuote?.totalThb ?? null,
+    domesticTransportThb: vehicleCase.domesticTransportThb,
+    repairModificationThb: vehicleCase.repairModificationThb,
+    exportShippingThb: vehicleCase.exportShippingThb,
+    containerLoadingFeeThb: null,
+    otherAgreedThb: vehicleCase.otherAgreedThb,
+  }).knownSubtotalThb;
+}
+
 export default function PricingBreakdown({ vehicleCase }: { vehicleCase: VehicleCase }) {
   const { t } = useI18n();
   const { language, state, updateCaseShippingPlan } = useBuyingBrowser();
@@ -244,7 +292,17 @@ export default function PricingBreakdown({ vehicleCase }: { vehicleCase: Vehicle
   const filledShipmentSlots = Math.min(shipmentVehicleCount, shipmentTarget);
   const missingShipmentSlots = Math.max(0, shipmentTarget - shipmentVehicleCount);
   const fillText = shipmentFillCopy(language, missingShipmentSlots);
+  const slotText = shipmentSlotCopy(language);
   const fillCarUnit = (count: number) => language === "en" ? (count === 1 ? "car" : "cars") : fillText.car;
+  const shipmentCases = [vehicleCase, ...state.cases.filter((item) => item.id !== vehicleCase.id)].slice(0, shipmentTarget);
+  const shipmentSlots = Array.from({ length: shipmentTarget }, (_, index) => shipmentCases[index] || null);
+  const shipmentSetKnownSubtotalThb = shipmentCases.reduce((total, item) => total + knownCaseSubtotalThb(item), 0);
+  const shipmentSetShippingUsd = shippingPlan.planningPerVehicleUsdMid === null || shippingPlan.planningPerVehicleUsdMid === undefined
+    ? null
+    : shippingPlan.planningPerVehicleUsdMid * shipmentCases.length;
+  const shipmentSetTotalUsd = shipmentSetShippingUsd === null
+    ? null
+    : Math.round(shipmentSetKnownSubtotalThb / CUSTOMER_FX_THB_PER_USD) + shipmentSetShippingUsd;
   const quoteChoices = [1, 2, 3].map((count) => {
     const optionPlan = shippingPlanForSelection(shippingCountry, count);
     return {
@@ -289,6 +347,25 @@ export default function PricingBreakdown({ vehicleCase }: { vehicleCase: Vehicle
             <div><dt>{fillText.estimate}</dt><dd>{estimatedTotalWithShipping || knownSubtotal}</dd></div>
           </dl>
           <p>{fillText.note}</p>
+          <section className="bb-shipment-slots" aria-label={slotText.title}>
+            <header><b>{slotText.title}</b><small>{slotText.currentSet}</small></header>
+            <div>
+              {shipmentSlots.map((item, index) => item ? (
+                <article key={item.id} className="filled">
+                  <VehiclePhoto listing={item.vehicle} />
+                  <div><small>{slotText.filled} {index + 1}</small><b>{item.vehicle.year ?? t("pending")} {item.vehicle.brand} {item.vehicle.model}</b><span>{formatUsdFromThb(item.vehicle.observedPriceThb)}</span></div>
+                  <Link href={`/buy/cases/${encodeURIComponent(item.id)}`}>{slotText.openCase}</Link>
+                </article>
+              ) : (
+                <article key={`empty-${index}`} className="empty">
+                  <span>{index + 1}</span>
+                  <div><small>{slotText.empty}</small><b>{slotText.add}</b><p>{slotText.addHint}</p></div>
+                  <Link href="/buy">{slotText.add}</Link>
+                </article>
+              ))}
+            </div>
+            <footer><span>{slotText.groupTotal}</span><strong>{formatUsdAmount(shipmentSetTotalUsd) || knownSubtotal}</strong></footer>
+          </section>
           {missingShipmentSlots > 0 && <nav aria-label={fillText.title}>
             <Link href="/buy"><Search size={15} />{fillText.browse}</Link>
             <Link href="/buy/paste"><SquarePlus size={15} />{fillText.paste}</Link>
