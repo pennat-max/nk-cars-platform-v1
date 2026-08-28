@@ -405,6 +405,16 @@ Decision:
 - If no reliable public freight benchmark is available, the country remains selectable but the freight estimate stays Pending / NK quote required rather than inventing a number.
 - Strict-compliance markets such as Australia, New Zealand, Singapore, Japan, India, Malaysia, Hong Kong, Ireland, and the United Kingdom require import/compliance confirmation before final quotation.
 
+## 2026-08-28 - Shipping estimates inherit approved benchmark groups
+
+Status: APPROVED AND IMPLEMENTED
+
+Decision:
+- Supersede the prior Pending-only behavior for destinations without a route-specific public benchmark.
+- Customer pricing may show a planning estimate for those destinations by inheriting the nearest approved benchmark group: Mombasa/East Africa gateway, Dar es Salaam/East Africa gateway, Southern Africa gateway, Asia RHD markets, Pacific/Indian Ocean RHD markets, or long-haul RHD markets.
+- The UI must label the benchmark group and keep the source wording clear that this is a planning benchmark, not a live forwarder quote.
+- Transit, border, clearing, local delivery, import approval, compliance, tax/duty, and registration costs remain separate until NK confirms the final route.
+
 ## 2026-08-28 - QNAP Hermes pilot reached safe zero-candidate result
 
 Status: IMPLEMENTED OPERATIONS RUNBOOK; PILOT PROOF STILL INCOMPLETE

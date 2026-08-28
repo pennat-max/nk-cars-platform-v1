@@ -343,6 +343,7 @@ export default function PricingBreakdown({ vehicleCase }: { vehicleCase: Vehicle
           <div><dt>{text.fullShipment}</dt><dd>{planningShipment || t("pending")}</dd></div>
           {shippingPlan.containerLoadingFeeUsd > 0 && <div><dt>{text.loadingService}</dt><dd>{text.loadingServiceNote(shippingPlan.containerLoadingFeeUsd, shippingPlan.containerLoadingPerVehicleUsd)}</dd></div>}
           <div><dt>Route type</dt><dd>{shippingPlan.routeType || t("pending")}</dd></div>
+          <div><dt>Benchmark group</dt><dd>{shippingPlan.benchmarkGroup || t("pending")}</dd></div>
           <div><dt>Gateway / transit plan</dt><dd>{shippingPlan.routeNote || t("pending")}</dd></div>
           <div><dt>Import eligibility</dt><dd>{shippingPlan.importNote || t("pending")}</dd></div>
           <div><dt>{text.marketBenchmark}</dt><dd>{marketBenchmark || t("pending")}</dd></div>

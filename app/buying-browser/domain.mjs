@@ -193,6 +193,35 @@ export function shippingDestinationForCountry(country) {
   return SHIPPING_DESTINATIONS.find((item) => item.country.toLowerCase() === normalized) || null;
 }
 
+function shippingPlanningBenchmarkForDestination(destination) {
+  if (!destination) return { low: null, high: null, source: null, group: null };
+  if (destination.country === "Thailand") return { low: null, high: null, source: destination.estimateSource, group: "Domestic / no ocean freight" };
+  if (destination.estimateUsdLow !== null && destination.estimateUsdLow !== undefined && destination.estimateUsdHigh !== null && destination.estimateUsdHigh !== undefined) {
+    return { low: destination.estimateUsdLow, high: destination.estimateUsdHigh, source: destination.estimateSource, group: "Public route benchmark" };
+  }
+
+  const route = `${destination.country} ${destination.port} ${destination.routeType || ""}`.toLowerCase();
+  if (route.includes("mombasa")) {
+    return { low: 5100, high: 6800, source: "Planning benchmark group: Mombasa / East Africa gateway. NK must confirm live booking rate and inland transit before final quote.", group: "Mombasa / East Africa gateway" };
+  }
+  if (route.includes("dar es salaam")) {
+    return { low: 9300, high: 9300, source: "Planning benchmark group: Dar es Salaam / East Africa gateway. NK must confirm live booking rate and inland transit before final quote.", group: "Dar es Salaam / East Africa gateway" };
+  }
+  if (/(maputo|beira|durban|walvis bay)/.test(route)) {
+    return { low: 2700, high: 5500, source: "Planning benchmark group: Southern Africa gateway. NK must confirm the live port, booking rate, and inland transit before final quote.", group: "Southern Africa gateway" };
+  }
+  if (/(australia|new zealand|fiji|papua new guinea|seyc?helles|mauritius)/.test(route)) {
+    return { low: 5100, high: 6800, source: "Planning benchmark group: Pacific / Indian Ocean RHD markets. NK must confirm live booking, transshipment, and compliance costs before final quote.", group: "Pacific / Indian Ocean RHD markets" };
+  }
+  if (/(singapore|malaysia|brunei|bangladesh|sri lanka|india|pakistan|nepal|japan|hong kong)/.test(route)) {
+    return { low: 2700, high: 5500, source: "Planning benchmark group: Asia RHD markets. NK must confirm live booking rate, import eligibility, and compliance costs before final quote.", group: "Asia RHD markets" };
+  }
+  if (/(united kingdom|ireland|cyprus|barbados|jamaica|guyana|ghana)/.test(route)) {
+    return { low: 9300, high: 9300, source: "Planning benchmark group: long-haul RHD markets. NK must confirm live booking, transshipment, and import costs before final quote.", group: "Long-haul RHD markets" };
+  }
+  return { low: 9300, high: 9300, source: "Planning benchmark group: fallback RHD market. NK must confirm live booking and route costs before final quote.", group: "Fallback RHD market" };
+}
+
 function planningFreightHigh(estimateHigh) {
   return estimateHigh === null || estimateHigh === undefined
     ? null
@@ -216,8 +245,9 @@ function midpointEstimate(lowUsd, highUsd) {
 export function shippingPlanForSelection(destinationCountry, vehicleQuantity = 1) {
   const destination = shippingDestinationForCountry(destinationCountry);
   const quantity = normalizeShippingVehicleQuantity(vehicleQuantity);
-  const indicativeFreightUsdLow = destination?.estimateUsdLow ?? null;
-  const indicativeFreightUsdHigh = destination?.estimateUsdHigh ?? null;
+  const benchmark = shippingPlanningBenchmarkForDestination(destination);
+  const indicativeFreightUsdLow = benchmark.low;
+  const indicativeFreightUsdHigh = benchmark.high;
   const containerLoadingFeeThb = quantity === 3 ? THREE_CAR_CONTAINER_LOADING_FEE_THB : 0;
   const containerLoadingFeeUsd = containerLoadingFeeThb ? customerUsdFromThb(containerLoadingFeeThb) : 0;
   const containerLoadingPerVehicleUsd = containerLoadingFeeThb ? customerUsdFromThb(containerLoadingFeeThb / quantity) : 0;
@@ -242,7 +272,8 @@ export function shippingPlanForSelection(destinationCountry, vehicleQuantity = 1
     planningShipmentUsdMid: midpointEstimate(planningShipmentUsdLow, planningShipmentUsdHigh),
     planningPerVehicleUsdMid: midpointEstimate(perVehicleEstimate(planningShipmentUsdLow, quantity), perVehicleEstimate(planningShipmentUsdHigh, quantity)),
     planningBufferRate: SHIPPING_PLANNING_BUFFER_RATE,
-    indicativeFreightSource: destination?.estimateSource ?? null,
+    indicativeFreightSource: benchmark.source,
+    benchmarkGroup: benchmark.group,
     routeType: destination?.routeType ?? null,
     routeNote: destination?.routeNote ?? null,
     importNote: destination?.importNote ?? null,

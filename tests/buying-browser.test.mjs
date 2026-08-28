@@ -817,6 +817,7 @@ test("shipping plan records destination and adds only approved three-car loading
     planningPerVehicleUsdMid: 2405,
     planningBufferRate: SHIPPING_PLANNING_BUFFER_RATE,
     indicativeFreightSource: "Public 40ft Kenya market benchmarks; verify Thailand route before booking.",
+    benchmarkGroup: "Public route benchmark",
     routeType: "Direct port",
     routeNote: "Port-country shipment. Inland delivery beyond the port is quoted separately when required.",
     importNote: "Right-hand-drive market; final import eligibility still requires NK/local agent check.",
@@ -825,8 +826,10 @@ test("shipping plan records destination and adds only approved three-car loading
   assert.ok(SHIPPING_DESTINATIONS.length >= 30, "RHD/left-traffic shipping coverage should include broad country choices");
   assert.equal(shippingPlanForSelection("Zambia", 1).routeType, "Transit / landlocked");
   assert.match(shippingPlanForSelection("Zambia", 1).routeNote, /inland transit to Zambia/i);
-  assert.equal(shippingPlanForSelection("Australia", 1).planningPerVehicleUsdMid, null);
+  assert.equal(shippingPlanForSelection("Australia", 1).benchmarkGroup, "Pacific / Indian Ocean RHD markets");
+  assert.equal(shippingPlanForSelection("Australia", 1).planningPerVehicleUsdMid, 6500);
   assert.match(shippingPlanForSelection("Australia", 1).importNote, /strict/i);
+  assert.equal(shippingPlanForSelection("Thailand", 1).planningPerVehicleUsdMid, null);
   assert.equal(shippingPlanForSelection("Kenya", 1).planningPerVehicleUsdHigh, 7900);
   assert.equal(shippingPlanForSelection("Kenya", 2).planningPerVehicleUsdHigh, 3950);
   assert.equal(shippingPlanForSelection("Tanzania", 1).planningFreightUsdHigh, 10700);
