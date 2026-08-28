@@ -179,6 +179,12 @@ function perVehicleEstimate(valueUsd, quantity) {
   return valueUsd === null || valueUsd === undefined ? null : Math.round(valueUsd / quantity);
 }
 
+function midpointEstimate(lowUsd, highUsd) {
+  return lowUsd === null || lowUsd === undefined || highUsd === null || highUsd === undefined
+    ? null
+    : Math.round((lowUsd + highUsd) / 2);
+}
+
 export function shippingPlanForSelection(destinationCountry, vehicleQuantity = 1) {
   const destination = shippingDestinationForCountry(destinationCountry);
   const quantity = normalizeShippingVehicleQuantity(vehicleQuantity);
@@ -205,6 +211,8 @@ export function shippingPlanForSelection(destinationCountry, vehicleQuantity = 1
     planningShipmentUsdHigh,
     planningPerVehicleUsdLow: perVehicleEstimate(planningShipmentUsdLow, quantity),
     planningPerVehicleUsdHigh: perVehicleEstimate(planningShipmentUsdHigh, quantity),
+    planningShipmentUsdMid: midpointEstimate(planningShipmentUsdLow, planningShipmentUsdHigh),
+    planningPerVehicleUsdMid: midpointEstimate(perVehicleEstimate(planningShipmentUsdLow, quantity), perVehicleEstimate(planningShipmentUsdHigh, quantity)),
     planningBufferRate: SHIPPING_PLANNING_BUFFER_RATE,
     indicativeFreightSource: destination?.estimateSource ?? null,
     freightRateStatus: destination ? "Pending - rate source required" : "Pending - destination required",

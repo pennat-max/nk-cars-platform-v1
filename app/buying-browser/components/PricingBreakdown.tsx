@@ -3,7 +3,7 @@
 import { Check, Clock3, Info, Ship } from "lucide-react";
 import { calculatePricing, shippingPlanForSelection, SHIPPING_DESTINATIONS, SHIPPING_PLANNING_BUFFER_RATE } from "../domain.mjs";
 import { useBuyingBrowser } from "../BuyingBrowserProvider";
-import { customerFxDisclosure, formatUsdFromThb } from "../format";
+import { CUSTOMER_FX_THB_PER_USD, customerFxDisclosure, formatUsdFromThb } from "../format";
 import { useI18n } from "../use-i18n";
 import type { CustomerLanguage, VehicleCase } from "../types";
 
@@ -23,7 +23,12 @@ const shippingCopy: Record<CustomerLanguage, {
   sourcePrefix: string;
   estimateSuffix: string;
   perCarSuffix: string;
+  aboutPrefix: string;
   fullShipment: string;
+  estimateRange: string;
+  estimatedTotal: string;
+  knownSubtotal: string;
+  estimatedTotalNote: (knownTotal: string, shippingEstimate: string) => string;
   loadingService: string;
   loadingServiceNote: (totalUsd: number, perCarUsd: number) => string;
   chooseDestinationFirst: string;
@@ -45,7 +50,12 @@ const shippingCopy: Record<CustomerLanguage, {
     sourcePrefix: "Source",
     estimateSuffix: "est.",
     perCarSuffix: "per car est.",
+    aboutPrefix: "About",
     fullShipment: "Full shipment estimate",
+    estimateRange: "Estimate range",
+    estimatedTotal: "Estimated total with shipping",
+    knownSubtotal: "Known subtotal",
+    estimatedTotalNote: (knownTotal, shippingEstimate) => `${knownTotal} known subtotal + ${shippingEstimate} selected shipping estimate. Other pending costs are still excluded.`,
     loadingService: "3-car Rushing / loading service",
     loadingServiceNote: (totalUsd, perCarUsd) => `THB 22,000 service is included above: USD ${totalUsd.toLocaleString("en-US")} total, about USD ${perCarUsd.toLocaleString("en-US")} per car when shared by 3 cars.`,
     chooseDestinationFirst: "Choose country first",
@@ -67,7 +77,12 @@ const shippingCopy: Record<CustomerLanguage, {
     sourcePrefix: "来源",
     estimateSuffix: "估算",
     perCarSuffix: "每辆估算",
+    aboutPrefix: "约",
     fullShipment: "整柜估算",
+    estimateRange: "估算范围",
+    estimatedTotal: "含运费估算总计",
+    knownSubtotal: "已知小计",
+    estimatedTotalNote: (knownTotal, shippingEstimate) => `${knownTotal} 已知小计 + ${shippingEstimate} 所选运费估算。其他待确认费用仍未包含。`,
     loadingService: "3 辆车 Rushing / 装柜服务费",
     loadingServiceNote: (totalUsd, perCarUsd) => `THB 22,000 服务费已包含在上方估算内：总计 USD ${totalUsd.toLocaleString("en-US")}，3 辆车分摊约每辆 USD ${perCarUsd.toLocaleString("en-US")}。`,
     chooseDestinationFirst: "请先选择国家",
@@ -89,7 +104,12 @@ const shippingCopy: Record<CustomerLanguage, {
     sourcePrefix: "แหล่งข้อมูล",
     estimateSuffix: "ประมาณการ",
     perCarSuffix: "ต่อคัน ประมาณการ",
+    aboutPrefix: "ประมาณ",
     fullShipment: "ยอดรวมทั้งตู้ประมาณการ",
+    estimateRange: "ช่วงราคาประมาณการ",
+    estimatedTotal: "ยอดรวมประมาณการรวมชิปปิ้ง",
+    knownSubtotal: "ยอดย่อยที่ทราบ",
+    estimatedTotalNote: (knownTotal, shippingEstimate) => `${knownTotal} ยอดย่อยที่ทราบ + ${shippingEstimate} ค่าชิปปิ้งประมาณการที่เลือกไว้ ยังไม่รวมรายการอื่นที่รอยืนยัน`,
     loadingService: "ค่าบริการ Rushing / ชิ่งตู้ 3 คัน",
     loadingServiceNote: (totalUsd, perCarUsd) => `รวมค่าบริการ 22,000 บาทไว้ในยอดด้านบนแล้ว คิดเป็น USD ${totalUsd.toLocaleString("en-US")} ทั้งตู้ หรือประมาณ USD ${perCarUsd.toLocaleString("en-US")} ต่อคันเมื่อหาร 3 คัน`,
     chooseDestinationFirst: "เลือกประเทศก่อน",
@@ -101,6 +121,10 @@ function formatUsdRange(low: number | null, high: number | null) {
   if (low === null || high === null) return null;
   if (low === high) return `USD ${low.toLocaleString("en-US")}`;
   return `USD ${low.toLocaleString("en-US")} - ${high.toLocaleString("en-US")}`;
+}
+
+function formatUsdAmount(value: number | null | undefined) {
+  return value === null || value === undefined ? null : `USD ${value.toLocaleString("en-US")}`;
 }
 
 export default function PricingBreakdown({ vehicleCase }: { vehicleCase: VehicleCase }) {
@@ -115,6 +139,7 @@ export default function PricingBreakdown({ vehicleCase }: { vehicleCase: Vehicle
   const planningFreight = formatUsdRange(shippingPlan.planningFreightUsdLow, shippingPlan.planningFreightUsdHigh);
   const planningShipment = formatUsdRange(shippingPlan.planningShipmentUsdLow, shippingPlan.planningShipmentUsdHigh);
   const planningPerVehicle = formatUsdRange(shippingPlan.planningPerVehicleUsdLow, shippingPlan.planningPerVehicleUsdHigh);
+  const planningPerVehicleMid = formatUsdAmount(shippingPlan.planningPerVehicleUsdMid);
   const bufferPercent = Math.round((shippingPlan.planningBufferRate ?? SHIPPING_PLANNING_BUFFER_RATE) * 100);
   const pricing = calculatePricing({
     vehiclePriceThb: vehicleCase.actualVehiclePurchasePriceThb ?? vehicleCase.vehicle.observedPriceThb,
@@ -140,8 +165,14 @@ export default function PricingBreakdown({ vehicleCase }: { vehicleCase: Vehicle
   };
   const updateCountry = (destinationCountry: string) => updateCaseShippingPlan(vehicleCase.id, { destinationCountry, vehicleQuantity: shippingQuantity });
   const updateQuantity = (vehicleQuantity: number) => updateCaseShippingPlan(vehicleCase.id, { destinationCountry: shippingCountry, vehicleQuantity });
+  const knownSubtotal = formatUsdFromThb(pricing.knownSubtotalThb);
+  const estimatedTotalWithShipping = formatUsdAmount(
+    shippingPlan.planningPerVehicleUsdMid === null || shippingPlan.planningPerVehicleUsdMid === undefined
+      ? null
+      : Math.round(pricing.knownSubtotalThb / CUSTOMER_FX_THB_PER_USD) + shippingPlan.planningPerVehicleUsdMid,
+  );
   const displayedLineAmount = (line: { key: string; amountThb: number | null }) => {
-    if (line.key === "shipping" && line.amountThb === null && planningPerVehicle) return `${planningPerVehicle} ${text.perCarSuffix}`;
+    if (line.key === "shipping" && line.amountThb === null && planningPerVehicleMid) return `${text.aboutPrefix} ${planningPerVehicleMid} ${text.perCarSuffix}`;
     if (line.key === "shipping" && line.amountThb === null && !shippingPlan.destinationCountry) return text.chooseDestinationFirst;
     return line.amountThb === null ? t("pending") : formatUsdFromThb(line.amountThb);
   };
@@ -160,7 +191,7 @@ export default function PricingBreakdown({ vehicleCase }: { vehicleCase: Vehicle
           <label><span>{text.country}</span><select disabled={shippingLocked} value={shippingCountry} onChange={(event) => updateCountry(event.target.value)}><option value="">{text.choose}</option>{SHIPPING_DESTINATIONS.map((item) => <option value={item.country} key={item.country}>{item.country} - {item.port}</option>)}</select></label>
           <label><span>{text.quantity}</span><select disabled={shippingLocked} value={shippingQuantity} onChange={(event) => updateQuantity(Number(event.target.value))}>{[1, 2, 3].map((count) => <option value={count} key={count}>{count}</option>)}</select></label>
         </div>
-        {shippingPlan.destinationCountry && <dl><div><dt>{text.planningFreight}</dt><dd>{planningPerVehicle || t("pending")}<br />{planningPerVehicle && <small>{text.shareNote(shippingPlan.vehicleQuantity)}</small>}</dd></div><div><dt>{text.fullShipment}</dt><dd>{planningShipment || t("pending")}</dd></div>{shippingPlan.containerLoadingFeeUsd > 0 && <div><dt>{text.loadingService}</dt><dd>{text.loadingServiceNote(shippingPlan.containerLoadingFeeUsd, shippingPlan.containerLoadingPerVehicleUsd)}</dd></div>}<div><dt>{text.marketBenchmark}</dt><dd>{marketBenchmark || t("pending")}</dd></div><div><dt>{text.sourcePrefix}</dt><dd>{marketBenchmark ? shippingPlan.indicativeFreightSource : text.noIndicativeFreight}</dd></div>{planningFreight && <div><dt>{`${bufferPercent}% buffer`}</dt><dd>{text.bufferNote}</dd></div>}</dl>}
+        {shippingPlan.destinationCountry && <dl><div><dt>{text.planningFreight}</dt><dd>{planningPerVehicleMid ? `${text.aboutPrefix} ${planningPerVehicleMid}` : t("pending")}<br />{planningPerVehicle && <small>{text.estimateRange}: {planningPerVehicle}. {text.shareNote(shippingPlan.vehicleQuantity)}</small>}</dd></div><div><dt>{text.fullShipment}</dt><dd>{planningShipment || t("pending")}</dd></div>{shippingPlan.containerLoadingFeeUsd > 0 && <div><dt>{text.loadingService}</dt><dd>{text.loadingServiceNote(shippingPlan.containerLoadingFeeUsd, shippingPlan.containerLoadingPerVehicleUsd)}</dd></div>}<div><dt>{text.marketBenchmark}</dt><dd>{marketBenchmark || t("pending")}</dd></div><div><dt>{text.sourcePrefix}</dt><dd>{marketBenchmark ? shippingPlan.indicativeFreightSource : text.noIndicativeFreight}</dd></div>{planningFreight && <div><dt>{`${bufferPercent}% buffer`}</dt><dd>{text.bufferNote}</dd></div>}</dl>}
         <p><Info size={15} />{shippingLocked ? text.locked : text.freightPending}</p>
       </section>
       <div className="bb-fee-inclusions">
@@ -168,7 +199,7 @@ export default function PricingBreakdown({ vehicleCase }: { vehicleCase: Vehicle
         <details><summary>{t("buyingServiceFee")} <span>{t("whatsIncluded")}</span></summary><p>{t("buyingIncluded")}</p></details>
         <p><Info size={15} />{t("nkServiceDisclosure")}</p>
       </div>
-      <footer><div><small>{t("knownSubtotal")}</small><strong>{formatUsdFromThb(pricing.knownSubtotalThb)}</strong></div><p><Info size={15} />{pricing.pendingCount ? `${t("pendingCosts", { count: pricing.pendingCount })} ${t("finalPurchasePriceNote")} ${customerFxDisclosure()}` : `${t("allCostsIncluded")} ${t("finalPurchasePriceNote")} ${customerFxDisclosure()}`}</p></footer>
+      <footer><div><small>{estimatedTotalWithShipping ? text.estimatedTotal : t("knownSubtotal")}</small><strong>{estimatedTotalWithShipping || knownSubtotal}</strong></div><p><Info size={15} />{estimatedTotalWithShipping && planningPerVehicleMid ? `${text.estimatedTotalNote(knownSubtotal, planningPerVehicleMid)} ` : ""}{pricing.pendingCount ? `${t("pendingCosts", { count: pricing.pendingCount })} ${t("finalPurchasePriceNote")} ${customerFxDisclosure()}` : `${t("allCostsIncluded")} ${t("finalPurchasePriceNote")} ${customerFxDisclosure()}`}</p></footer>
     </div>
   );
 }
