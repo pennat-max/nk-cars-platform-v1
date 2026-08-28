@@ -351,6 +351,7 @@ Decision:
 - Customer-facing shipping estimates are per-car: 1 car uses the full shipping estimate, 2 cars divide the shipping estimate by 2, and 3 cars divide the shipping estimate by 3.
 - Customer-facing pricing uses the midpoint of the per-car planning range as the primary "about" number while keeping the low/high range visible in shipping details. The footer may show an estimated total with selected shipping, but other pending cost lines remain excluded and final quotation readiness is unchanged.
 - Selecting 3 cars adds the approved THB 22,000 Rushing/loading/stuffing charge into the customer-facing Export / Shipping estimate, divides it by 3, and explains the approximate per-car share using the customer FX rate. The customer UI should make the shared-container logic visible before/while the quantity is selected, including a clear 3-car best-value label.
+- Customer pricing should prompt the customer to fill the selected shipment with enough Vehicle Cases and provide direct Browse, Paste Link, and Ask NK AI paths. This prompt is a planning guide only and does not create a confirmed grouped shipment or final quote.
 - This does not book shipping, send supplier/customer messages, confirm freight availability, accept payment, purchase a vehicle, or activate QNAP/Hermes behavior.
 
 ## 2026-08-28 - Owner-managed Hermes browser profiles

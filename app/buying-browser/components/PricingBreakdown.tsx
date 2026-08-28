@@ -1,6 +1,7 @@
 "use client";
 
-import { Check, Clock3, Info, Ship } from "lucide-react";
+import Link from "next/link";
+import { Bot, Check, Clock3, Info, Search, Ship, SquarePlus } from "lucide-react";
 import { calculatePricing, shippingPlanForSelection, SHIPPING_DESTINATIONS, SHIPPING_PLANNING_BUFFER_RATE } from "../domain.mjs";
 import { useBuyingBrowser } from "../BuyingBrowserProvider";
 import { CUSTOMER_FX_THB_PER_USD, customerFxDisclosure, formatUsdFromThb } from "../format";
@@ -127,9 +128,54 @@ function formatUsdAmount(value: number | null | undefined) {
   return value === null || value === undefined ? null : `USD ${value.toLocaleString("en-US")}`;
 }
 
+function shipmentFillCopy(language: CustomerLanguage, missingSlots: number) {
+  if (language === "th") return {
+    title: "เติมรถให้ครบตู้",
+    progress: "มี Vehicle Case แล้ว",
+    target: "เป้าหมายรอบส่งนี้",
+    add: "ยังต้องหาเพิ่ม",
+    ready: "พร้อมให้ NK สรุปค่าใช้จ่ายรวมของชุดนี้",
+    missing: `หาเพิ่มอีก ${missingSlots} คัน เพื่อแชร์ค่าตู้และสรุปยอดรวมทั้งชุด`,
+    estimate: "ยอดประมาณของคันนี้",
+    note: "เมื่อลูกค้าเพิ่มรถครบ ระบบจะใช้แต่ละ Vehicle Case รวมกับค่าชิปปิ้งต่อคัน เพื่อให้ NK ตรวจและออกยอดรวมจริงก่อนเสนอราคา",
+    browse: "Browse",
+    paste: "Paste link",
+    ask: "Ask NK AI",
+    car: "คัน",
+  };
+  if (language === "zh-CN") return {
+    title: "补满同一柜车辆",
+    progress: "已建立车辆案件",
+    target: "本次运输目标",
+    add: "还需补充",
+    ready: "可让 NK 汇总本组预计费用",
+    missing: `再添加 ${missingSlots} 辆车，以分摊整柜费用并汇总本组总成本`,
+    estimate: "本车预计金额",
+    note: "车辆补齐后，系统会把每个车辆案件与每车运费估算合并，供 NK 核实后再出正式报价。",
+    browse: "Browse",
+    paste: "Paste link",
+    ask: "Ask NK AI",
+    car: "辆",
+  };
+  return {
+    title: "Fill this shipment",
+    progress: "Vehicle Cases added",
+    target: "Shipment target",
+    add: "Still needed",
+    ready: "Ready for NK to summarize this shipment",
+    missing: `Add ${missingSlots} more vehicle${missingSlots === 1 ? "" : "s"} to share the container cost and summarize the full shipment.`,
+    estimate: "This vehicle estimate",
+    note: "When the customer adds enough vehicles, NK can combine each Vehicle Case with the per-car shipping estimate, then verify the real total before quote.",
+    browse: "Browse",
+    paste: "Paste link",
+    ask: "Ask NK AI",
+    car: "cars",
+  };
+}
+
 export default function PricingBreakdown({ vehicleCase }: { vehicleCase: VehicleCase }) {
   const { t } = useI18n();
-  const { language, updateCaseShippingPlan } = useBuyingBrowser();
+  const { language, state, updateCaseShippingPlan } = useBuyingBrowser();
   const text = shippingCopy[language];
   const shippingCountry = vehicleCase.shippingDestinationCountry || "";
   const shippingQuantity = vehicleCase.shippingVehicleQuantity || 1;
@@ -177,6 +223,12 @@ export default function PricingBreakdown({ vehicleCase }: { vehicleCase: Vehicle
       ? null
       : Math.round(pricing.knownSubtotalThb / CUSTOMER_FX_THB_PER_USD) + shippingPlan.planningPerVehicleUsdMid,
   );
+  const shipmentVehicleCount = Math.min(3, Math.max(1, state.cases.length));
+  const shipmentTarget = shippingPlan.vehicleQuantity;
+  const filledShipmentSlots = Math.min(shipmentVehicleCount, shipmentTarget);
+  const missingShipmentSlots = Math.max(0, shipmentTarget - shipmentVehicleCount);
+  const fillText = shipmentFillCopy(language, missingShipmentSlots);
+  const fillCarUnit = (count: number) => language === "en" ? (count === 1 ? "car" : "cars") : fillText.car;
   const displayedLineAmount = (line: { key: string; amountThb: number | null }) => {
     if (line.key === "shipping" && line.amountThb === null && planningPerVehicleMid) return `${text.aboutPrefix} ${planningPerVehicleMid} ${text.perCarSuffix}`;
     if (line.key === "shipping" && line.amountThb === null && !shippingPlan.destinationCountry) return text.chooseDestinationFirst;
@@ -199,6 +251,20 @@ export default function PricingBreakdown({ vehicleCase }: { vehicleCase: Vehicle
         </div>
         <p><Info size={15} />{text.shareNote(shippingPlan.vehicleQuantity)}</p>
         {shippingPlan.destinationCountry && <dl><div><dt>{text.planningFreight}</dt><dd>{planningPerVehicleMid ? `${text.aboutPrefix} ${planningPerVehicleMid}` : t("pending")}<br />{planningPerVehicle && <small>{text.estimateRange}: {planningPerVehicle}. {text.shareNote(shippingPlan.vehicleQuantity)}</small>}</dd></div><div><dt>{text.fullShipment}</dt><dd>{planningShipment || t("pending")}</dd></div>{shippingPlan.containerLoadingFeeUsd > 0 && <div><dt>{text.loadingService}</dt><dd>{text.loadingServiceNote(shippingPlan.containerLoadingFeeUsd, shippingPlan.containerLoadingPerVehicleUsd)}</dd></div>}<div><dt>{text.marketBenchmark}</dt><dd>{marketBenchmark || t("pending")}</dd></div><div><dt>{text.sourcePrefix}</dt><dd>{marketBenchmark ? shippingPlan.indicativeFreightSource : text.noIndicativeFreight}</dd></div>{planningFreight && <div><dt>{`${bufferPercent}% buffer`}</dt><dd>{text.bufferNote}</dd></div>}</dl>}
+        <section className="bb-shipping-fill">
+          <header><b>{fillText.title}</b><span>{missingShipmentSlots ? fillText.missing : fillText.ready}</span></header>
+          <dl>
+            <div><dt>{fillText.progress}</dt><dd>{filledShipmentSlots}/{shipmentTarget} {fillCarUnit(shipmentTarget)}</dd></div>
+            <div><dt>{fillText.add}</dt><dd>{missingShipmentSlots} {fillCarUnit(missingShipmentSlots)}</dd></div>
+            <div><dt>{fillText.estimate}</dt><dd>{estimatedTotalWithShipping || knownSubtotal}</dd></div>
+          </dl>
+          <p>{fillText.note}</p>
+          {missingShipmentSlots > 0 && <nav aria-label={fillText.title}>
+            <Link href="/buy"><Search size={15} />{fillText.browse}</Link>
+            <Link href="/buy/paste"><SquarePlus size={15} />{fillText.paste}</Link>
+            <Link href="/buy/ask"><Bot size={15} />{fillText.ask}</Link>
+          </nav>}
+        </section>
         <p><Info size={15} />{shippingLocked ? text.locked : text.freightPending}</p>
       </section>
       <div className="bb-fee-inclusions">
