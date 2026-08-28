@@ -16,6 +16,9 @@ const shippingCopy: Record<CustomerLanguage, {
   freightPending: string;
   loadingFee: string;
   locked: string;
+  indicativeFreight: string;
+  noIndicativeFreight: string;
+  sourcePrefix: string;
 }> = {
   en: {
     title: "Destination and shipping plan",
@@ -26,6 +29,9 @@ const shippingCopy: Record<CustomerLanguage, {
     freightPending: "Main ocean freight remains Pending until NK confirms the current route rate.",
     loadingFee: "3-car container loading / stuffing fee",
     locked: "Shipping selection is locked after an approved quotation is issued.",
+    indicativeFreight: "Indicative ocean freight",
+    noIndicativeFreight: "No reliable public route estimate found yet. NK quote is required before final pricing.",
+    sourcePrefix: "Source",
   },
   "zh-CN": {
     title: "目的地和海运计划",
@@ -36,6 +42,9 @@ const shippingCopy: Record<CustomerLanguage, {
     freightPending: "主要海运费仍待 NK 按当前路线费率确认。",
     loadingFee: "3 辆车装柜 / 装载费",
     locked: "批准报价发出后，海运选择将被锁定。",
+    indicativeFreight: "海运费参考估算",
+    noIndicativeFreight: "尚未找到可靠的公开路线估算。最终价格前需要 NK 报价。",
+    sourcePrefix: "来源",
   },
   th: {
     title: "ปลายทางและแผนชิปปิ้ง",
@@ -46,8 +55,17 @@ const shippingCopy: Record<CustomerLanguage, {
     freightPending: "ค่าระวางเรือหลักยังรอยืนยันจนกว่า NK จะตรวจราคาปัจจุบันของเส้นทาง",
     loadingFee: "ค่าบรรจุ / ชิ่งตู้สำหรับ 3 คัน",
     locked: "หลังออกใบเสนอราคาที่อนุมัติแล้ว ระบบจะล็อกตัวเลือกชิปปิ้ง",
+    indicativeFreight: "ค่าระวางเรือประมาณการ",
+    noIndicativeFreight: "ยังไม่พบราคาประมาณการสาธารณะที่น่าเชื่อถือสำหรับเส้นทางนี้ ต้องให้ NK ขอราคาก่อนออกยอดสุดท้าย",
+    sourcePrefix: "แหล่งข้อมูล",
   },
 };
+
+function formatUsdRange(low: number | null, high: number | null) {
+  if (low === null || high === null) return null;
+  if (low === high) return `USD ${low.toLocaleString("en-US")}`;
+  return `USD ${low.toLocaleString("en-US")} - ${high.toLocaleString("en-US")}`;
+}
 
 export default function PricingBreakdown({ vehicleCase }: { vehicleCase: VehicleCase }) {
   const { t } = useI18n();
@@ -57,6 +75,7 @@ export default function PricingBreakdown({ vehicleCase }: { vehicleCase: Vehicle
   const shippingQuantity = vehicleCase.shippingVehicleQuantity || 1;
   const shippingPlan = shippingPlanForSelection(shippingCountry, shippingQuantity);
   const shippingLocked = Boolean(vehicleCase.quotation || vehicleCase.proformaInvoice);
+  const indicativeFreight = formatUsdRange(shippingPlan.indicativeFreightUsdLow, shippingPlan.indicativeFreightUsdHigh);
   const pricing = calculatePricing({
     vehiclePriceThb: vehicleCase.actualVehiclePurchasePriceThb ?? vehicleCase.vehicle.observedPriceThb,
     platformTransactionRate: vehicleCase.platformTransactionRate,
@@ -93,6 +112,7 @@ export default function PricingBreakdown({ vehicleCase }: { vehicleCase: Vehicle
           <label><span>{text.country}</span><select disabled={shippingLocked} value={shippingCountry} onChange={(event) => updateCountry(event.target.value)}><option value="">{text.choose}</option>{SHIPPING_DESTINATIONS.map((item) => <option value={item.country} key={item.country}>{item.country} - {item.port}</option>)}</select></label>
           <label><span>{text.quantity}</span><select disabled={shippingLocked} value={shippingQuantity} onChange={(event) => updateQuantity(Number(event.target.value))}>{[1, 2, 3].map((count) => <option value={count} key={count}>{count}</option>)}</select></label>
         </div>
+        {shippingPlan.destinationCountry && <dl><div><dt>{text.indicativeFreight}</dt><dd>{indicativeFreight || t("pending")}</dd></div><div><dt>{text.sourcePrefix}</dt><dd>{indicativeFreight ? shippingPlan.indicativeFreightSource : text.noIndicativeFreight}</dd></div></dl>}
         <p><Info size={15} />{shippingLocked ? text.locked : text.freightPending}</p>
       </section>
       <div className="bb-fee-inclusions">

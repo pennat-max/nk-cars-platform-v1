@@ -21,15 +21,15 @@ export const BANGKOK_INSPECTION_FEE_THB = 5000;
 export const OUTSIDE_BANGKOK_INSPECTION_RATE_THB_PER_KM = 20;
 export const THREE_CAR_CONTAINER_LOADING_FEE_THB = 22000;
 export const SHIPPING_DESTINATIONS = Object.freeze([
-  { country: "Kenya", port: "Mombasa" },
-  { country: "Tanzania", port: "Dar es Salaam" },
-  { country: "Zambia", port: "Dar es Salaam" },
-  { country: "Malawi", port: "Beira" },
-  { country: "Zimbabwe", port: "Maputo" },
-  { country: "Mozambique", port: "Maputo" },
-  { country: "Ghana", port: "Tema" },
-  { country: "Uganda", port: "Mombasa" },
-  { country: "South Africa", port: "Durban" },
+  { country: "Kenya", port: "Mombasa", estimateUsdLow: 5100, estimateUsdHigh: 6800, estimateSource: "Public 40ft Kenya market benchmarks; verify Thailand route before booking." },
+  { country: "Tanzania", port: "Dar es Salaam", estimateUsdLow: 9300, estimateUsdHigh: 9300, estimateSource: "Public Thailand to Dar es Salaam 40ft quote sample; verify before booking." },
+  { country: "Zambia", port: "Dar es Salaam", estimateUsdLow: 9300, estimateUsdHigh: 9300, estimateSource: "Ocean freight estimate to Dar es Salaam only; inland Zambia charges excluded." },
+  { country: "Malawi", port: "Beira", estimateUsdLow: null, estimateUsdHigh: null, estimateSource: "No reliable public Thailand-to-Beira rate found; NK quote required." },
+  { country: "Zimbabwe", port: "Maputo", estimateUsdLow: 2700, estimateUsdHigh: 5500, estimateSource: "Public 2026 Maputo 40ft regional benchmark; verify Thailand route before booking." },
+  { country: "Mozambique", port: "Maputo", estimateUsdLow: 2700, estimateUsdHigh: 5500, estimateSource: "Public 2026 Maputo 40ft regional benchmark; verify Thailand route before booking." },
+  { country: "Ghana", port: "Tema", estimateUsdLow: null, estimateUsdHigh: null, estimateSource: "No reliable public Thailand-to-Tema rate found; NK quote required." },
+  { country: "Uganda", port: "Mombasa", estimateUsdLow: 5100, estimateUsdHigh: 6800, estimateSource: "Ocean freight estimate to Mombasa only; inland Uganda charges excluded." },
+  { country: "South Africa", port: "Durban", estimateUsdLow: null, estimateUsdHigh: null, estimateSource: "No reliable public Thailand-to-Durban rate found; NK quote required." },
 ]);
 
 export function formatCustomerUsd(value) {
@@ -142,12 +142,13 @@ export function inspectionQuoteForLocation(location) {
   const normalized = String(location || "").toLowerCase();
   const matched = INSPECTION_LOCATIONS.find((item) => normalized.includes(item.location.toLowerCase()));
   if (!matched) return null;
-  const isBangkok = matched.location === "Bangkok";
-  const totalThb = isBangkok ? BANGKOK_INSPECTION_FEE_THB : matched.distanceKm * OUTSIDE_BANGKOK_INSPECTION_RATE_THB_PER_KM;
+  const isBangkokMetro = BANGKOK_METRO_LOCATIONS.includes(matched.location);
+  const outsideBangkokFeeThb = Math.max(BANGKOK_INSPECTION_FEE_THB, matched.distanceKm * OUTSIDE_BANGKOK_INSPECTION_RATE_THB_PER_KM);
+  const totalThb = isBangkokMetro ? BANGKOK_INSPECTION_FEE_THB : outsideBangkokFeeThb;
   return {
-    region: isBangkok ? "Bangkok" : `${matched.region} - ${matched.distanceKm} km`,
-    baseFeeThb: isBangkok ? BANGKOK_INSPECTION_FEE_THB : 0,
-    travelFeeThb: isBangkok ? 0 : totalThb,
+    region: isBangkokMetro ? "Bangkok Metro" : `${matched.region} - ${matched.distanceKm} km`,
+    baseFeeThb: BANGKOK_INSPECTION_FEE_THB,
+    travelFeeThb: isBangkokMetro ? 0 : totalThb - BANGKOK_INSPECTION_FEE_THB,
     totalThb,
     status: "Quote Ready",
   };
@@ -171,6 +172,9 @@ export function shippingPlanForSelection(destinationCountry, vehicleQuantity = 1
     destinationPort: destination?.port || null,
     vehicleQuantity: quantity,
     containerLoadingFeeThb: quantity === 3 ? THREE_CAR_CONTAINER_LOADING_FEE_THB : 0,
+    indicativeFreightUsdLow: destination?.estimateUsdLow ?? null,
+    indicativeFreightUsdHigh: destination?.estimateUsdHigh ?? null,
+    indicativeFreightSource: destination?.estimateSource ?? null,
     freightRateStatus: destination ? "Pending - rate source required" : "Pending - destination required",
   };
 }

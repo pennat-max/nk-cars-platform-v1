@@ -788,8 +788,10 @@ test("customer USD display uses one deterministic preview FX rate", () => {
 });
 
 test("inspection quote uses deterministic configured location zones", () => {
-  assert.deepEqual(inspectionQuoteForLocation("Bangkok, Thailand"), { region: "Bangkok", baseFeeThb: 5000, travelFeeThb: 0, totalThb: 5000, status: "Quote Ready" });
-  assert.deepEqual(inspectionQuoteForLocation("Nakhon Pathom, Thailand"), { region: "Outside Bangkok - 58 km", baseFeeThb: 0, travelFeeThb: 1160, totalThb: 1160, status: "Quote Ready" });
+  assert.deepEqual(inspectionQuoteForLocation("Bangkok, Thailand"), { region: "Bangkok Metro", baseFeeThb: 5000, travelFeeThb: 0, totalThb: 5000, status: "Quote Ready" });
+  assert.deepEqual(inspectionQuoteForLocation("Samut Sakhon, Thailand"), { region: "Bangkok Metro", baseFeeThb: 5000, travelFeeThb: 0, totalThb: 5000, status: "Quote Ready" });
+  assert.deepEqual(inspectionQuoteForLocation("Nakhon Pathom, Thailand"), { region: "Bangkok Metro", baseFeeThb: 5000, travelFeeThb: 0, totalThb: 5000, status: "Quote Ready" });
+  assert.deepEqual(inspectionQuoteForLocation("Chiang Mai, Thailand"), { region: "Outside Bangkok - 700 km", baseFeeThb: 5000, travelFeeThb: 9000, totalThb: 14000, status: "Quote Ready" });
   assert.equal(inspectionQuoteForLocation("Unknown province"), null);
 });
 
@@ -799,6 +801,9 @@ test("shipping plan records destination and adds only approved three-car loading
     destinationPort: "Mombasa",
     vehicleQuantity: 3,
     containerLoadingFeeThb: THREE_CAR_CONTAINER_LOADING_FEE_THB,
+    indicativeFreightUsdLow: 5100,
+    indicativeFreightUsdHigh: 6800,
+    indicativeFreightSource: "Public 40ft Kenya market benchmarks; verify Thailand route before booking.",
     freightRateStatus: "Pending - rate source required",
   });
   const listing = presentCustomerListing(source);
