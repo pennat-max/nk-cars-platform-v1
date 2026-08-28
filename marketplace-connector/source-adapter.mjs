@@ -63,11 +63,16 @@ export class FacebookPlaywrightSourceAdapter extends SourceAdapter {
     return this.profileManager.getStatus(this.profileId);
   }
 
+  profileIdFor(options = {}) {
+    return typeof options.profileId === "string" && options.profileId.trim() ? options.profileId.trim() : this.profileId;
+  }
+
   async search(input, options = {}) {
     const request = normalizeSearchRequest(input);
+    const profileId = this.profileIdFor(options);
     const searchUrl = buildFacebookSearchUrl(request);
     const searchPage = await this.profileManager.withPage(
-      this.profileId,
+      profileId,
       (page) => collectFacebookSearchCards(page, searchUrl, {
         signal: options.signal,
         navigationTimeoutMs: this.navigationTimeoutMs,
@@ -98,6 +103,7 @@ export class FacebookPlaywrightSourceAdapter extends SourceAdapter {
         const listing = await this.openListing(card.source_url, {
           signal: options.signal,
           maxImages: 6,
+          profileId,
         });
         const candidate = normalizeCandidate(listing, {
           search_request_id: request.request_id,
@@ -120,7 +126,7 @@ export class FacebookPlaywrightSourceAdapter extends SourceAdapter {
     const uniqueCandidates = [...new Map(candidates.map((candidate) => [candidate.candidate_id, candidate])).values()];
     return {
       request,
-      profile_id: this.profileId,
+      profile_id: profileId,
       listings_found: searchPage.cards.length,
       duplicates: Math.max(0, candidates.length - uniqueCandidates.length),
       rejected,
@@ -130,8 +136,9 @@ export class FacebookPlaywrightSourceAdapter extends SourceAdapter {
 
   async openListing(sourceUrl, options = {}) {
     const validatedUrl = validateFacebookUrl(sourceUrl);
+    const profileId = this.profileIdFor(options);
     const result = await this.profileManager.withPage(
-      this.profileId,
+      profileId,
       (page) => collectFacebookListingOnPage(page, validatedUrl, {
         signal: options.signal,
         maxImages: boundedImageCount(options.maxImages),

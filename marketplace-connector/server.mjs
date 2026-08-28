@@ -1,5 +1,6 @@
 import { createHash, randomUUID, timingSafeEqual } from "node:crypto";
 import http from "node:http";
+import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { BrowserProfileManager } from "./browser-profile-manager.mjs";
 import { loadServerConfig } from "./config.mjs";
@@ -57,14 +58,49 @@ function statusCode(errorCode) {
   if (["invalid_url", "invalid_json", "invalid_search_request", "search_terms_required", "json_content_type_required"].includes(errorCode)) return 400;
   if (errorCode === "request_too_large") return 413;
   if (errorCode === "profile_not_found") return 404;
+  if (errorCode === "duplicate_profile_id") return 409;
   if (["facebook_login_required", "login_required"].includes(errorCode)) return 409;
   if (["profile_paused", "search_queue_full"].includes(errorCode)) return 423;
+  if (errorCode === "credential_entry_not_supported") return 422;
   return 422;
 }
 
 function safeErrorCode(error) {
   const message = error instanceof Error ? error.message : String(error || "connector_failed");
   return /^[a-z0-9_:-]{1,100}$/i.test(message) ? message : "connector_failed";
+}
+
+function safeProfileLabel(value, fallback) {
+  const label = typeof value === "string" ? value.trim() : "";
+  return label ? label.slice(0, 100) : fallback;
+}
+
+function safeTimeoutMs(value, fallback = 30 * 60_000) {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed >= 60_000 && parsed <= 60 * 60_000 ? parsed : fallback;
+}
+
+function rejectCredentialPayload(value) {
+  const text = JSON.stringify(value || {}).toLowerCase();
+  if (/(password|passcode|otp|mfa|secret|cookie|token|email|username)/.test(text)) {
+    throw new Error("credential_entry_not_supported");
+  }
+}
+
+function configuredProfiles(config, env) {
+  const legacyId = env.NK_CONNECTOR_PROFILE_ID?.trim() || "fb-buyer-01";
+  const legacyLabel = env.NK_CONNECTOR_PROFILE_LABEL?.trim() || "Facebook Buyer 01";
+  const rawIds = env.NK_CONNECTOR_PROFILE_IDS?.trim();
+  if (!rawIds) {
+    return [{ id: legacyId, label: legacyLabel, directory: config.profileDirectory }];
+  }
+  const ids = [...new Set(rawIds.split(",").map((item) => item.trim()).filter(Boolean))];
+  if (!ids.length || ids.length > 20) throw new Error("invalid_profile_registry");
+  return ids.map((id) => ({
+    id,
+    label: id,
+    directory: path.join(config.profileDirectory, id),
+  }));
 }
 
 async function waitForTerminalRun(queue, runId, timeoutMs = 80_000) {
@@ -104,7 +140,7 @@ function listingResponse(listing, maxImages) {
   };
 }
 
-export function createConnectorServer({ token, adapter, profileManager, queue, logger = console }) {
+export function createConnectorServer({ token, adapter, profileManager, queue, profileDefaults = {}, logger = console }) {
   if (!token || token.length < 32) throw new Error("connector_token_required");
   if (!adapter || !profileManager || !queue) throw new Error("connector_dependencies_required");
 
@@ -123,10 +159,35 @@ export function createConnectorServer({ token, adapter, profileManager, queue, l
         return sendJson(response, 200, { profiles: profileManager.listProfiles() });
       }
 
+      if (request.method === "POST" && url.pathname === "/v1/profiles") {
+        const body = await readJson(request);
+        rejectCredentialPayload(body);
+        const profileId = typeof body.profile_id === "string" ? body.profile_id : "";
+        const status = profileManager.addProfile({
+          id: profileId,
+          label: safeProfileLabel(body.label, profileId),
+          directory: typeof profileDefaults.directoryForId === "function" ? profileDefaults.directoryForId(profileId) : profileId,
+          channel: profileDefaults.channel || "chrome",
+          headless: false,
+          navigationTimeoutMs: profileDefaults.navigationTimeoutMs,
+        });
+        return sendJson(response, 201, status);
+      }
+
       const profileCheck = url.pathname.match(/^\/v1\/profiles\/([a-z0-9_-]+)\/check$/i);
       if (request.method === "POST" && profileCheck) {
         const status = await profileManager.checkSession(profileCheck[1]);
         return sendJson(response, 200, status);
+      }
+
+      const profileLogin = url.pathname.match(/^\/v1\/profiles\/([a-z0-9_-]+)\/login$/i);
+      if (request.method === "POST" && profileLogin) {
+        const body = await readJson(request);
+        rejectCredentialPayload(body);
+        const login = await profileManager.openInteractiveLogin(profileLogin[1]);
+        login.waitForSession(safeTimeoutMs(body.timeout_ms)).catch(() => undefined);
+        const status = profileManager.getStatus(profileLogin[1]);
+        return sendJson(response, 202, { ...status, action: "manual_login_window_opened" });
       }
 
       const profileState = url.pathname.match(/^\/v1\/profiles\/([a-z0-9_-]+)\/state$/i);
@@ -142,11 +203,11 @@ export function createConnectorServer({ token, adapter, profileManager, queue, l
         const body = await readJson(request);
         const requestInput = normalizeSearchRequest(body.request || body);
         const profileId = typeof body.profile_id === "string" ? body.profile_id : adapter.profileId;
-        if (profileId !== adapter.profileId) throw new Error("profile_not_found");
+        profileManager.getStatus(profileId);
         const run = queue.enqueue({
           request: requestInput,
           profileId,
-          execute: ({ signal, runId }) => adapter.search(requestInput, { signal, runId }),
+          execute: ({ signal, runId }) => adapter.search(requestInput, { signal, runId, profileId }),
         });
         return sendJson(response, 202, run);
       }
@@ -164,15 +225,17 @@ export function createConnectorServer({ token, adapter, profileManager, queue, l
       if (request.method === "POST" && url.pathname === "/v1/facebook/import") {
         const body = await readJson(request);
         const sourceUrl = validateFacebookUrl(body.source_url);
+        const profileId = typeof body.profile_id === "string" ? body.profile_id : adapter.profileId;
+        profileManager.getStatus(profileId);
         const maxImages = boundedImageCount(body.max_images);
         const syntheticRequest = { request_id: `listing_${randomUUID()}` };
         const run = queue.enqueue({
           request: syntheticRequest,
-          profileId: adapter.profileId,
+          profileId,
           execute: async ({ signal }) => ({
             listings_found: 1,
             candidates: [],
-            output: await adapter.openListing(sourceUrl, { signal, maxImages }),
+            output: await adapter.openListing(sourceUrl, { signal, maxImages, profileId }),
           }),
         });
         const completed = await waitForTerminalRun(queue, run.run_id);
@@ -196,16 +259,15 @@ export function createConnectorServer({ token, adapter, profileManager, queue, l
 
 export function createDefaultRuntime(env = process.env) {
   const config = loadServerConfig(env);
-  const profileId = env.NK_CONNECTOR_PROFILE_ID?.trim() || "fb-buyer-01";
+  const profiles = configuredProfiles(config, env);
+  const profileId = env.NK_CONNECTOR_PROFILE_ID?.trim() || profiles[0].id;
   const profileManager = new BrowserProfileManager({
-    profiles: [{
-      id: profileId,
-      label: env.NK_CONNECTOR_PROFILE_LABEL?.trim() || "Facebook Buyer 01",
-      directory: config.profileDirectory,
+    profiles: profiles.map((profile) => ({
+      ...profile,
       channel: config.channel,
       headless: config.headless,
       navigationTimeoutMs: config.navigationTimeoutMs,
-    }],
+    })),
   });
   const adapter = new FacebookPlaywrightSourceAdapter({
     profileManager,
@@ -228,6 +290,11 @@ export async function startLocalConnector(env = process.env) {
     adapter: runtime.adapter,
     profileManager: runtime.profileManager,
     queue: runtime.queue,
+    profileDefaults: {
+      channel: runtime.config.channel,
+      navigationTimeoutMs: runtime.config.navigationTimeoutMs,
+      directoryForId: (id) => path.join(runtime.config.profileDirectory, id),
+    },
   });
   server.requestTimeout = runtime.config.operationTimeoutMs + 10_000;
   server.headersTimeout = 10_000;

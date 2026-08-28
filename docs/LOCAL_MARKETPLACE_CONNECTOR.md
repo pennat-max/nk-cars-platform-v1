@@ -21,7 +21,8 @@ The connector uses the existing Chrome browser runtime through `playwright-core`
 
 - Dedicated persistent browser profile with manual Facebook login/re-login.
 - Profile states: `Ready`, `Login Required`, `Paused`, and `Error`.
-- Architecture supports a future legitimate profile registry; V1 configures one profile named `fb-buyer-01`.
+- Multiple legitimate browser profiles can be configured for Owner-controlled sourcing resilience. V1 defaults to `fb-buyer-01`; additional profiles may be supplied with `NK_CONNECTOR_PROFILE_IDS=fb-buyer-01,fb-buyer-02` or added while the connector is running through the authenticated profile API.
+- The authenticated Owner sourcing menu can proxy profile control when the app runtime has a server-side `NK_CONNECTOR_ADMIN_URL` and `NK_CONNECTOR_ADMIN_TOKEN`.
 - FIFO search queue with concurrency one, conservative start spacing, bounded rate, timeout, cancellation, and safe telemetry.
 - Structured search request and source-first candidate contracts.
 - Facebook search card discovery plus listing/gallery traversal.
@@ -40,6 +41,7 @@ The connector does not automatically turn search candidates into permanent Vehic
 - The token, Facebook cookies, passwords, and browser profile are never committed to Git.
 - Facebook login is performed manually in a dedicated visible Chrome window.
 - NK Cars never reads or stores the Facebook password.
+- NK Cars web forms must never accept Facebook email, username, password, OTP, MFA code, cookie, or token values. Owner remote access must present the real browser/runtime screen instead of collecting credentials.
 - Chrome stores the dedicated session in the operating-system user profile directory. On Windows, Chrome protects supported cookie secrets using the signed-in Windows account.
 - Do not point Playwright at the normal Chrome `User Data` directory.
 - No automated password entry, CAPTCHA solving, MFA/checkpoint bypass, stealth, fingerprint spoofing, proxy rotation, or rate-limit evasion.
@@ -110,7 +112,9 @@ Unauthenticated liveness only:
 Bearer token required:
 
 - `GET /v1/profiles`
+- `POST /v1/profiles`
 - `POST /v1/profiles/{profileId}/check`
+- `POST /v1/profiles/{profileId}/login`
 - `POST /v1/profiles/{profileId}/state`
 - `POST /v1/search-runs`
 - `GET /v1/search-runs/{runId}`

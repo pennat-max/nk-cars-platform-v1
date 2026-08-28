@@ -348,3 +348,15 @@ Decision:
 - Main export/ocean freight is still Pending until NK records an Owner-approved freight table, provider quote, or API result for the selected route.
 - Selecting 3 cars adds the approved THB 22,000 container loading/stuffing charge as a customer-visible pricing line.
 - This does not book shipping, send supplier/customer messages, confirm freight availability, accept payment, purchase a vehicle, or activate QNAP/Hermes behavior.
+
+## 2026-08-28 - Owner-managed Hermes browser profiles
+
+Status: APPROVED APPLICATION CONTROL; LIVE CONNECTOR ACTIVATION PENDING
+
+Decision:
+- Owner may manage multiple Hermes Facebook browser profiles from the authenticated Owner sourcing menu.
+- The menu may list connector profiles, add a profile identifier/label, check session state, pause a profile, and ask the local connector to open a visible Facebook login browser window.
+- NK Cars must not provide a web form for Facebook email, username, password, OTP, MFA code, cookies, or tokens.
+- The account owner must enter Facebook credentials directly in the authorized browser/runtime screen. If that cannot be reached remotely, use an approved remote desktop/browser-screen channel rather than credential collection.
+- Connector profile control remains fail-closed unless a server-side connector admin URL and token are configured. Secrets and browser sessions stay out of GitHub.
+- This approval does not authorize publication, seller messaging, reservation, purchase, payment, CAPTCHA/MFA bypass, or rate-limit evasion.

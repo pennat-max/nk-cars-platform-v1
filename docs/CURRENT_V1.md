@@ -317,6 +317,7 @@ Approved application storage direction:
 - QNAP full stack commit `f31c030f6d7a0946af033f9005412c6671e84238` is now deployed and includes the Owner-approved Phetchaburi pilot sourcing location. The pilot rule exists in QNAP as `7412f2fb-fe79-4469-b36b-96d3c55daa3a`.
 - The installed Hermes container is running, but its current free inference provider has returned rate-limit errors and its browser profile/connector runtime is not connected. The application must continue to report `not_configured` or the real safe error state; it must not claim that automated sourcing ran.
 - Phetchaburi is approved as a narrow Hermes pilot sourcing location. Bangkok Metro remains the default customer Browse and Owner sourcing scope. The pilot remains `NEEDS_REVIEW` only and does not authorize publication, seller messaging, reservation, purchase, or payment.
+- The Owner sourcing menu now includes safe Hermes browser-profile controls for multiple Facebook profiles when a server-side local connector admin URL/token is configured. It can add profile IDs/labels, check state, pause a profile, and open a visible Facebook login browser window. It must never collect Facebook passwords, OTPs, cookies, or tokens in NK forms.
 
 Do not switch production architecture to QNAP until backup, recovery, security, networking, and deployment controls are documented and tested.
 

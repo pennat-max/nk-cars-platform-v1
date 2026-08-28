@@ -132,9 +132,12 @@ test("tracks authorized browser profile state without exposing session data", as
 test("protects the local connector and supports search plus legacy listing import", async (t) => {
   const profileManager = {
     listProfiles: () => [{ profile_id: "fb-buyer-01", state: "ready" }],
+    addProfile: (profile) => ({ profile_id: profile.id, label: profile.label, state: "login_required" }),
     checkSession: async () => ({ profile_id: "fb-buyer-01", state: "ready" }),
+    getStatus: (id) => ({ profile_id: id, state: "login_required" }),
     setState: (_id, state) => ({ profile_id: "fb-buyer-01", state }),
     closeProfile: async () => undefined,
+    openInteractiveLogin: async () => ({ waitForSession: async () => ({ profile_id: "fb-buyer-01", state: "ready" }) }),
   };
   const candidate = normalizeCandidate({
     source_url: "https://www.facebook.com/marketplace/item/123456789/",
@@ -173,6 +176,30 @@ test("protects the local connector and supports search plus legacy listing impor
 
   const unauthorized = await fetch(`${baseUrl}/v1/profiles`);
   assert.equal(unauthorized.status, 401);
+
+  const addedProfile = await fetch(`${baseUrl}/v1/profiles`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ profile_id: "fb-buyer-02", label: "Facebook Buyer 02" }),
+  });
+  assert.equal(addedProfile.status, 201);
+  assert.equal((await addedProfile.json()).profile_id, "fb-buyer-02");
+
+  const rejectedCredential = await fetch(`${baseUrl}/v1/profiles/fb-buyer-01/login`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ password: "never-send-this" }),
+  });
+  assert.equal(rejectedCredential.status, 422);
+  assert.equal((await rejectedCredential.json()).safe_reason_code, "credential_entry_not_supported");
+
+  const openedLogin = await fetch(`${baseUrl}/v1/profiles/fb-buyer-01/login`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ timeout_ms: 60000 }),
+  });
+  assert.equal(openedLogin.status, 202);
+  assert.equal((await openedLogin.json()).action, "manual_login_window_opened");
 
   const invalid = await fetch(`${baseUrl}/v1/facebook/import`, {
     method: "POST",

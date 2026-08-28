@@ -12,12 +12,15 @@ import {
   ListChecks,
   MapPin,
   Plus,
+  RefreshCw,
   Save,
   Search,
   ShieldCheck,
+  UserPlus,
   WifiOff,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import type { ConnectorProfilesSnapshot } from "./connector-profiles";
 import {
   BANGKOK_METRO_LOCATIONS,
   SOURCING_WEEKDAYS,
@@ -38,6 +41,12 @@ const LOCATION_LABELS: Record<string, string> = {
   "Samut Sakhon": "สมุทรสาคร",
   "Nakhon Pathom": "นครปฐม",
   Phetchaburi: "เพชรบุรี",
+};
+
+const EMPTY_CONNECTOR_PROFILES: ConnectorProfilesSnapshot = {
+  connected: false,
+  message: "Local connector profile control is not configured.",
+  profiles: [],
 };
 
 function editableRule(rule: SourcingRuleRecord): SourcingRuleInput {
@@ -77,12 +86,29 @@ function statusLabel(value: string) {
   } as Record<string, string>)[value] || "ไม่ทราบสถานะ";
 }
 
+function profileStatusLabel(value: string) {
+  return ({
+    ready: "Ready",
+    paused: "Paused",
+    login_required: "Login required",
+    error: "Check needed",
+  } as Record<string, string>)[value] || "Unknown";
+}
+
 export default function BuyingBrowserOwnerSourcing({ initialSnapshot, previewMode = false }: { initialSnapshot: SourcingAutomationSnapshot; previewMode?: boolean }) {
   const [snapshot, setSnapshot] = useState(initialSnapshot);
+  const [connectorProfiles, setConnectorProfiles] = useState<ConnectorProfilesSnapshot>(EMPTY_CONNECTOR_PROFILES);
   const [selectedId, setSelectedId] = useState(initialSnapshot.rules[0]?.id || "new");
   const [form, setForm] = useState<SourcingRuleInput>(initialSnapshot.rules[0] ? editableRule(initialSnapshot.rules[0]) : defaultSourcingRuleInput());
+  const [profileForm, setProfileForm] = useState({ profileId: "fb-buyer-02", label: "Facebook Buyer 02" });
   const [busy, setBusy] = useState(false);
+  const [profileBusy, setProfileBusy] = useState("");
   const [message, setMessage] = useState("");
+  const [profileMessage, setProfileMessage] = useState("");
+
+  useEffect(() => {
+    if (!previewMode) void refreshProfiles();
+  }, [previewMode]);
 
   function selectRule(rule: SourcingRuleRecord) {
     setSelectedId(rule.id);
@@ -109,6 +135,60 @@ export default function BuyingBrowserOwnerSourcing({ initialSnapshot, previewMod
   function toggleDay(day: SourcingWeekday) {
     const weekdays = form.schedule.weekdays.includes(day) ? form.schedule.weekdays.filter((item) => item !== day) : [...form.schedule.weekdays, day];
     update("schedule", { ...form.schedule, weekdays });
+  }
+
+  async function refreshProfiles() {
+    try {
+      const response = await fetch("/api/buying-browser/owner/connector-profiles", { cache: "no-store" });
+      const payload = await response.json();
+      if (!response.ok && response.status !== 503) throw new Error(typeof payload?.error === "string" ? payload.error : "connector_profiles_request_failed");
+      setConnectorProfiles(payload as ConnectorProfilesSnapshot);
+      setProfileMessage("");
+    } catch {
+      setConnectorProfiles(EMPTY_CONNECTOR_PROFILES);
+      setProfileMessage("Connector profile control is not reachable.");
+    }
+  }
+
+  async function addProfile() {
+    setProfileBusy("add");
+    setProfileMessage("");
+    try {
+      const response = await fetch("/api/buying-browser/owner/connector-profiles", {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(profileForm),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(typeof payload?.error === "string" ? payload.error : "connector_profile_request_failed");
+      await refreshProfiles();
+      setProfileMessage(`Profile ${payload.profile_id} added.`);
+    } catch (error) {
+      const code = error instanceof Error ? error.message : "connector_profile_request_failed";
+      setProfileMessage(code === "duplicate_profile_id" ? "Profile already exists." : "Profile could not be added.");
+    } finally {
+      setProfileBusy("");
+    }
+  }
+
+  async function controlProfile(action: "check" | "open_login" | "pause" | "login_required", profileId: string) {
+    setProfileBusy(`${action}:${profileId}`);
+    setProfileMessage("");
+    try {
+      const response = await fetch("/api/buying-browser/owner/connector-profiles", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action, profileId }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(typeof payload?.error === "string" ? payload.error : "connector_profile_request_failed");
+      await refreshProfiles();
+      setProfileMessage(action === "open_login" ? `Login browser opened for ${payload.profile_id}.` : `Profile ${payload.profile_id} updated.`);
+    } catch {
+      setProfileMessage("Profile command failed. Check the connector service.");
+    } finally {
+      setProfileBusy("");
+    }
   }
 
   async function request(method: "PUT" | "POST", body: unknown) {
@@ -177,6 +257,37 @@ export default function BuyingBrowserOwnerSourcing({ initialSnapshot, previewMod
           <button className="bb-button secondary" disabled={previewMode || busy || !snapshot.connected || snapshot.hermesState === "paused"} onClick={() => command("pause")}><CirclePause size={17} />หยุดชั่วคราว</button>
           <button className="bb-button secondary" disabled={previewMode || busy || !snapshot.connected || snapshot.hermesState !== "paused"} onClick={() => command("resume")}><CirclePlay size={17} />ทำงานต่อ</button>
           <small>คำสั่งจะหยุดเองเมื่อพบ Login Required, MFA, CAPTCHA, rate limit หรือถึงจำนวนสูงสุดต่อวัน</small>
+        </section>
+
+        <section className="bb-owner-profile-control" aria-label="Hermes browser profiles">
+          <div className="bb-section-heading">
+            <div><p className="bb-kicker">Hermes profiles</p><h2>Facebook browser login</h2></div>
+            <span className={`bb-status-chip ${connectorProfiles.connected && !previewMode ? "requested" : "pending"}`}>{connectorProfiles.connected && !previewMode ? <ShieldCheck size={13} /> : <WifiOff size={13} />}{previewMode ? "Preview only" : connectorProfiles.connected ? "Connector ready" : "Not configured"}</span>
+          </div>
+          <p>{connectorProfiles.message}</p>
+          <div className="bb-owner-profile-grid">
+            {connectorProfiles.profiles.map((profile) => (
+              <article key={profile.profile_id}>
+                <div>
+                  <b>{profile.label || profile.profile_id}</b>
+                  <small>{profile.profile_id} / {profileStatusLabel(profile.state)}{profile.reason ? ` / ${profile.reason}` : ""}</small>
+                </div>
+                <div>
+                  <button className="bb-button secondary" disabled={previewMode || !connectorProfiles.connected || profileBusy !== ""} onClick={() => controlProfile("check", profile.profile_id)}><RefreshCw size={16} />Check</button>
+                  <button className="bb-button primary" disabled={previewMode || !connectorProfiles.connected || profileBusy !== ""} onClick={() => controlProfile("open_login", profile.profile_id)}><Search size={16} />Open Login</button>
+                  <button className="bb-button secondary" disabled={previewMode || !connectorProfiles.connected || profileBusy !== ""} onClick={() => controlProfile("pause", profile.profile_id)}><CirclePause size={16} />Pause</button>
+                </div>
+              </article>
+            ))}
+            {!connectorProfiles.profiles.length && <p>No connector profiles are available yet.</p>}
+          </div>
+          <div className="bb-owner-profile-add">
+            <label><span>Profile ID</span><input value={profileForm.profileId} maxLength={64} onChange={(event) => setProfileForm((current) => ({ ...current, profileId: event.target.value }))} /></label>
+            <label><span>Label</span><input value={profileForm.label} maxLength={100} onChange={(event) => setProfileForm((current) => ({ ...current, label: event.target.value }))} /></label>
+            <button className="bb-button secondary" disabled={previewMode || !connectorProfiles.connected || profileBusy !== ""} onClick={addProfile}><UserPlus size={16} />Add profile</button>
+          </div>
+          <div className="bb-owner-sourcing-safety"><ShieldCheck size={17} /><p>This menu never accepts Facebook passwords. It only opens the authorized browser profile so the account owner can sign in directly with Facebook.</p></div>
+          {profileMessage && <p className="bb-owner-case-status" role="status">{profileMessage}</p>}
         </section>
 
         <section className="bb-owner-sourcing-layout">

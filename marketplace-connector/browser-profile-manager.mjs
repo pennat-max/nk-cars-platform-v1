@@ -41,6 +41,25 @@ export class BrowserProfileManager {
     }
   }
 
+  addProfile(profile) {
+    const id = profileId(profile.id);
+    if (this.profiles.has(id)) throw new Error("duplicate_profile_id");
+    this.profiles.set(id, {
+      id,
+      label: typeof profile.label === "string" ? profile.label.trim().slice(0, 100) : id,
+      directory: path.resolve(profile.directory),
+      channel: profile.channel || "chrome",
+      headless: profile.headless !== false,
+      navigationTimeoutMs: profile.navigationTimeoutMs || 45_000,
+      state: PROFILE_STATES.has(profile.initialState) ? profile.initialState : "login_required",
+      stateReason: "session_not_checked",
+      checkedAt: undefined,
+      contextPromise: null,
+      operationTail: Promise.resolve(),
+    });
+    return this.getStatus(id);
+  }
+
   listProfiles() {
     return [...this.profiles.values()].map((profile) => this.#publicStatus(profile));
   }
@@ -105,6 +124,10 @@ export class BrowserProfileManager {
       locale: "th-TH",
       timezoneId: "Asia/Bangkok",
       acceptDownloads: false,
+    });
+    profile.contextPromise = Promise.resolve(context);
+    context.on("close", () => {
+      profile.contextPromise = null;
     });
     context.setDefaultNavigationTimeout(profile.navigationTimeoutMs);
     context.setDefaultTimeout(15_000);
