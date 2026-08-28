@@ -395,3 +395,15 @@ Decision:
 - Because no candidate vehicle ID was created, the activation request is not complete. Hermes must not be reported as proven for real sourcing until one qualifying Toyota Revo 2022 Phetchaburi candidate is retained as `NEEDS_REVIEW`.
 - No publish, seller message, reservation, purchase, or payment command is authorized by this runbook or this result.
 - Direct Owner-supplied Facebook URLs may be tested through the same backup-first, worker-token, audited-command boundary, but QNAP remains the final rule validator. The 2026-08-28 direct URL attempt was stopped safely because the supplied listing normalized as year `2024` with no confirmed Phetchaburi location, which does not satisfy the approved `Toyota Revo 2022 - Phetchaburi` pilot rule.
+
+## 2026-08-28 - Hermes pilot rule widened to Bangkok Metro Revo 2020+
+
+Status: OWNER APPROVED AND APPLIED ON QNAP
+
+Decision:
+- Replace the narrow `Toyota Revo 2022 - Phetchaburi` pilot with `Toyota Revo 2020+ - Bangkok Metro pilot`.
+- The live QNAP rule now targets Toyota Revo pickup candidates from year 2020 through the current 2026 operating year.
+- The approved search locations are Bangkok, Nonthaburi, Pathum Thani, Samut Prakan, Samut Sakhon, and Nakhon Pathom.
+- Keep daily retained candidates capped at `1` for the pilot and keep all results in `NEEDS_REVIEW`.
+- This widening does not authorize publication, seller messaging, reservation, purchase, payment, CAPTCHA/MFA bypass, or rate-limit evasion.
+- QNAP rule `7412f2fb-fe79-4469-b36b-96d3c55daa3a` was updated from revision 1 to revision 2 after backup `/share/CACHEDEV6_DATA/nk-cars/backups/postgres/nk-cars-before-hermes-rule-update-20260828T102957Z.dump`.

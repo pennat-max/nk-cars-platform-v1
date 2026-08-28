@@ -188,6 +188,8 @@ powershell -ExecutionPolicy Bypass -File .\scripts\run-hermes-qnap-url-pilot.ps1
 
 This path still creates a QNAP backup first, opens the listing with the authorized browser profile, normalizes one candidate, submits it through the worker candidate endpoint, and completes the audited worker command. It must not bypass the active Owner rule. A 2026-08-28 direct URL attempt opened the supplied listing and found 18 image URLs, but QNAP rejected retention because the normalized candidate was year `2024` with no confirmed Phetchaburi location while the active pilot rule requires `Toyota Revo 2022` in `Phetchaburi`.
 
+The live QNAP pilot rule was later updated on 2026-08-28 to `Toyota Revo 2020+ - Bangkok Metro pilot` after backup `/share/CACHEDEV6_DATA/nk-cars/backups/postgres/nk-cars-before-hermes-rule-update-20260828T102957Z.dump`. The active locations are Bangkok, Nonthaburi, Pathum Thani, Samut Prakan, Samut Sakhon, and Nakhon Pathom, with dailyLimit `1`. Direct URL and search pilots still require enough listing evidence to satisfy this rule before QNAP retains a candidate.
+
 ## Production Gate
 
 The hosted ChatGPT Site cannot call `127.0.0.1` on the Owner PC. A later production connection requires:
