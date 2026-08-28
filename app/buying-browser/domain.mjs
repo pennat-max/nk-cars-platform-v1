@@ -171,20 +171,32 @@ function planningFreightHigh(estimateHigh) {
     : Math.ceil((estimateHigh * (1 + SHIPPING_PLANNING_BUFFER_RATE)) / 100) * 100;
 }
 
+function customerUsdFromThb(valueThb) {
+  return Math.round(valueThb / CUSTOMER_FX_THB_PER_USD);
+}
+
 export function shippingPlanForSelection(destinationCountry, vehicleQuantity = 1) {
   const destination = shippingDestinationForCountry(destinationCountry);
   const quantity = normalizeShippingVehicleQuantity(vehicleQuantity);
   const indicativeFreightUsdLow = destination?.estimateUsdLow ?? null;
   const indicativeFreightUsdHigh = destination?.estimateUsdHigh ?? null;
+  const containerLoadingFeeThb = quantity === 3 ? THREE_CAR_CONTAINER_LOADING_FEE_THB : 0;
+  const containerLoadingFeeUsd = containerLoadingFeeThb ? customerUsdFromThb(containerLoadingFeeThb) : 0;
+  const containerLoadingPerVehicleUsd = containerLoadingFeeThb ? customerUsdFromThb(containerLoadingFeeThb / quantity) : 0;
+  const planningFreightUsdHigh = planningFreightHigh(indicativeFreightUsdHigh);
   return {
     destinationCountry: destination?.country || null,
     destinationPort: destination?.port || null,
     vehicleQuantity: quantity,
-    containerLoadingFeeThb: quantity === 3 ? THREE_CAR_CONTAINER_LOADING_FEE_THB : 0,
+    containerLoadingFeeThb,
+    containerLoadingFeeUsd,
+    containerLoadingPerVehicleUsd,
     indicativeFreightUsdLow,
     indicativeFreightUsdHigh,
     planningFreightUsdLow: indicativeFreightUsdLow,
-    planningFreightUsdHigh: planningFreightHigh(indicativeFreightUsdHigh),
+    planningFreightUsdHigh,
+    planningShipmentUsdLow: indicativeFreightUsdLow === null ? null : indicativeFreightUsdLow + containerLoadingFeeUsd,
+    planningShipmentUsdHigh: planningFreightUsdHigh === null ? null : planningFreightUsdHigh + containerLoadingFeeUsd,
     planningBufferRate: SHIPPING_PLANNING_BUFFER_RATE,
     indicativeFreightSource: destination?.estimateSource ?? null,
     freightRateStatus: destination ? "Pending - rate source required" : "Pending - destination required",

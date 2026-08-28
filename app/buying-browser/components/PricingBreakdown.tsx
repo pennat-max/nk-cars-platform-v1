@@ -22,6 +22,8 @@ const shippingCopy: Record<CustomerLanguage, {
   noIndicativeFreight: string;
   sourcePrefix: string;
   estimateSuffix: string;
+  loadingService: string;
+  loadingServiceNote: (totalUsd: number, perCarUsd: number) => string;
 }> = {
   en: {
     title: "Destination and shipping estimate",
@@ -38,6 +40,8 @@ const shippingCopy: Record<CustomerLanguage, {
     noIndicativeFreight: "No reliable public route estimate found yet. NK quote is required before final pricing.",
     sourcePrefix: "Source",
     estimateSuffix: "est.",
+    loadingService: "3-car Rushing / loading service",
+    loadingServiceNote: (totalUsd, perCarUsd) => `THB 22,000 service is included above: USD ${totalUsd.toLocaleString("en-US")} total, about USD ${perCarUsd.toLocaleString("en-US")} per car when shared by 3 cars.`,
   },
   "zh-CN": {
     title: "目的地和运费估算",
@@ -54,6 +58,8 @@ const shippingCopy: Record<CustomerLanguage, {
     noIndicativeFreight: "尚未找到可靠的公开路线估算。最终定价前需要 NK 报价。",
     sourcePrefix: "来源",
     estimateSuffix: "估算",
+    loadingService: "3 辆车 Rushing / 装柜服务费",
+    loadingServiceNote: (totalUsd, perCarUsd) => `THB 22,000 服务费已包含在上方估算内：总计 USD ${totalUsd.toLocaleString("en-US")}，3 辆车分摊约每辆 USD ${perCarUsd.toLocaleString("en-US")}。`,
   },
   th: {
     title: "ปลายทางและค่าชิปปิ้งประมาณการ",
@@ -70,6 +76,8 @@ const shippingCopy: Record<CustomerLanguage, {
     noIndicativeFreight: "ยังไม่พบราคาประมาณการสาธารณะที่น่าเชื่อถือสำหรับเส้นทางนี้ ต้องให้ NK ขอราคาก่อนออกยอดสุดท้าย",
     sourcePrefix: "แหล่งข้อมูล",
     estimateSuffix: "ประมาณการ",
+    loadingService: "ค่าบริการ Rushing / ชิ่งตู้ 3 คัน",
+    loadingServiceNote: (totalUsd, perCarUsd) => `รวมค่าบริการ 22,000 บาทไว้ในยอดด้านบนแล้ว คิดเป็น USD ${totalUsd.toLocaleString("en-US")} ทั้งตู้ หรือประมาณ USD ${perCarUsd.toLocaleString("en-US")} ต่อคันเมื่อหาร 3 คัน`,
   },
 };
 
@@ -89,6 +97,7 @@ export default function PricingBreakdown({ vehicleCase }: { vehicleCase: Vehicle
   const shippingLocked = Boolean(vehicleCase.quotation || vehicleCase.proformaInvoice);
   const marketBenchmark = formatUsdRange(shippingPlan.indicativeFreightUsdLow, shippingPlan.indicativeFreightUsdHigh);
   const planningFreight = formatUsdRange(shippingPlan.planningFreightUsdLow, shippingPlan.planningFreightUsdHigh);
+  const planningShipment = formatUsdRange(shippingPlan.planningShipmentUsdLow, shippingPlan.planningShipmentUsdHigh);
   const bufferPercent = Math.round((shippingPlan.planningBufferRate ?? SHIPPING_PLANNING_BUFFER_RATE) * 100);
   const pricing = calculatePricing({
     vehiclePriceThb: vehicleCase.actualVehiclePurchasePriceThb ?? vehicleCase.vehicle.observedPriceThb,
@@ -98,7 +107,7 @@ export default function PricingBreakdown({ vehicleCase }: { vehicleCase: Vehicle
     domesticTransportThb: vehicleCase.domesticTransportThb,
     repairModificationThb: vehicleCase.repairModificationThb,
     exportShippingThb: vehicleCase.exportShippingThb,
-    containerLoadingFeeThb: vehicleCase.shippingContainerLoadingFeeThb ?? shippingPlan.containerLoadingFeeThb,
+    containerLoadingFeeThb: null,
     otherAgreedThb: vehicleCase.otherAgreedThb,
   });
   const labels: Record<string, string> = {
@@ -115,11 +124,11 @@ export default function PricingBreakdown({ vehicleCase }: { vehicleCase: Vehicle
   const updateCountry = (destinationCountry: string) => updateCaseShippingPlan(vehicleCase.id, { destinationCountry, vehicleQuantity: shippingQuantity });
   const updateQuantity = (vehicleQuantity: number) => updateCaseShippingPlan(vehicleCase.id, { destinationCountry: shippingCountry, vehicleQuantity });
   const displayedLineAmount = (line: { key: string; amountThb: number | null }) => {
-    if (line.key === "shipping" && line.amountThb === null && planningFreight) return `${planningFreight} ${text.estimateSuffix}`;
+    if (line.key === "shipping" && line.amountThb === null && planningShipment) return `${planningShipment} ${text.estimateSuffix}`;
     return line.amountThb === null ? t("pending") : formatUsdFromThb(line.amountThb);
   };
   const displayedLineClass = (line: { key: string; amountThb: number | null; status: string }) => (
-    line.key === "shipping" && line.amountThb === null && planningFreight ? "estimate" : line.status === "Pending" ? "pending" : ""
+    line.key === "shipping" && line.amountThb === null && planningShipment ? "estimate" : line.status === "Pending" ? "pending" : ""
   );
   return (
     <div className="bb-pricing-tool">
@@ -133,7 +142,7 @@ export default function PricingBreakdown({ vehicleCase }: { vehicleCase: Vehicle
           <label><span>{text.country}</span><select disabled={shippingLocked} value={shippingCountry} onChange={(event) => updateCountry(event.target.value)}><option value="">{text.choose}</option>{SHIPPING_DESTINATIONS.map((item) => <option value={item.country} key={item.country}>{item.country} - {item.port}</option>)}</select></label>
           <label><span>{text.quantity}</span><select disabled={shippingLocked} value={shippingQuantity} onChange={(event) => updateQuantity(Number(event.target.value))}>{[1, 2, 3].map((count) => <option value={count} key={count}>{count}</option>)}</select></label>
         </div>
-        {shippingPlan.destinationCountry && <dl><div><dt>{text.planningFreight}</dt><dd>{planningFreight || t("pending")}</dd></div><div><dt>{text.marketBenchmark}</dt><dd>{marketBenchmark || t("pending")}</dd></div><div><dt>{text.sourcePrefix}</dt><dd>{marketBenchmark ? shippingPlan.indicativeFreightSource : text.noIndicativeFreight}</dd></div>{planningFreight && <div><dt>{`${bufferPercent}% buffer`}</dt><dd>{text.bufferNote}</dd></div>}</dl>}
+        {shippingPlan.destinationCountry && <dl><div><dt>{text.planningFreight}</dt><dd>{planningShipment || t("pending")}</dd></div>{shippingPlan.containerLoadingFeeUsd > 0 && <div><dt>{text.loadingService}</dt><dd>{text.loadingServiceNote(shippingPlan.containerLoadingFeeUsd, shippingPlan.containerLoadingPerVehicleUsd)}</dd></div>}<div><dt>{text.marketBenchmark}</dt><dd>{marketBenchmark || t("pending")}</dd></div><div><dt>{text.sourcePrefix}</dt><dd>{marketBenchmark ? shippingPlan.indicativeFreightSource : text.noIndicativeFreight}</dd></div>{planningFreight && <div><dt>{`${bufferPercent}% buffer`}</dt><dd>{text.bufferNote}</dd></div>}</dl>}
         <p><Info size={15} />{shippingLocked ? text.locked : text.freightPending}</p>
       </section>
       <div className="bb-fee-inclusions">

@@ -802,15 +802,26 @@ test("shipping plan records destination and adds only approved three-car loading
     destinationPort: "Mombasa",
     vehicleQuantity: 3,
     containerLoadingFeeThb: THREE_CAR_CONTAINER_LOADING_FEE_THB,
+    containerLoadingFeeUsd: 629,
+    containerLoadingPerVehicleUsd: 210,
     indicativeFreightUsdLow: 5100,
     indicativeFreightUsdHigh: 6800,
     planningFreightUsdLow: 5100,
     planningFreightUsdHigh: 7900,
+    planningShipmentUsdLow: 5729,
+    planningShipmentUsdHigh: 8529,
     planningBufferRate: SHIPPING_PLANNING_BUFFER_RATE,
     indicativeFreightSource: "Public 40ft Kenya market benchmarks; verify Thailand route before booking.",
     freightRateStatus: "Pending - rate source required",
   });
+  assert.equal(shippingPlanForSelection("Kenya", 2).planningShipmentUsdHigh, 7900);
   assert.equal(shippingPlanForSelection("Tanzania", 1).planningFreightUsdHigh, 10700);
+  assert.deepEqual({
+    low: shippingPlanForSelection("Tanzania", 3).planningShipmentUsdLow,
+    high: shippingPlanForSelection("Tanzania", 3).planningShipmentUsdHigh,
+    loadingTotal: shippingPlanForSelection("Tanzania", 3).containerLoadingFeeUsd,
+    loadingPerCar: shippingPlanForSelection("Tanzania", 3).containerLoadingPerVehicleUsd,
+  }, { low: 9929, high: 11329, loadingTotal: 629, loadingPerCar: 210 });
   const listing = presentCustomerListing(source);
   const vehicleCase = createVehicleCase(listing, [], "customer-1", "2026-08-23T10:00:00.000Z").caseRecord;
   const planned = applyCustomerShippingSelection(vehicleCase, { destinationCountry: "Kenya", vehicleQuantity: 3 }, "2026-08-23T10:05:00.000Z");

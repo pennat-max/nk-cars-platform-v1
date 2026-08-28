@@ -347,7 +347,7 @@ Decision:
 - Customer Vehicle Case pricing now lets the customer choose destination country/port and shipment quantity from 1 to 3 cars.
 - Customer screens may show public-source indicative ocean freight ranges as pre-booking estimates only. The customer-facing planning range keeps the public benchmark low end and adds a 15% planning buffer to the upper end so the possible booking movement is visible.
 - Main export/ocean freight is still Pending for final quotation readiness until NK records an Owner-approved freight table, provider quote, or API result for the selected route. The customer-facing Export / Shipping line may show the selected route planning range with an estimate label.
-- Selecting 3 cars adds the approved THB 22,000 container loading/stuffing charge as a customer-visible pricing line.
+- Selecting 3 cars adds the approved THB 22,000 Rushing/loading/stuffing charge into the customer-facing Export / Shipping estimate and explains the approximate per-car share using the customer FX rate.
 - This does not book shipping, send supplier/customer messages, confirm freight availability, accept payment, purchase a vehicle, or activate QNAP/Hermes behavior.
 
 ## 2026-08-28 - Owner-managed Hermes browser profiles
