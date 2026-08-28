@@ -4,3 +4,5 @@ dist/
 marketplace-connector/.profiles/
 native/
 deploy/
+/*.log
+/*.png
