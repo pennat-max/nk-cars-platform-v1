@@ -460,6 +460,11 @@ Currency presentation:
 - English displays USD, Simplified Chinese displays CNY, and Thai displays THB.
 - The preview uses deterministic configurable presentation FX in the HiSpeed layer; it does not change NK Cars pricing or shared source/purchase cost records.
 
+Payment request presentation:
+- HiSpeed may show preview Payment Requests grouped by selected plan milestone across one or more vehicles. Standard contributes deposit and before-shipment requests. Flex contributes initial, before-shipment, and destination/gateway milestone requests.
+- Payment Requests are customer-facing collection instructions only. Uploading transfer proof or a SWIFT reference does not confirm payment, release a vehicle, release documents, pay a seller, or create a purchase.
+- Real bank instructions must be configured by Owner/Finance and should point only to the approved HiSpeed company bank account. Finance confirmation of actual received funds remains required before any request can be treated as confirmed.
+
 ## 2026-08-28 - Broader RHD-market destination coverage and transit disclosure
 
 Status: APPROVED AND IMPLEMENTED

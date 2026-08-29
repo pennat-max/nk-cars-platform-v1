@@ -1290,6 +1290,9 @@ test("renders additive HiSpeed routes from the shared customer-safe inventory", 
     }
     if (route === "/hispeed/cases/NK-CASE-2026-000001") {
       assert.match(html, /data-hispeed-quote-snapshot/i);
+      assert.match(html, /data-hispeed-payment-request-example/i);
+      assert.match(html, /HS-PR-2026-000128/i);
+      assert.match(html, /Finance confirmation required|财务确认实际到账|Finance ยืนยันยอดเงินจริง/i);
       assert.match(html, /标准方案|Standard Plan/i);
       assert.match(html, /Confirmed|Estimate|Not calculated/i);
     }
@@ -1314,5 +1317,5 @@ test("NK Cars routes do not render HiSpeed payment plan UI", async () => {
   const response = await worker.fetch(new Request("http://localhost/buy/vehicle/nk-market-2026-0825-01", { headers: { accept: "text/html" } }), env, ctx);
   assert.equal(response.status, 200);
   const html = await response.text();
-  assert.doesNotMatch(html, /data-hispeed-payment-plans|HiSpeed Flex Plan|HiSpeed Inspection Wallet/i);
+  assert.doesNotMatch(html, /data-hispeed-payment-plans|data-hispeed-payment-request-example|HiSpeed Flex Plan|HiSpeed Inspection Wallet/i);
 });

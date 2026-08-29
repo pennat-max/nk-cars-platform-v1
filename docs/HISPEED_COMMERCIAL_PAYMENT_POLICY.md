@@ -88,6 +88,20 @@ HiSpeed quotation presentation must snapshot:
 
 Shipping remains a planning estimate until booking and Owner/authorized confirmation.
 
+## Payment Requests
+
+HiSpeed may generate customer-facing payment request presentations from the selected plan schedule. A request can group one or more vehicles by milestone:
+
+- Secure vehicles: Standard deposit or Flex initial payment.
+- Before shipment: Standard balance or Flex second payment.
+- Destination/gateway milestone: Flex remaining balance, only after approved Flex terms and route/legal/document policy.
+
+Payment Requests are not payment confirmation. Customer proof upload, remittance advice, or SWIFT reference is only evidence for Finance review. Status can become confirmed only after authorized Finance staff verify actual received funds.
+
+Real bank instructions must be configured by Owner/Finance and must use the approved HiSpeed company bank account. Preview UI must not display invented account names, bank numbers, payment rails, or payment processor instructions.
+
+Payment Requests must not automate seller payment, purchase, vehicle release, document release, customer financing, or Flex approval.
+
 ## Safety Boundaries
 
 The preview does not:

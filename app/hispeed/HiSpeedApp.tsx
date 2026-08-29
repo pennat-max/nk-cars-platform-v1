@@ -312,6 +312,60 @@ const commercialCopy = {
   },
 } satisfies Record<CustomerLanguage, Record<string, string>>;
 
+const paymentCopy = {
+  "zh-CN": {
+    title: "付款请求示例",
+    method: "付款方式",
+    bankTransfer: "仅转账至 HiSpeed 公司银行账户",
+    notConfigured: "公司账户资料需由 Owner 配置；预览不显示真实银行资料。",
+    proof: "上传付款凭证不代表自动确认收款。HiSpeed 财务确认实际到账后，状态才会变为 Confirmed。",
+    secure: "Secure Vehicles",
+    beforeShipment: "Before Shipment",
+    destination: "Destination Milestone",
+    totalDue: "本次应付",
+    status: "状态",
+    awaiting: "Awaiting Payment",
+    notIssued: "Not Issued Yet",
+    flexPending: "Pending Flex Approval",
+    finance: "Finance confirmation required",
+    customerAction: "客户操作：转账后上传凭证 / SWIFT reference",
+  },
+  en: {
+    title: "Payment Request Example",
+    method: "Payment Method",
+    bankTransfer: "Bank transfer to HiSpeed company account only",
+    notConfigured: "Company bank details must be configured by Owner; real bank details are not shown in preview.",
+    proof: "Uploading proof does not confirm payment automatically. Status changes to Confirmed only after HiSpeed Finance verifies actual received funds.",
+    secure: "Secure Vehicles",
+    beforeShipment: "Before Shipment",
+    destination: "Destination Milestone",
+    totalDue: "Total due",
+    status: "Status",
+    awaiting: "Awaiting Payment",
+    notIssued: "Not Issued Yet",
+    flexPending: "Pending Flex Approval",
+    finance: "Finance confirmation required",
+    customerAction: "Customer action: transfer funds, then upload proof / SWIFT reference",
+  },
+  th: {
+    title: "ตัวอย่าง Payment Request",
+    method: "วิธีชำระเงิน",
+    bankTransfer: "โอนเข้าบัญชีธนาคารชื่อบริษัท HiSpeed เท่านั้น",
+    notConfigured: "ข้อมูลบัญชีบริษัทต้องให้ Owner ตั้งค่า ยังไม่แสดงบัญชีจริงใน preview",
+    proof: "การอัปโหลดสลิปยังไม่ถือว่าชำระสำเร็จ สถานะจะเป็น Confirmed หลัง Finance ตรวจพบยอดเงินจริงเท่านั้น",
+    secure: "Secure Vehicles",
+    beforeShipment: "Before Shipment",
+    destination: "Destination Milestone",
+    totalDue: "ยอดเรียกเก็บ",
+    status: "สถานะ",
+    awaiting: "Awaiting Payment",
+    notIssued: "Not Issued Yet",
+    flexPending: "Pending Flex Approval",
+    finance: "ต้องให้ Finance ยืนยันยอดเงินจริง",
+    customerAction: "ลูกค้าโอนเงิน แล้วอัปโหลดสลิป / SWIFT reference",
+  },
+} satisfies Record<CustomerLanguage, Record<string, string>>;
+
 const navItems = [
   { view: "browse", href: "/hispeed", icon: Search },
   { view: "saved", href: "/hispeed/saved", icon: Heart },
@@ -334,6 +388,11 @@ function useCopy() {
 function useCommercialCopy() {
   const { language } = useBuyingBrowser();
   return commercialCopy[language];
+}
+
+function usePaymentCopy() {
+  const { language } = useBuyingBrowser();
+  return paymentCopy[language];
 }
 
 function useHiSpeedMoney() {
@@ -454,6 +513,49 @@ function HiSpeedQuoteSnapshot({ vehicleCase, selectedPlan }: { vehicleCase: Vehi
       <dl>{lines.map((line) => <div key={line.key}><dt>{line.label}</dt><dd><b>{money.fromThb(line.amountThb)}</b><span>{line.status}</span></dd></div>)}</dl>
       <PaymentTimeline listing={vehicleCase.vehicle} planId={selectedPlan} />
       {selectedPlan === "flex" && <p className="hs-flex-status">{c.flexStatus}: {snapshot.flexStatus}</p>}
+    </section>
+  );
+}
+
+function PaymentRequestExample({ vehicleCases }: { vehicleCases: VehicleCase[] }) {
+  const pay = usePaymentCopy();
+  const money = useHiSpeedMoney();
+  const groups = [
+    { key: "secure", title: pay.secure, status: pay.awaiting, steps: ["deposit", "initial"] },
+    { key: "beforeShipment", title: pay.beforeShipment, status: pay.notIssued, steps: ["beforeShipment"] },
+    { key: "destination", title: pay.destination, status: pay.flexPending, steps: ["destination"] },
+  ];
+  const rows = groups.map((group) => {
+    const items = vehicleCases.flatMap((vehicleCase) => {
+      const planId = normalizeHiSpeedPlan(vehicleCase.hispeedPaymentPlan) as HiSpeedPlanId;
+      const purchase = calculateHiSpeedPurchasePlan({ sourceCostThb: vehicleCase.actualVehiclePurchasePriceThb ?? vehicleCase.vehicle.observedPriceThb, planId });
+      return purchase.schedule
+        .filter((step) => group.steps.includes(step.key))
+        .map((step) => ({ vehicleCase, planId, step, amountThb: step.amountThb }));
+    });
+    return { ...group, items, totalThb: items.reduce((total, item) => total + (item.amountThb || 0), 0) };
+  }).filter((group) => group.items.length);
+  return (
+    <section className="hs-section hs-payment-requests" data-hispeed-payment-request-example>
+      <div className="hs-section-head"><CreditCard size={22} /><h2>{pay.title}</h2></div>
+      <div className="hs-bank-method"><b>{pay.method}</b><p>{pay.bankTransfer}</p><small>{pay.notConfigured}</small></div>
+      <div className="hs-request-list">
+        {rows.map((group, index) => (
+          <article key={group.key}>
+            <header><div><span>{`HS-PR-2026-${String(128 + index).padStart(6, "0")}`}</span><h3>{group.title}</h3></div><strong>{money.fromThb(group.totalThb)}</strong></header>
+            <dl>
+              {group.items.map(({ vehicleCase, planId, step }) => (
+                <div key={`${vehicleCase.id}-${step.key}`}>
+                  <dt>{vehicleCase.vehicle.year} {vehicleCase.vehicle.brand} {vehicleCase.vehicle.model}</dt>
+                  <dd><span>{planId === "standard" ? "Standard" : "Flex"} · {step.percent}%</span><b>{money.fromThb(step.amountThb)}</b></dd>
+                </div>
+              ))}
+            </dl>
+            <footer><span>{pay.status}: {group.status}</span><span>{pay.finance}</span></footer>
+          </article>
+        ))}
+      </div>
+      <p className="hs-commercial-note">{pay.customerAction}. {pay.proof}</p>
     </section>
   );
 }
@@ -607,6 +709,7 @@ function ShipmentPlanner() {
         <section className="hs-shipment-slots">{Array.from({ length: selectedQuantity }, (_, index) => state.cases[index] || null).map((item, index) => item ? <article key={item.id}><VehiclePhoto listing={item.vehicle} /><div><small>Car {index + 1}</small><b>{item.vehicle.year} {item.vehicle.brand} {item.vehicle.model}</b><span>{money.fromThb(hiSpeedVehiclePrice(item.vehicle, normalizeHiSpeedPlan(item.hispeedPaymentPlan) as HiSpeedPlanId))}</span></div><Link href={`/hispeed/cases/${encodeURIComponent(item.id)}`}>Open</Link></article> : <article key={index} className="empty"><span>{index + 1}</span><div><small>Open slot</small><b>{text.addShipment}</b></div><Link href="/hispeed/saved">Add</Link></article>)}</section>
         <footer><p>{text.planning}. Base freight comes from configured estimate/rate data; final freight requires NK confirmation.</p><button className="hs-primary" disabled={!selectedCountry} onClick={() => state.cases.slice(0, selectedQuantity).forEach((item) => requestCaseQuotation(item.id))}>{text.requestQuote}</button></footer>
       </section>
+      <PaymentRequestExample vehicleCases={state.cases.slice(0, selectedQuantity)} />
     </>
   );
 }
@@ -632,6 +735,7 @@ function CasesScreen({ caseId }: { caseId?: string }) {
       <PaymentPlanSelector listing={current.vehicle} selectedPlan={normalizeHiSpeedPlan(current.hispeedPaymentPlan) as HiSpeedPlanId} onChange={(planId) => updateCaseHiSpeedPaymentPlan(current.id, planId)} />
       <InspectionWalletPanel vehicleCase={current} />
       <HiSpeedQuoteSnapshot vehicleCase={current} selectedPlan={normalizeHiSpeedPlan(current.hispeedPaymentPlan) as HiSpeedPlanId} />
+      <PaymentRequestExample vehicleCases={[current]} />
       <CaseTimeline vehicleCase={current} />
       <QuotationPanel vehicleCase={current} />
       <ProformaInvoicePanel vehicleCase={current} />
