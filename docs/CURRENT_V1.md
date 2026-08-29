@@ -396,6 +396,16 @@ HiSpeed preview checkpoint:
 - HiSpeed-created customer Cases are tagged with channel `hispeed` for reporting while preserving the same underlying vehicle listing identity.
 - No QNAP infrastructure, Hermes runtime, production DNS, seller messaging, purchase, payment, or destructive PostgreSQL schema/data change was made.
 
+HiSpeed commercial/payment preview checkpoint:
+- HiSpeed now has two preview-only purchase plan presentations: Standard Plan and HiSpeed Flex Plan.
+- Standard calculates customer vehicle selling price from the same source/purchase cost plus a 10% HiSpeed sourcing/service margin, then displays a 30% deposit and 70% before-shipment schedule.
+- Flex calculates customer vehicle selling price from the same source/purchase cost plus a 20% HiSpeed sourcing/service margin, then displays 50% initial, 20% before shipment, and 30% destination/gateway milestone schedule.
+- HiSpeed customer UI shows the selling price and service-included disclosure; it does not expose source cost or frame the comparison as profit percentages.
+- HiSpeed quote snapshot preview records the selected payment plan, vehicle selling price, inspection/travel, shipping estimate, other approved costs, payment schedule, FX snapshot, and three-day validity presentation.
+- HiSpeed Inspection Wallet / Inspection Credit is UX-prepared only. New customers must pay inspection/travel before dispatch; regular customers may use wallet balance; approved dealers/VIP credit terms require separate approval. No credit is automatically granted.
+- Flex statuses are represented as `FLEX_NOT_REQUESTED`, `FLEX_REQUESTED`, `FLEX_UNDER_REVIEW`, `FLEX_APPROVED`, and `FLEX_DECLINED`. Flex approval, real payment movement, customer financing, seller payment, purchase, vehicle release, and document release remain disabled until Owner policy and authorized controls are implemented.
+- NK Cars `/buy` pricing remains unchanged.
+
 Identity/workspace activation checkpoint:
 - The application now supports a provider-neutral QNAP identity gateway without collecting passwords in NK forms.
 - The identity gateway contract now supports allowlisted Google and Apple provider selection. The Account UI renders provider-specific actions only when the corresponding gateway providers are explicitly enabled.

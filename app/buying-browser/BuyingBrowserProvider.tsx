@@ -27,6 +27,7 @@ type BuyingBrowserContextValue = {
   requestCaseAvailability: (caseId: string) => void;
   requestCaseInspection: (caseId: string) => void;
   requestCaseQuotation: (caseId: string) => void;
+  updateCaseHiSpeedPaymentPlan: (caseId: string, planId: "standard" | "flex") => void;
   updateCaseShippingPlan: (caseId: string, selection: { destinationCountry: string; vehicleQuantity: number }) => void;
   acceptCaseQuotation: (caseId: string, quotationNumber: string) => Promise<void>;
   askCaseQuestion: (caseId: string, question: string) => void;
@@ -295,6 +296,15 @@ export function BuyingBrowserProvider({
     updateCase(caseId, (record) => requestQuotation(record, new Date(), language));
   }
 
+  function updateCaseHiSpeedPaymentPlan(caseId: string, planId: "standard" | "flex") {
+    updateCase(caseId, (record) => ({
+      ...record,
+      hispeedPaymentPlan: planId,
+      hispeedFlexStatus: planId === "flex" ? "FLEX_REQUESTED" : "FLEX_NOT_REQUESTED",
+      updatedAt: new Date().toISOString(),
+    }));
+  }
+
   function updateCaseShippingPlan(caseId: string, selection: { destinationCountry: string; vehicleQuantity: number }) {
     updateCase(caseId, (record) => applyCustomerShippingSelection(record, selection, new Date()));
   }
@@ -349,6 +359,7 @@ export function BuyingBrowserProvider({
     requestCaseAvailability,
     requestCaseInspection,
     requestCaseQuotation,
+    updateCaseHiSpeedPaymentPlan,
     updateCaseShippingPlan,
     acceptCaseQuotation,
     askCaseQuestion,

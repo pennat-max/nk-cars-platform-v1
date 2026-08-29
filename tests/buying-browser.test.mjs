@@ -29,6 +29,7 @@ import { customerWorkspaceId, enforceServerControlledWorkspaceState, mergeBuying
 import { applyOwnerCaseVerification, normalizeOwnerCaseVerification } from "../app/buying-browser/owner-case-verification.mjs";
 import { acceptQuotation, currentQuotationStatus, issueQuotation, quotationMaterialKey } from "../app/buying-browser/quotation-domain.mjs";
 import { currentProformaInvoiceStatus, issueProformaInvoice } from "../app/buying-browser/pi-domain.mjs";
+import { buildHiSpeedQuoteSnapshot, calculateHiSpeedPurchasePlan } from "../app/hispeed/hispeed-commercial.mjs";
 import { cookieValue, identityGatewayRedirect, identityProviderMode, identitySocialProviders, parseQnapIdentity } from "../app/identity-domain.mjs";
 import { qnapWorkspaceTestHelpers, readQnapWorkspace, writeQnapWorkspace } from "../app/buying-browser/qnap-workspace.ts";
 import { readQnapSourcingAutomation, saveQnapSourcingRule, sendQnapHermesCommand } from "../app/buying-browser/qnap-sourcing.ts";
@@ -1206,6 +1207,41 @@ test("multi-brand visibility defaults to shared inventory without duplicating ve
   assert.equal(hispeedCase.channel, "hispeed");
 });
 
+test("HiSpeed Standard and Flex purchase plans calculate brand-specific selling prices", () => {
+  const standard = calculateHiSpeedPurchasePlan({ sourceCostThb: 500000, planId: "standard" });
+  assert.equal(standard.vehicleSellingPriceThb, 550000);
+  assert.deepEqual(standard.schedule.map((step) => [step.percent, step.amountThb]), [[30, 165000], [70, 385000]]);
+  assert.equal(standard.flexStatus, "FLEX_NOT_REQUESTED");
+
+  const flex = calculateHiSpeedPurchasePlan({ sourceCostThb: 500000, planId: "flex" });
+  assert.equal(flex.vehicleSellingPriceThb, 600000);
+  assert.deepEqual(flex.schedule.map((step) => [step.percent, step.amountThb]), [[50, 300000], [20, 120000], [30, 180000]]);
+  assert.equal(flex.flexStatus, "FLEX_REQUESTED");
+  assert.match(flex.customerMarginDisclosure.en, /sourcing and service margin/i);
+});
+
+test("HiSpeed quote snapshot records selected payment plan without changing NK pricing", () => {
+  const nkPricing = calculatePricing({ vehiclePriceThb: 500000, platformTransactionRate: 6, buyingServiceRate: 4, inspectionTravelThb: null, domesticTransportThb: null, repairModificationThb: null, exportShippingThb: null, otherAgreedThb: null });
+  const flexSnapshot = buildHiSpeedQuoteSnapshot({
+    vehicleId: "listing-1",
+    sourceCostThb: 500000,
+    planId: "flex",
+    inspectionTravelThb: 5000,
+    shippingEstimateThb: 70000,
+    fxRateThbPerUsd: 35,
+  });
+
+  assert.equal(nkPricing.knownSubtotalThb, 550000);
+  assert.equal(flexSnapshot.selectedPaymentPlan, "flex");
+  assert.equal(flexSnapshot.vehicleSellingPriceThb, 600000);
+  assert.equal(flexSnapshot.knownTotalThb, 675000);
+  assert.deepEqual(flexSnapshot.paymentSchedule.map((step) => step.percent), [50, 20, 30]);
+  assert.equal(flexSnapshot.statuses.vehicle, "Confirmed");
+  assert.equal(flexSnapshot.statuses.inspectionTravel, "Estimate");
+  assert.equal(flexSnapshot.statuses.shipping, "Estimate");
+  assert.equal(flexSnapshot.flexStatus, "FLEX_REQUESTED");
+});
+
 test("renders additive HiSpeed routes from the shared customer-safe inventory", async () => {
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
   workerUrl.searchParams.set("test", `hispeed-${process.pid}-${Date.now()}`);
@@ -1236,8 +1272,17 @@ test("renders additive HiSpeed routes from the shared customer-safe inventory", 
     }
     if (route === "/hispeed/vehicles/nk-market-2026-0825-01") {
       assert.match(html, /data-hispeed-vehicle-detail/i);
+      assert.match(html, /data-hispeed-payment-plans/i);
+      assert.match(html, /data-hispeed-payment-timeline/i);
+      assert.match(html, /data-hispeed-inspection-wallet/i);
+      assert.match(html, /HiSpeed Flex Plan|HiSpeed 灵活付款方案/i);
       assert.match(html, /确认车辆是否可购买/);
       assert.match(html, /透明价格明细/);
+    }
+    if (route === "/hispeed/cases/NK-CASE-2026-000001") {
+      assert.match(html, /data-hispeed-quote-snapshot/i);
+      assert.match(html, /标准方案|Standard Plan/i);
+      assert.match(html, /Confirmed|Estimate|Not calculated/i);
     }
     if (route === "/hispeed/shipments") {
       assert.match(html, /data-hispeed-shipment-planner/i);
@@ -1249,4 +1294,16 @@ test("renders additive HiSpeed routes from the shared customer-safe inventory", 
       assert.match(html, /车辆与 NK Cars 使用同一底层车辆身份/);
     }
   }
+});
+
+test("NK Cars routes do not render HiSpeed payment plan UI", async () => {
+  const workerUrl = new URL("../dist/server/index.js", import.meta.url);
+  workerUrl.searchParams.set("test", `nk-no-hispeed-payment-${process.pid}-${Date.now()}`);
+  const { default: worker } = await import(workerUrl.href);
+  const env = { ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) } };
+  const ctx = { waitUntil() {}, passThroughOnException() {} };
+  const response = await worker.fetch(new Request("http://localhost/buy/vehicle/nk-market-2026-0825-01", { headers: { accept: "text/html" } }), env, ctx);
+  assert.equal(response.status, 200);
+  const html = await response.text();
+  assert.doesNotMatch(html, /data-hispeed-payment-plans|HiSpeed Flex Plan|HiSpeed Inspection Wallet/i);
 });

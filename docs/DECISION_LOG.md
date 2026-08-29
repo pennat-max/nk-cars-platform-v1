@@ -433,6 +433,28 @@ Safety:
 - HiSpeed customer pages continue to exclude source URL, seller identity/contact, internal evidence, internal notes, source cost/margin, and private QNAP identifiers.
 - Real payment, real purchase, real seller messaging, QNAP infrastructure, Hermes runtime, and production DNS are unchanged.
 
+## 2026-08-29 - HiSpeed Standard and Flex commercial plans
+
+Status: IMPLEMENTED AS PREVIEW / OWNER APPROVAL REQUIRED FOR CREDIT ACTIVATION
+
+Decision:
+- HiSpeed has two brand-specific purchase plan presentations while continuing to use the same underlying vehicle identity and shared inventory source.
+- Standard Plan calculates the HiSpeed customer vehicle selling price as vehicle source/purchase cost plus a 10% HiSpeed sourcing/service margin. Customer schedule is 30% deposit to secure the vehicle and 70% before shipment.
+- HiSpeed Flex Plan calculates the HiSpeed customer vehicle selling price as vehicle source/purchase cost plus a 20% HiSpeed sourcing/service margin. Customer schedule is 50% initial payment, 20% before shipment, and 30% at an approved destination/gateway milestone before controlled vehicle or shipping-document release.
+- HiSpeed customer UI presents the benefit and payment timing, not profit language. Customer-facing copy may say the vehicle price includes HiSpeed sourcing and service margin.
+- NK Cars pricing remains unchanged and continues to use the existing configurable NK 6% platform/transaction plus 4% buying-service model.
+
+Flex safety:
+- Flex is never automatically approved. Supported states are `FLEX_NOT_REQUESTED`, `FLEX_REQUESTED`, `FLEX_UNDER_REVIEW`, `FLEX_APPROVED`, and `FLEX_DECLINED`.
+- No customer financing, payment confirmation, seller payment, vehicle release, document release, or purchase action is automated by the preview.
+- Owner/authorized staff approval and route/legal/document policy are required before any Flex credit terms can become operational.
+
+Inspection/wallet policy:
+- Check Availability may occur before paid inspection.
+- Before physical inspection/travel dispatch, the customer must approve/pay the configured inspection and travel price unless a separately approved credit policy exists.
+- HiSpeed may present an Inspection Wallet / Inspection Credit concept for future use by regular customers or approved dealers/VIP customers, but credit is not granted automatically based on membership.
+- If Owner configures it later, eligible inspection cost may be credited toward a successful purchase. The preview does not hard-code the credit amount.
+
 ## 2026-08-28 - Broader RHD-market destination coverage and transit disclosure
 
 Status: APPROVED AND IMPLEMENTED

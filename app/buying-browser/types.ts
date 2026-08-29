@@ -150,6 +150,8 @@ export type VehicleCase = {
     status: "Requested - Awaiting NK Review";
     requestedAt: string;
   } | null;
+  hispeedPaymentPlan?: "standard" | "flex";
+  hispeedFlexStatus?: "FLEX_NOT_REQUESTED" | "FLEX_REQUESTED" | "FLEX_UNDER_REVIEW" | "FLEX_APPROVED" | "FLEX_DECLINED";
   translationHistory: TranslationTrace[];
   messages: CaseMessage[];
   timeline: CaseTimelineItem[];
