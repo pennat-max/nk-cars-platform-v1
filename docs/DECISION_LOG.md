@@ -455,6 +455,11 @@ Inspection/wallet policy:
 - HiSpeed may present an Inspection Wallet / Inspection Credit concept for future use by regular customers or approved dealers/VIP customers, but credit is not granted automatically based on membership.
 - If Owner configures it later, eligible inspection cost may be credited toward a successful purchase. The preview does not hard-code the credit amount.
 
+Currency presentation:
+- HiSpeed keeps the authoritative calculation basis in THB and changes only the customer presentation currency by selected language.
+- English displays USD, Simplified Chinese displays CNY, and Thai displays THB.
+- The preview uses deterministic configurable presentation FX in the HiSpeed layer; it does not change NK Cars pricing or shared source/purchase cost records.
+
 ## 2026-08-28 - Broader RHD-market destination coverage and transit disclosure
 
 Status: APPROVED AND IMPLEMENTED

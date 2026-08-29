@@ -29,7 +29,7 @@ import { customerWorkspaceId, enforceServerControlledWorkspaceState, mergeBuying
 import { applyOwnerCaseVerification, normalizeOwnerCaseVerification } from "../app/buying-browser/owner-case-verification.mjs";
 import { acceptQuotation, currentQuotationStatus, issueQuotation, quotationMaterialKey } from "../app/buying-browser/quotation-domain.mjs";
 import { currentProformaInvoiceStatus, issueProformaInvoice } from "../app/buying-browser/pi-domain.mjs";
-import { buildHiSpeedQuoteSnapshot, calculateHiSpeedPurchasePlan } from "../app/hispeed/hispeed-commercial.mjs";
+import { buildHiSpeedQuoteSnapshot, calculateHiSpeedPurchasePlan, formatHiSpeedMoneyFromThb, hiSpeedMoneyInputToThb } from "../app/hispeed/hispeed-commercial.mjs";
 import { cookieValue, identityGatewayRedirect, identityProviderMode, identitySocialProviders, parseQnapIdentity } from "../app/identity-domain.mjs";
 import { qnapWorkspaceTestHelpers, readQnapWorkspace, writeQnapWorkspace } from "../app/buying-browser/qnap-workspace.ts";
 import { readQnapSourcingAutomation, saveQnapSourcingRule, sendQnapHermesCommand } from "../app/buying-browser/qnap-sourcing.ts";
@@ -1242,6 +1242,15 @@ test("HiSpeed quote snapshot records selected payment plan without changing NK p
   assert.equal(flexSnapshot.flexStatus, "FLEX_REQUESTED");
 });
 
+test("HiSpeed currency presentation follows the selected language", () => {
+  assert.equal(formatHiSpeedMoneyFromThb(350000, "en"), "USD 10,000");
+  assert.equal(formatHiSpeedMoneyFromThb(350000, "zh-CN"), "CNY 70,000");
+  assert.equal(formatHiSpeedMoneyFromThb(350000, "th"), "THB 350,000");
+  assert.equal(hiSpeedMoneyInputToThb("10000", "en"), "350000");
+  assert.equal(hiSpeedMoneyInputToThb("70000", "zh-CN"), "350000");
+  assert.equal(hiSpeedMoneyInputToThb("350000", "th"), "350000");
+});
+
 test("renders additive HiSpeed routes from the shared customer-safe inventory", async () => {
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
   workerUrl.searchParams.set("test", `hispeed-${process.pid}-${Date.now()}`);
@@ -1268,7 +1277,7 @@ test("renders additive HiSpeed routes from the shared customer-safe inventory", 
       assert.match(html, /data-hispeed-vehicle-card/i);
       assert.match(html, /从泰国采购优质车辆/);
       assert.match(html, /曼谷都会区/);
-      assert.match(html, /THB 35 = USD 1/);
+      assert.match(html, /CNY 1 = THB 5/);
     }
     if (route === "/hispeed/vehicles/nk-market-2026-0825-01") {
       assert.match(html, /data-hispeed-vehicle-detail/i);
@@ -1287,7 +1296,7 @@ test("renders additive HiSpeed routes from the shared customer-safe inventory", 
     if (route === "/hispeed/shipments") {
       assert.match(html, /data-hispeed-shipment-planner/i);
       assert.match(html, /Planning Estimate/i);
-      assert.match(html, /THB 25,000/);
+      assert.match(html, /CNY 5,000/);
     }
     if (route === "/hispeed/account") {
       assert.match(html, /hispeed/i);

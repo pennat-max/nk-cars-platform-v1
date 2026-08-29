@@ -5,12 +5,12 @@ import { ArrowLeft, CheckCircle2, Clock3, CreditCard, FolderKanban, Gauge, Globe
 import { FormEvent, useMemo, useState } from "react";
 import { useBuyingBrowser } from "../buying-browser/BuyingBrowserProvider";
 import { DEFAULT_FILTERS, filterListings, SHIPPING_DESTINATIONS, shippingPlanForSelection } from "../buying-browser/domain.mjs";
-import { CUSTOMER_FX_THB_PER_USD, customerUsdInputToThb, formatDateTime, formatMileage, formatThb, formatUsdFromThb } from "../buying-browser/format";
+import { CUSTOMER_FX_THB_PER_USD, formatDateTime, formatMileage } from "../buying-browser/format";
 import ProformaInvoicePanel from "../buying-browser/components/ProformaInvoicePanel";
 import QuotationPanel from "../buying-browser/components/QuotationPanel";
 import VehiclePhoto from "../buying-browser/components/VehiclePhoto";
 import type { BrowseFilters, BuyingBrowserView, CustomerLanguage, CustomerListing, VehicleCase } from "../buying-browser/types";
-import { buildHiSpeedQuoteSnapshot, calculateHiSpeedPurchasePlan, HISPEED_PURCHASE_PLANS, normalizeHiSpeedPlan } from "./hispeed-commercial.mjs";
+import { buildHiSpeedQuoteSnapshot, calculateHiSpeedPurchasePlan, formatHiSpeedMoneyFromThb, formatHiSpeedMoneyFromUsd, hiSpeedFxDisclosure, hiSpeedMoneyInputToThb, hispeedCurrencyForLanguage, HISPEED_PURCHASE_PLANS, normalizeHiSpeedPlan } from "./hispeed-commercial.mjs";
 
 type HiSpeedPlanId = "standard" | "flex";
 
@@ -336,8 +336,16 @@ function useCommercialCopy() {
   return commercialCopy[language];
 }
 
-function usd(value: number | null | undefined) {
-  return value === null || value === undefined ? "Pending" : `USD ${value.toLocaleString("en-US")}`;
+function useHiSpeedMoney() {
+  const { language } = useBuyingBrowser();
+  const fx = hispeedCurrencyForLanguage(language);
+  return {
+    currency: fx.currency,
+    fromThb: (value: number | null | undefined) => formatHiSpeedMoneyFromThb(value, language),
+    fromUsd: (value: number | null | undefined) => formatHiSpeedMoneyFromUsd(value, language),
+    inputToThb: (value: string) => hiSpeedMoneyInputToThb(value, language),
+    disclosure: hiSpeedFxDisclosure(language),
+  };
 }
 
 function hiSpeedVehiclePrice(listing: CustomerListing, planId: HiSpeedPlanId = "standard") {
@@ -355,6 +363,7 @@ function PaymentPlanSelector({
 }) {
   const { language } = useBuyingBrowser();
   const c = useCommercialCopy();
+  const money = useHiSpeedMoney();
   return (
     <section className="hs-section hs-plan-selector" data-hispeed-payment-plans>
       <div className="hs-section-head"><CreditCard size={22} /><h2>{c.choosePlan}</h2></div>
@@ -366,7 +375,7 @@ function PaymentPlanSelector({
             <button key={planId} type="button" className={selectedPlan === planId ? "active" : ""} onClick={() => onChange(planId)}>
               <span>{planId === "standard" ? c.recommended : c.flexible}</span>
               <h3>{planId === "standard" ? c.standardPlan : c.flexPlan}</h3>
-              <strong>{formatThb(plan.vehicleSellingPriceThb)}</strong>
+              <strong>{money.fromThb(plan.vehicleSellingPriceThb)}</strong>
               <p>{meta.positioning[language]}</p>
               <small>{planId === "standard" ? c.lowerPrice : c.preserveCash}</small>
             </button>
@@ -381,6 +390,7 @@ function PaymentPlanSelector({
 function PaymentTimeline({ listing, planId }: { listing: CustomerListing; planId: HiSpeedPlanId }) {
   const { language } = useBuyingBrowser();
   const c = useCommercialCopy();
+  const money = useHiSpeedMoney();
   const plan = calculateHiSpeedPurchasePlan({ sourceCostThb: listing.observedPriceThb, planId });
   return (
     <section className="hs-section hs-payment-timeline" data-hispeed-payment-timeline>
@@ -390,10 +400,10 @@ function PaymentTimeline({ listing, planId }: { listing: CustomerListing; planId
           <li key={step.key}>
             <span>{index + 1}</span>
             <div><b>{step.percent}%</b><p>{step.timing[language]}</p></div>
-            <strong>{formatThb(step.amountThb)}</strong>
+            <strong>{money.fromThb(step.amountThb)}</strong>
           </li>
         ))}
-        <li className="complete"><span>{plan.schedule.length + 1}</span><div><b>100%</b><p>Complete before the approved release workflow continues.</p></div><strong>{formatThb(plan.vehicleSellingPriceThb)}</strong></li>
+        <li className="complete"><span>{plan.schedule.length + 1}</span><div><b>100%</b><p>Complete before the approved release workflow continues.</p></div><strong>{money.fromThb(plan.vehicleSellingPriceThb)}</strong></li>
       </ol>
       {planId === "flex" && <p className="hs-commercial-note">{c.flexSafety}</p>}
     </section>
@@ -402,12 +412,13 @@ function PaymentTimeline({ listing, planId }: { listing: CustomerListing; planId
 
 function InspectionWalletPanel({ vehicleCase }: { vehicleCase?: VehicleCase | null }) {
   const c = useCommercialCopy();
+  const money = useHiSpeedMoney();
   return (
     <section className="hs-section hs-wallet" data-hispeed-inspection-wallet>
       <div className="hs-section-head"><WalletCards size={22} /><h2>{c.inspectionWallet}</h2></div>
       <p>{c.inspectionPolicy}</p>
       <dl>
-        <div><dt>{c.newCustomer}</dt><dd>{vehicleCase?.inspectionQuote ? formatThb(vehicleCase.inspectionQuote.totalThb) : c.notCalculated}</dd></div>
+        <div><dt>{c.newCustomer}</dt><dd>{vehicleCase?.inspectionQuote ? money.fromThb(vehicleCase.inspectionQuote.totalThb) : c.notCalculated}</dd></div>
         <div><dt>{c.regularCustomer}</dt><dd>Wallet balance required</dd></div>
         <div><dt>{c.vipCustomer}</dt><dd>Owner approval required</dd></div>
       </dl>
@@ -418,6 +429,7 @@ function InspectionWalletPanel({ vehicleCase }: { vehicleCase?: VehicleCase | nu
 
 function HiSpeedQuoteSnapshot({ vehicleCase, selectedPlan }: { vehicleCase: VehicleCase; selectedPlan: HiSpeedPlanId }) {
   const c = useCommercialCopy();
+  const money = useHiSpeedMoney();
   const shippingEstimateThb = vehicleCase.exportShippingThb ?? null;
   const snapshot = buildHiSpeedQuoteSnapshot({
     vehicleId: vehicleCase.listingId,
@@ -438,8 +450,8 @@ function HiSpeedQuoteSnapshot({ vehicleCase, selectedPlan }: { vehicleCase: Vehi
   return (
     <section className="hs-section hs-quote-snapshot" data-hispeed-quote-snapshot>
       <div className="hs-section-head"><ShieldCheck size={22} /><h2>{c.quoteSnapshot}</h2></div>
-      <div className="hs-quote-total"><span>{selectedPlan === "standard" ? c.standardPlan : c.flexPlan}</span><b>{formatThb(snapshot.knownTotalThb)}</b><small>{c.valid} · THB {CUSTOMER_FX_THB_PER_USD} = USD 1</small></div>
-      <dl>{lines.map((line) => <div key={line.key}><dt>{line.label}</dt><dd><b>{formatThb(line.amountThb)}</b><span>{line.status}</span></dd></div>)}</dl>
+      <div className="hs-quote-total"><span>{selectedPlan === "standard" ? c.standardPlan : c.flexPlan}</span><b>{money.fromThb(snapshot.knownTotalThb)}</b><small>{c.valid} · {money.disclosure}</small></div>
+      <dl>{lines.map((line) => <div key={line.key}><dt>{line.label}</dt><dd><b>{money.fromThb(line.amountThb)}</b><span>{line.status}</span></dd></div>)}</dl>
       <PaymentTimeline listing={vehicleCase.vehicle} planId={selectedPlan} />
       {selectedPlan === "flex" && <p className="hs-flex-status">{c.flexStatus}: {snapshot.flexStatus}</p>}
     </section>
@@ -466,13 +478,14 @@ function HiSpeedShell({ view, children }: { view: BuyingBrowserView; children: R
 
 function SearchControls({ filters, setFilter }: { filters: BrowseFilters; setFilter: <K extends keyof BrowseFilters>(key: K, value: BrowseFilters[K]) => void }) {
   const text = useCopy();
+  const money = useHiSpeedMoney();
   const locationOptions = ["Bangkok Metro", "All Thailand", "Bangkok", "Nonthaburi", "Pathum Thani", "Samut Prakan", "Chon Buri"];
   return (
     <section className="hs-filter-row" aria-label="HiSpeed vehicle search">
       <label className="hs-search"><Search size={19} /><input value={filters.query} onChange={(event) => setFilter("query", event.target.value)} placeholder={text.searchPlaceholder} /></label>
       <label><span>{text.location}</span><select value={filters.location} onChange={(event) => setFilter("location", event.target.value)}>{locationOptions.map((location) => <option key={location} value={location}>{location === "Bangkok Metro" ? text.bangkokMetro : location === "All Thailand" ? text.allThailand : location}</option>)}</select></label>
       <label><span>{text.year}</span><select value={filters.yearFrom} onChange={(event) => setFilter("yearFrom", event.target.value)}>{["", "2020", "2021", "2022", "2023", "2024", "2025"].map((year) => <option key={year || "any"} value={year}>{year || text.any}</option>)}</select></label>
-      <label><span>{text.price}</span><input inputMode="numeric" value={filters.priceMax} onChange={(event) => setFilter("priceMax", event.target.value.replace(/\D/g, ""))} placeholder="USD max" /></label>
+      <label><span>{text.price}</span><input inputMode="numeric" value={filters.priceMax} onChange={(event) => setFilter("priceMax", event.target.value.replace(/\D/g, ""))} placeholder={`${money.currency} max`} /></label>
       <button type="button"><SlidersHorizontal size={18} />{text.filters}</button>
     </section>
   );
@@ -481,6 +494,7 @@ function SearchControls({ filters, setFilter }: { filters: BrowseFilters; setFil
 function HiSpeedVehicleCard({ listing, selectable = false, selected = false, onSelect }: { listing: CustomerListing; selectable?: boolean; selected?: boolean; onSelect?: (id: string) => void }) {
   const { isSaved, toggleSaved } = useBuyingBrowser();
   const text = useCopy();
+  const money = useHiSpeedMoney();
   const saved = isSaved(listing.id);
   return (
     <article className="hs-card" data-hispeed-vehicle-card data-listing-id={listing.id}>
@@ -488,7 +502,7 @@ function HiSpeedVehicleCard({ listing, selectable = false, selected = false, onS
       <Link className="hs-card-image" href={`/hispeed/vehicles/${encodeURIComponent(listing.id)}`}><VehiclePhoto listing={listing} /><em>{text.inspected}</em></Link>
       <button className={saved ? "hs-heart saved" : "hs-heart"} onClick={() => toggleSaved(listing.id)} aria-label={saved ? text.saved : text.save}><Heart size={20} fill={saved ? "currentColor" : "none"} /></button>
       <Link className="hs-card-copy" href={`/hispeed/vehicles/${encodeURIComponent(listing.id)}`}>
-        <strong>{formatThb(hiSpeedVehiclePrice(listing))}</strong>
+        <strong>{money.fromThb(hiSpeedVehiclePrice(listing))}</strong>
         <h2>{listing.year ?? text.year} {listing.brand} {listing.model}</h2>
         <p>{listing.transmission} · {formatMileage(listing.mileageKm)}</p>
         <footer><span><MapPin size={13} />{listing.generalLocation}</span><span><CheckCircle2 size={13} />{listing.availability === "Verified Available" ? "Verified" : "Check"}</span></footer>
@@ -503,8 +517,9 @@ function BrowseScreen({ savedOnly = false }: { savedOnly?: boolean }) {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const text = useCopy();
   const c = useCommercialCopy();
+  const money = useHiSpeedMoney();
   const sourceListings = savedOnly ? listings.filter((item) => state.savedListingIds.includes(item.id)) : listings;
-  const domainFilters = useMemo(() => ({ ...filters, priceMin: customerUsdInputToThb(filters.priceMin), priceMax: customerUsdInputToThb(filters.priceMax) }), [filters]);
+  const domainFilters = useMemo(() => ({ ...filters, priceMin: money.inputToThb(filters.priceMin), priceMax: money.inputToThb(filters.priceMax) }), [filters, money]);
   const visibleListings = useMemo(() => filterListings(sourceListings, domainFilters), [domainFilters, sourceListings]);
   function setFilter<K extends keyof BrowseFilters>(key: K, value: BrowseFilters[K]) {
     setFilters((current) => ({ ...current, [key]: value }));
@@ -515,7 +530,7 @@ function BrowseScreen({ savedOnly = false }: { savedOnly?: boolean }) {
   }
   return (
     <>
-      {!savedOnly && <section className="hs-hero"><div><span>HiSpeed Export Marketplace</span><h1>{text.heroTitle}</h1><p>{text.heroSub}</p><a href="#hispeed-vehicles">{text.heroCta}</a></div><div className="hs-hero-stats"><b>{visibleListings.length}</b><span>{text.verified}</span><strong>THB 35 = USD 1</strong></div></section>}
+      {!savedOnly && <section className="hs-hero"><div><span>HiSpeed Export Marketplace</span><h1>{text.heroTitle}</h1><p>{text.heroSub}</p><a href="#hispeed-vehicles">{text.heroCta}</a></div><div className="hs-hero-stats"><b>{visibleListings.length}</b><span>{text.verified}</span><strong>{money.disclosure}</strong></div></section>}
       {savedOnly && <section className="hs-page-title"><div><span>{text.shortlist}</span><h1>{text.saved}</h1></div><button className="hs-primary" disabled={!selectedIds.length} onClick={addSelectedToShipment}><Ship size={18} />{text.addShipment}</button></section>}
       <SearchControls filters={filters} setFilter={setFilter} />
       {savedOnly && <section className="hs-shortlist"><b>{selectedIds.length} selected</b><button disabled={selectedIds.length < 2}>{text.compare}</button><button disabled={!selectedIds.length} onClick={addSelectedToShipment}>{text.addShipment}</button></section>}
@@ -532,6 +547,7 @@ function VehicleDetailScreen({ sourceId }: { sourceId?: string }) {
   const [selectedPlan, setSelectedPlan] = useState<HiSpeedPlanId>("standard");
   const text = useCopy();
   const c = useCommercialCopy();
+  const money = useHiSpeedMoney();
   const listing = listings.find((item) => item.id === sourceId);
   if (!listing) return <section className="hs-empty"><h1>Vehicle not found</h1><Link className="hs-primary" href="/hispeed"><ArrowLeft size={18} />Back</Link></section>;
   const purchase = calculateHiSpeedPurchasePlan({ sourceCostThb: listing.observedPriceThb, planId: selectedPlan });
@@ -551,8 +567,8 @@ function VehicleDetailScreen({ sourceId }: { sourceId?: string }) {
           <span className="hs-chip"><CheckCircle2 size={14} />{text.inspected}</span>
           <h1>{listing.title}</h1>
           <p>{listing.grade} · {listing.color}</p>
-          <strong>{formatThb(purchase.vehicleSellingPriceThb)}</strong>
-          <small>{formatUsdFromThb(purchase.vehicleSellingPriceThb)} · {text.lastChecked}: {formatDateTime(listing.observedAt)}</small>
+          <strong>{money.fromThb(purchase.vehicleSellingPriceThb)}</strong>
+          <small>{money.disclosure} · {text.lastChecked}: {formatDateTime(listing.observedAt)}</small>
           <div className="hs-actions"><button className="hs-primary" onClick={() => openCase("availability")}><Gauge size={19} />{text.checkAvailability}</button><button onClick={() => openCase()}><MessageCircle size={19} />{text.ask}</button><button onClick={() => toggleSaved(listing.id)}><Heart size={19} fill={isSaved(listing.id) ? "currentColor" : "none"} />{isSaved(listing.id) ? text.saved : text.save}</button></div>
         </section>
       </article>
@@ -560,7 +576,7 @@ function VehicleDetailScreen({ sourceId }: { sourceId?: string }) {
       <PaymentTimeline listing={listing} planId={selectedPlan} />
       <InspectionWalletPanel />
       <section className="hs-section"><h2>{text.keySpecs}</h2><dl className="hs-specs"><div><dt>{text.year}</dt><dd>{listing.year ?? "Pending"}</dd></div><div><dt>{text.transmission}</dt><dd>{listing.transmission}</dd></div><div><dt>{text.mileage}</dt><dd>{formatMileage(listing.mileageKm)}</dd></div><div><dt>{text.location}</dt><dd>{listing.generalLocation}</dd></div></dl><p>{listing.summary}</p></section>
-      <section className="hs-section hs-price-detail"><h2>{text.priceDetail}</h2><div><span>{c.vehicleSellingPrice}</span><b>{formatUsdFromThb(purchase.vehicleSellingPriceThb)}</b></div><p>{c.included}</p><p>Final quotation stays pending until HiSpeed/NK verifies availability, vehicle price, inspection, and shipping.</p></section>
+      <section className="hs-section hs-price-detail"><h2>{text.priceDetail}</h2><div><span>{c.vehicleSellingPrice}</span><b>{money.fromThb(purchase.vehicleSellingPriceThb)}</b></div><p>{c.included}</p><p>Final quotation stays pending until HiSpeed/NK verifies availability, vehicle price, inspection, and shipping.</p></section>
       <section className="hs-shipping-promo"><Ship size={28} /><div><h2>{text.shippingTitle}</h2><p>{text.shippingSub}</p><Link href="/hispeed/shipments">{text.shipping}</Link></div></section>
     </>
   );
@@ -569,6 +585,7 @@ function VehicleDetailScreen({ sourceId }: { sourceId?: string }) {
 function ShipmentPlanner() {
   const { hydrated, state, updateCaseShippingPlan, requestCaseQuotation } = useBuyingBrowser();
   const text = useCopy();
+  const money = useHiSpeedMoney();
   const primaryCase = state.cases[0];
   const selectedCountry = primaryCase?.shippingDestinationCountry || "";
   const selectedQuantity = primaryCase?.shippingVehicleQuantity || Math.min(3, Math.max(1, state.cases.length || 1));
@@ -585,9 +602,9 @@ function ShipmentPlanner() {
       <section className="hs-page-title"><div><span>{text.shipping}</span><h1>{text.shippingTitle}</h1><p>{text.shippingSub}</p></div><Link className="hs-primary" href="/hispeed/saved">{text.addShipment}</Link></section>
       <section className="hs-shipment" data-hispeed-shipment-planner>
         <div className="hs-shipment-controls"><label><span>{text.destination}</span><select value={selectedCountry} onChange={(event) => update(event.target.value)}><option value="">{text.chooseCountry}</option>{SHIPPING_DESTINATIONS.map((item) => <option key={item.country} value={item.country}>{item.country} - {item.port}</option>)}</select></label><label><span>{text.quantity}</span><select value={selectedQuantity} onChange={(event) => update(selectedCountry, Number(event.target.value))}>{[1, 2, 3].map((count) => <option key={count} value={count}>{count}{count === 3 ? " - best value" : ""}</option>)}</select></label></div>
-        <div className="hs-shipment-metrics"><article><span>{text.planning}</span><b>{usd(plan.planningShipmentUsdMid)}</b></article><article><span>{text.perVehicle}</span><b>{usd(plan.planningPerVehicleUsdMid)}</b></article><article><span>{text.savings}</span><b>{usd(saving)}</b></article></div>
-        <div className="hs-route-note"><b>{text.route}</b><p>{plan.routeType || "Choose destination"} · {plan.routeNote || text.inland}</p><p>3 cars include THB 25,000 rushing/loading: about USD {Math.round(25000 / CUSTOMER_FX_THB_PER_USD).toLocaleString("en-US")} per shipment, USD {Math.round((25000 / 3) / CUSTOMER_FX_THB_PER_USD).toLocaleString("en-US")} per car.</p></div>
-        <section className="hs-shipment-slots">{Array.from({ length: selectedQuantity }, (_, index) => state.cases[index] || null).map((item, index) => item ? <article key={item.id}><VehiclePhoto listing={item.vehicle} /><div><small>Car {index + 1}</small><b>{item.vehicle.year} {item.vehicle.brand} {item.vehicle.model}</b><span>{formatUsdFromThb(hiSpeedVehiclePrice(item.vehicle, normalizeHiSpeedPlan(item.hispeedPaymentPlan) as HiSpeedPlanId))}</span></div><Link href={`/hispeed/cases/${encodeURIComponent(item.id)}`}>Open</Link></article> : <article key={index} className="empty"><span>{index + 1}</span><div><small>Open slot</small><b>{text.addShipment}</b></div><Link href="/hispeed/saved">Add</Link></article>)}</section>
+        <div className="hs-shipment-metrics"><article><span>{text.planning}</span><b>{money.fromUsd(plan.planningShipmentUsdMid)}</b></article><article><span>{text.perVehicle}</span><b>{money.fromUsd(plan.planningPerVehicleUsdMid)}</b></article><article><span>{text.savings}</span><b>{money.fromUsd(saving)}</b></article></div>
+        <div className="hs-route-note"><b>{text.route}</b><p>{plan.routeType || "Choose destination"} · {plan.routeNote || text.inland}</p><p>3 cars include rushing/loading: about {money.fromThb(25000)} per shipment, {money.fromThb(Math.round(25000 / 3))} per car.</p></div>
+        <section className="hs-shipment-slots">{Array.from({ length: selectedQuantity }, (_, index) => state.cases[index] || null).map((item, index) => item ? <article key={item.id}><VehiclePhoto listing={item.vehicle} /><div><small>Car {index + 1}</small><b>{item.vehicle.year} {item.vehicle.brand} {item.vehicle.model}</b><span>{money.fromThb(hiSpeedVehiclePrice(item.vehicle, normalizeHiSpeedPlan(item.hispeedPaymentPlan) as HiSpeedPlanId))}</span></div><Link href={`/hispeed/cases/${encodeURIComponent(item.id)}`}>Open</Link></article> : <article key={index} className="empty"><span>{index + 1}</span><div><small>Open slot</small><b>{text.addShipment}</b></div><Link href="/hispeed/saved">Add</Link></article>)}</section>
         <footer><p>{text.planning}. Base freight comes from configured estimate/rate data; final freight requires NK confirmation.</p><button className="hs-primary" disabled={!selectedCountry} onClick={() => state.cases.slice(0, selectedQuantity).forEach((item) => requestCaseQuotation(item.id))}>{text.requestQuote}</button></footer>
       </section>
     </>
@@ -598,6 +615,7 @@ function CasesScreen({ caseId }: { caseId?: string }) {
   const { hydrated, state, findCaseById, requestCaseAvailability, requestCaseInspection, updateCaseHiSpeedPaymentPlan, askCaseQuestion } = useBuyingBrowser();
   const [question, setQuestion] = useState("");
   const text = useCopy();
+  const money = useHiSpeedMoney();
   if (!hydrated && !state.cases.length) return <section className="hs-empty">Loading...</section>;
   const current = caseId ? findCaseById(caseId) : null;
   function submit(event: FormEvent) {
@@ -610,7 +628,7 @@ function CasesScreen({ caseId }: { caseId?: string }) {
   if (current) return (
     <>
       <Link className="hs-back" href="/hispeed/cases"><ArrowLeft size={18} />{text.cases}</Link>
-      <section className="hs-case-detail"><VehiclePhoto listing={current.vehicle} /><div><span>{current.id}</span><h1>{current.vehicle.title}</h1><p>{current.vehicle.generalLocation} · {formatUsdFromThb(hiSpeedVehiclePrice(current.vehicle, normalizeHiSpeedPlan(current.hispeedPaymentPlan) as HiSpeedPlanId))}</p><div className="hs-actions"><button className="hs-primary" onClick={() => requestCaseAvailability(current.id)}>{text.checkAvailability}</button><button onClick={() => requestCaseInspection(current.id)}>Inspection</button></div></div></section>
+      <section className="hs-case-detail"><VehiclePhoto listing={current.vehicle} /><div><span>{current.id}</span><h1>{current.vehicle.title}</h1><p>{current.vehicle.generalLocation} · {money.fromThb(hiSpeedVehiclePrice(current.vehicle, normalizeHiSpeedPlan(current.hispeedPaymentPlan) as HiSpeedPlanId))}</p><div className="hs-actions"><button className="hs-primary" onClick={() => requestCaseAvailability(current.id)}>{text.checkAvailability}</button><button onClick={() => requestCaseInspection(current.id)}>Inspection</button></div></div></section>
       <PaymentPlanSelector listing={current.vehicle} selectedPlan={normalizeHiSpeedPlan(current.hispeedPaymentPlan) as HiSpeedPlanId} onChange={(planId) => updateCaseHiSpeedPaymentPlan(current.id, planId)} />
       <InspectionWalletPanel vehicleCase={current} />
       <HiSpeedQuoteSnapshot vehicleCase={current} selectedPlan={normalizeHiSpeedPlan(current.hispeedPaymentPlan) as HiSpeedPlanId} />
@@ -621,7 +639,7 @@ function CasesScreen({ caseId }: { caseId?: string }) {
     </>
   );
   if (!state.cases.length) return <section className="hs-empty"><FolderKanban size={30} /><h1>{text.noCases}</h1><Link className="hs-primary" href="/hispeed">{text.nav[0]}</Link></section>;
-  return <section className="hs-case-list"><div className="hs-page-title"><div><span>{text.timeline}</span><h1>{text.cases}</h1></div></div>{state.cases.map((item) => <Link key={item.id} href={`/hispeed/cases/${encodeURIComponent(item.id)}`}><VehiclePhoto listing={item.vehicle} /><div><small>{item.id}</small><h2>{item.vehicle.title}</h2><p>{item.availability} · {formatUsdFromThb(hiSpeedVehiclePrice(item.vehicle, normalizeHiSpeedPlan(item.hispeedPaymentPlan) as HiSpeedPlanId))}</p></div><Clock3 size={18} /></Link>)}</section>;
+  return <section className="hs-case-list"><div className="hs-page-title"><div><span>{text.timeline}</span><h1>{text.cases}</h1></div></div>{state.cases.map((item) => <Link key={item.id} href={`/hispeed/cases/${encodeURIComponent(item.id)}`}><VehiclePhoto listing={item.vehicle} /><div><small>{item.id}</small><h2>{item.vehicle.title}</h2><p>{item.availability} · {money.fromThb(hiSpeedVehiclePrice(item.vehicle, normalizeHiSpeedPlan(item.hispeedPaymentPlan) as HiSpeedPlanId))}</p></div><Clock3 size={18} /></Link>)}</section>;
 }
 
 function CaseTimeline({ vehicleCase }: { vehicleCase: VehicleCase }) {

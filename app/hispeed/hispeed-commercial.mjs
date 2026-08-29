@@ -40,6 +40,41 @@ export const HISPEED_FLEX_STATUSES = Object.freeze([
   "FLEX_DECLINED",
 ]);
 
+export const HISPEED_PRESENTATION_FX = Object.freeze({
+  en: { currency: "USD", thbPerUnit: 35, locale: "en-US" },
+  "zh-CN": { currency: "CNY", thbPerUnit: 5, locale: "zh-CN" },
+  th: { currency: "THB", thbPerUnit: 1, locale: "th-TH" },
+});
+
+export function hispeedCurrencyForLanguage(language = "zh-CN") {
+  return HISPEED_PRESENTATION_FX[language] || HISPEED_PRESENTATION_FX["zh-CN"];
+}
+
+export function formatHiSpeedMoneyFromThb(valueThb, language = "zh-CN") {
+  if (valueThb === null || valueThb === undefined) return "Pending";
+  const fx = hispeedCurrencyForLanguage(language);
+  const amount = Math.round(Number(valueThb) / fx.thbPerUnit);
+  if (!Number.isFinite(amount)) return "Pending";
+  return `${fx.currency} ${amount.toLocaleString(fx.locale)}`;
+}
+
+export function formatHiSpeedMoneyFromUsd(valueUsd, language = "zh-CN") {
+  if (valueUsd === null || valueUsd === undefined) return "Pending";
+  return formatHiSpeedMoneyFromThb(Math.round(Number(valueUsd) * HISPEED_PRESENTATION_FX.en.thbPerUnit), language);
+}
+
+export function hiSpeedMoneyInputToThb(value, language = "zh-CN") {
+  const amount = Number(String(value || "").replace(/[^\d.]/g, ""));
+  if (!Number.isFinite(amount) || amount <= 0) return "";
+  return String(Math.round(amount * hispeedCurrencyForLanguage(language).thbPerUnit));
+}
+
+export function hiSpeedFxDisclosure(language = "zh-CN") {
+  const fx = hispeedCurrencyForLanguage(language);
+  if (fx.currency === "THB") return "THB display";
+  return `${fx.currency} 1 = THB ${fx.thbPerUnit}`;
+}
+
 export function normalizeHiSpeedPlan(planId) {
   return planId === "flex" ? "flex" : "standard";
 }

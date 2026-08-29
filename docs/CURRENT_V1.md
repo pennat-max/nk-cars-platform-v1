@@ -402,6 +402,7 @@ HiSpeed commercial/payment preview checkpoint:
 - Flex calculates customer vehicle selling price from the same source/purchase cost plus a 20% HiSpeed sourcing/service margin, then displays 50% initial, 20% before shipment, and 30% destination/gateway milestone schedule.
 - HiSpeed customer UI shows the selling price and service-included disclosure; it does not expose source cost or frame the comparison as profit percentages.
 - HiSpeed quote snapshot preview records the selected payment plan, vehicle selling price, inspection/travel, shipping estimate, other approved costs, payment schedule, FX snapshot, and three-day validity presentation.
+- HiSpeed money presentation now follows the selected language: English uses USD, Simplified Chinese uses CNY, and Thai uses THB. The underlying source/purchase cost and deterministic calculations remain THB-based and shared; only HiSpeed presentation changes.
 - HiSpeed Inspection Wallet / Inspection Credit is UX-prepared only. New customers must pay inspection/travel before dispatch; regular customers may use wallet balance; approved dealers/VIP credit terms require separate approval. No credit is automatically granted.
 - Flex statuses are represented as `FLEX_NOT_REQUESTED`, `FLEX_REQUESTED`, `FLEX_UNDER_REVIEW`, `FLEX_APPROVED`, and `FLEX_DECLINED`. Flex approval, real payment movement, customer financing, seller payment, purchase, vehicle release, and document release remain disabled until Owner policy and authorized controls are implemented.
 - NK Cars `/buy` pricing remains unchanged.

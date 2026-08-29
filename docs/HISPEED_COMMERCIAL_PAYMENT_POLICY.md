@@ -48,6 +48,14 @@ Permitted transparent explanation:
 - Simplified Chinese: 车辆价格已包含 HiSpeed 采购及服务费用。
 - Thai: ราคารถรวมค่าจัดหาและบริการของ HiSpeed แล้ว
 
+HiSpeed displays customer money by selected language:
+
+- English: USD
+- Simplified Chinese: CNY
+- Thai: THB
+
+The authoritative cost basis remains THB. Currency conversion is presentation-only and must use configured HiSpeed FX policy at quote issue.
+
 Do not expose source cost, source URL, seller identity/contact, internal evidence, internal notes, private QNAP identifiers, or internal margin calculations through customer DTOs.
 
 ## Inspection Wallet / Credit
