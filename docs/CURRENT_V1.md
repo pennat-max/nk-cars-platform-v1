@@ -393,6 +393,7 @@ Pricing update: Vehicle Case now applies the approved inspection/travel rule of 
 HiSpeed preview checkpoint:
 - `/hispeed`, `/hispeed/vehicles/[id]`, `/hispeed/saved`, `/hispeed/shipments`, `/hispeed/cases`, `/hispeed/cases/[caseId]`, `/hispeed/cases/[caseId]/pi`, and `/hispeed/account` now provide an additive second-brand storefront.
 - `taishuaiauto.com` and `www.taishuaiauto.com` are routed as HiSpeed host aliases: `/` rewrites to `/hispeed`, short HiSpeed paths such as `/vehicles/[id]`, `/saved`, `/shipments`, `/cases`, and `/account` rewrite into `/hispeed/...`, and `/buy` redirects to `/hispeed` on the HiSpeed host.
+- The HiSpeed storefront now presents a TAISHUAI AUTO header logo and route metadata while continuing to use the same shared HiSpeed/NK domain logic underneath.
 - HiSpeed defaults to Simplified Chinese, with English and Thai language switching, and uses a distinct red/white China-friendly marketplace UI.
 - HiSpeed reuses the same customer-safe inventory adapter, Vehicle Case, inspection, deterministic pricing, shipping planner, quotation, PI, and workspace contracts. `/buy` remains unchanged.
 - Application DTOs now support `visibleOnNk` and `visibleOnHispeed`, mapping to future QNAP `visible_on_nk` and `visible_on_hispeed`. Missing values default to visible on both brands for backward compatibility.

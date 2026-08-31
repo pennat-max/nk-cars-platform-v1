@@ -575,7 +575,7 @@ function HiSpeedShell({ view, children }: { view: BuyingBrowserView; children: R
   return (
     <div className={`hispeed hs-view-${view}`} data-hispeed-preview-v1 data-buying-browser-v1>
       <header className="hs-header">
-        <Link className="hs-brand" href="/hispeed" aria-label="HiSpeed home"><span>Hi</span><div><b>HiSpeed</b><small>{text.logoLine}</small></div></Link>
+        <Link className="hs-brand" href="/hispeed" aria-label="TAISHUAI AUTO home"><TaishuaiAutoLogo /><div><b>TAISHUAI AUTO</b><small>{text.logoLine}</small></div></Link>
         <div className="hs-search-area"><MapPin size={16} /><span>{text.searchArea}</span></div>
         <nav className="hs-desktop-nav" aria-label="HiSpeed navigation">{navItems.slice(0, 4).map((item, index) => { const Icon = item.icon; return <Link key={item.href} className={selected === item.view ? "active" : ""} href={item.href}><Icon size={17} />{text.nav[index]}</Link>; })}</nav>
         <label className="hs-lang" title={text.language}><Globe2 size={16} /><select value={language} onChange={(event) => setLanguage(event.target.value as CustomerLanguage)} aria-label={text.language}><option value="zh-CN">中文</option><option value="en">EN</option><option value="th">ไทย</option></select></label>
@@ -583,6 +583,20 @@ function HiSpeedShell({ view, children }: { view: BuyingBrowserView; children: R
       <main className="hs-main">{children}</main>
       <nav className="hs-bottom-nav" aria-label="HiSpeed mobile navigation">{navItems.map((item, index) => { const Icon = item.icon; const count = item.view === "saved" ? state.savedListingIds.length : item.view === "cases" ? state.cases.length : 0; return <Link key={item.href} className={selected === item.view ? "active" : ""} href={item.href}><span><Icon size={20} />{count > 0 && <i>{count > 9 ? "9+" : count}</i>}</span><b>{text.nav[index]}</b></Link>; })}</nav>
     </div>
+  );
+}
+
+function TaishuaiAutoLogo() {
+  return (
+    <span className="hs-logo-mark" aria-hidden="true">
+      <svg viewBox="0 0 64 64" role="img" focusable="false">
+        <path d="M32 5 54 13v17c0 14.8-8.7 24.5-22 29-13.3-4.5-22-14.2-22-29V13L32 5Z" />
+        <path d="M18.5 29.5h27l-2.9-6.1c-.7-1.4-2.1-2.4-3.7-2.4H25.1c-1.6 0-3 .9-3.7 2.4l-2.9 6.1Z" />
+        <path d="M18 31.5h28c2.2 0 4 1.8 4 4v7H14v-7c0-2.2 1.8-4 4-4Z" />
+        <path d="M20 43h7M37 43h7" />
+        <path d="m22 39 6.1 6.1L44 29.2" />
+      </svg>
+    </span>
   );
 }
 

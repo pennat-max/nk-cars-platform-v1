@@ -443,6 +443,14 @@ Decision:
 - Requests for `/buy` on the HiSpeed host redirect to `/hispeed` so the HiSpeed domain does not expose the NK Cars storefront as its primary customer route.
 - This is a domain/routing change only. It does not create a new backend, duplicate inventory, create a QNAP stack, create a Hermes runtime, change NK Cars pricing, activate real payments, or change customer/internal DTO boundaries.
 
+## 2026-08-31 - TAISHUAI AUTO logo for HiSpeed storefront
+
+Status: OWNER APPROVED AND IMPLEMENTED
+
+Decision:
+- Use the TAISHUAI AUTO wordmark with a red shield/car/check logo mark in the HiSpeed storefront header and HiSpeed route metadata.
+- Keep the change in the HiSpeed presentation layer only. This does not rename or fork the shared inventory, QNAP adapter, Vehicle Case, pricing, shipping, quotation, PI, payment, or NK Cars `/buy` surfaces.
+
 ## 2026-08-29 - HiSpeed Standard and Flex commercial plans
 
 Status: IMPLEMENTED AS PREVIEW / OWNER APPROVAL REQUIRED FOR CREDIT ACTIVATION
