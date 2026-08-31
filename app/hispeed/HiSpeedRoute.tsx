@@ -3,7 +3,7 @@ import { BuyingBrowserProvider } from "../buying-browser/BuyingBrowserProvider";
 import { DEFAULT_FILTERS } from "../buying-browser/domain.mjs";
 import { customerMarketplaceAdapter } from "../buying-browser/source-adapters/customer-marketplace-adapter";
 import { createCapturedPocCase } from "../buying-browser/source-adapters/sheet-poc-data";
-import type { BuyingBrowserView, CustomerIdentity, VehicleCase } from "../buying-browser/types";
+import type { BuyingBrowserView, CustomerIdentity, CustomerListing, VehicleCase } from "../buying-browser/types";
 import { customerWorkspaceId } from "../buying-browser/workspace-state.mjs";
 import HiSpeedApp from "./HiSpeedApp";
 
@@ -16,9 +16,25 @@ function customerIdFromAccountId(accountId: string) {
   return customerWorkspaceId(accountId);
 }
 
+function taishuaiListing(listing: CustomerListing): CustomerListing {
+  return {
+    ...listing,
+    sourceReference: listing.sourceReference.replace(/^NK-MKT-/i, "TS-MKT-").replace(/^NK-/i, "TS-"),
+    summary: listing.summary
+      .replace(/\bNK verification\b/g, "TAISHUAI AUTO verification")
+      .replace(/\bNK\/local agent check\b/g, "TAISHUAI AUTO/local agent check"),
+  };
+}
+
 function hispeedSeedCase(customerId: string): VehicleCase {
   const seed = createCapturedPocCase(customerId);
-  return { ...seed, customerId, channel: "hispeed" };
+  return {
+    ...seed,
+    customerId,
+    channel: "hispeed",
+    sourceReference: seed.sourceReference.replace(/^NK-MKT-/i, "TS-MKT-").replace(/^NK-/i, "TS-"),
+    vehicle: taishuaiListing(seed.vehicle),
+  };
 }
 
 export default async function HiSpeedRoute({ view, sourceId, caseId }: { view: BuyingBrowserView; sourceId?: string; caseId?: string }) {
@@ -46,7 +62,7 @@ export default async function HiSpeedRoute({ view, sourceId, caseId }: { view: B
     <BuyingBrowserProvider
       customer={customer}
       sourceStatus={taishuaiSourceStatus}
-      initialListings={result.results}
+      initialListings={result.results.map(taishuaiListing)}
       seedCases={signedIn || !demoWorkspaceEnabled ? [] : [hispeedSeedCase(customer.id)]}
       durableAccount={Boolean(signedIn)}
       legacyCustomerId={signedIn?.provider !== "qnap" ? customerIdFromEmail(signedIn?.email || null) : undefined}
