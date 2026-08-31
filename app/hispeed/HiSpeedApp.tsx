@@ -92,7 +92,7 @@ const copy: Record<CustomerLanguage, Copy> = {
     save: "收藏",
     saved: "已收藏",
     checkAvailability: "确认车辆是否可购买",
-    ask: "咨询 HiSpeed",
+    ask: "咨询 TAISHUAI AUTO",
     inspected: "已审核",
     lastChecked: "最后检查",
     detail: "车辆详情",
@@ -122,7 +122,7 @@ const copy: Record<CustomerLanguage, Copy> = {
     timeline: "订单进度",
     selected: "已选择车辆",
     quotePi: "报价 / PI",
-    accountIntro: "HiSpeed 客户来源会标记为 hispeed，车辆与 NK Cars 使用同一底层车辆身份。",
+    accountIntro: "TAISHUAI AUTO 客户来源会标记为 hispeed，车辆与 NK Cars 使用同一底层车辆身份。",
   },
   en: {
     nav: ["Vehicles", "Saved", "Shipping", "Cases", "Account"],
@@ -146,7 +146,7 @@ const copy: Record<CustomerLanguage, Copy> = {
     save: "Save",
     saved: "Saved",
     checkAvailability: "Check Availability",
-    ask: "Ask HiSpeed",
+    ask: "Ask TAISHUAI AUTO",
     inspected: "Reviewed",
     lastChecked: "Last checked",
     detail: "Vehicle detail",
@@ -176,7 +176,7 @@ const copy: Record<CustomerLanguage, Copy> = {
     timeline: "Order timeline",
     selected: "Vehicle selected",
     quotePi: "Quote / PI",
-    accountIntro: "HiSpeed customer activity is marked as hispeed while vehicles keep the shared NK identity.",
+    accountIntro: "TAISHUAI AUTO customer activity is marked as hispeed while vehicles keep the shared NK identity.",
   },
   th: {
     nav: ["รถ", "บันทึก", "ขนส่ง", "เคส", "บัญชี"],
@@ -200,7 +200,7 @@ const copy: Record<CustomerLanguage, Copy> = {
     save: "บันทึก",
     saved: "บันทึกแล้ว",
     checkAvailability: "เช็คว่ารถยังซื้อได้ไหม",
-    ask: "ปรึกษา HiSpeed",
+    ask: "ปรึกษา TAISHUAI AUTO",
     inspected: "ตรวจแล้ว",
     lastChecked: "ตรวจล่าสุด",
     detail: "รายละเอียดรถ",
@@ -230,7 +230,7 @@ const copy: Record<CustomerLanguage, Copy> = {
     timeline: "ไทม์ไลน์คำสั่งซื้อ",
     selected: "เลือกรถแล้ว",
     quotePi: "ใบเสนอราคา / PI",
-    accountIntro: "กิจกรรมลูกค้า HiSpeed จะถูกระบุเป็น hispeed โดยรถยังใช้ identity เดียวกับ NK Cars",
+    accountIntro: "กิจกรรมลูกค้า TAISHUAI AUTO จะถูกระบุเป็น hispeed โดยรถยังใช้ identity เดียวกับ NK Cars",
   },
 };
 
@@ -238,19 +238,19 @@ const commercialCopy = {
   "zh-CN": {
     choosePlan: "选择付款方案",
     standardPlan: "标准方案",
-    flexPlan: "HiSpeed 灵活付款方案",
+    flexPlan: "TAISHUAI AUTO 灵活付款方案",
     recommended: "推荐 / 总价更优",
     flexible: "灵活现金流 / 需审核批准",
     lowerPrice: "更低车辆总价",
     preserveCash: "发运前支付更少，保留更多流动资金",
-    included: "车辆价格已包含 HiSpeed 采购及服务费用。",
+    included: "车辆价格已包含 TAISHUAI AUTO 采购及服务费用。",
     vehicleSellingPrice: "车辆销售价",
     paymentTimeline: "付款时间线",
     quoteSnapshot: "报价快照",
-    inspectionWallet: "HiSpeed 验车钱包 / 验车额度",
+    inspectionWallet: "TAISHUAI AUTO 验车钱包 / 验车额度",
     inspectionPolicy: "确认库存可先进行。实地验车/出行前，客户需批准并支付验车及出行费用，除非已有单独批准的信用政策。",
     newCustomer: "新客户：派单前支付验车/出行费用",
-    regularCustomer: "常规客户：可使用 HiSpeed Wallet 余额",
+    regularCustomer: "常规客户：可使用 TAISHUAI AUTO Wallet 余额",
     vipCustomer: "经批准经销商/VIP：按单独批准账期处理",
     purchaseCredit: "如 Owner 配置，符合条件的验车费用可抵扣成功购车；金额不在此预览硬编码。",
     flexStatus: "Flex 审核状态",
@@ -263,19 +263,19 @@ const commercialCopy = {
   en: {
     choosePlan: "Choose Payment Plan",
     standardPlan: "Standard Plan",
-    flexPlan: "HiSpeed Flex Plan",
+    flexPlan: "TAISHUAI AUTO Flex Plan",
     recommended: "Recommended / Best Price",
     flexible: "Flexible Cash Flow / Subject to Approval",
     lowerPrice: "Lower total vehicle price",
     preserveCash: "Pay less before shipment and preserve working capital",
-    included: "Vehicle price includes HiSpeed sourcing and service margin.",
+    included: "Vehicle price includes TAISHUAI AUTO sourcing and service margin.",
     vehicleSellingPrice: "Vehicle Selling Price",
     paymentTimeline: "Payment timeline",
     quoteSnapshot: "Quote snapshot",
-    inspectionWallet: "HiSpeed Inspection Wallet / Inspection Credit",
+    inspectionWallet: "TAISHUAI AUTO Inspection Wallet / Inspection Credit",
     inspectionPolicy: "Availability can be checked first. Before physical inspection or travel, the customer must approve and pay inspection/travel unless an approved credit policy exists.",
     newCustomer: "New customer: pay inspection/travel before dispatch",
-    regularCustomer: "Regular customer: may use HiSpeed Wallet balance",
+    regularCustomer: "Regular customer: may use TAISHUAI AUTO Wallet balance",
     vipCustomer: "Approved dealer/VIP: separately approved credit terms only",
     purchaseCredit: "If configured by Owner, eligible inspection cost may be credited toward a successful purchase; no amount is hard-coded in this preview.",
     flexStatus: "Flex review status",
@@ -288,19 +288,19 @@ const commercialCopy = {
   th: {
     choosePlan: "เลือกแผนชำระเงิน",
     standardPlan: "แผนมาตรฐาน",
-    flexPlan: "HiSpeed Flex",
+    flexPlan: "TAISHUAI AUTO Flex",
     recommended: "แนะนำ / ราคารวมดีกว่า",
     flexible: "ยืดหยุ่นเงินหมุนเวียน / ต้องอนุมัติ",
     lowerPrice: "ราคารถรวมต่ำกว่า",
     preserveCash: "จ่ายก่อนส่งน้อยลง ช่วยรักษาเงินหมุนเวียน",
-    included: "ราคารถรวมค่าจัดหาและบริการของ HiSpeed แล้ว",
+    included: "ราคารถรวมค่าจัดหาและบริการของ TAISHUAI AUTO แล้ว",
     vehicleSellingPrice: "ราคาขายรถ",
     paymentTimeline: "ไทม์ไลน์การชำระเงิน",
     quoteSnapshot: "ภาพรวมใบเสนอราคา",
-    inspectionWallet: "HiSpeed Inspection Wallet / Inspection Credit",
+    inspectionWallet: "TAISHUAI AUTO Inspection Wallet / Inspection Credit",
     inspectionPolicy: "เช็ก availability ได้ก่อน แต่ก่อนออกตรวจ/เดินทาง ลูกค้าต้องอนุมัติและชำระค่าตรวจ/เดินทาง เว้นแต่มีนโยบายเครดิตที่อนุมัติแยกต่างหาก",
     newCustomer: "ลูกค้าใหม่: ชำระค่าตรวจ/เดินทางก่อน dispatch",
-    regularCustomer: "ลูกค้าประจำ: ใช้ยอด HiSpeed Wallet ได้ถ้ามี",
+    regularCustomer: "ลูกค้าประจำ: ใช้ยอด TAISHUAI AUTO Wallet ได้ถ้ามี",
     vipCustomer: "Dealer/VIP ที่อนุมัติแล้ว: ใช้เครดิตตามเงื่อนไขที่อนุมัติแยกเท่านั้น",
     purchaseCredit: "ถ้า Owner ตั้งค่าไว้ ค่า inspection ที่เข้าเงื่อนไขอาจนำไปเครดิตเมื่อซื้อสำเร็จ โดยยังไม่ hard-code จำนวนเงินใน preview นี้",
     flexStatus: "สถานะพิจารณา Flex",
@@ -316,9 +316,9 @@ const paymentCopy = {
   "zh-CN": {
     title: "付款请求示例",
     method: "付款方式",
-    bankTransfer: "仅转账至 HiSpeed 公司银行账户",
+    bankTransfer: "仅转账至 TAISHUAI AUTO 公司银行账户",
     notConfigured: "公司账户资料需由 Owner 配置；预览不显示真实银行资料。",
-    proof: "上传付款凭证不代表自动确认收款。HiSpeed 财务确认实际到账后，状态才会变为 Confirmed。",
+    proof: "上传付款凭证不代表自动确认收款。TAISHUAI AUTO 财务确认实际到账后，状态才会变为 Confirmed。",
     secure: "Secure Vehicles",
     beforeShipment: "Before Shipment",
     beforeContainerClose: "关柜前补足80%",
@@ -335,9 +335,9 @@ const paymentCopy = {
   en: {
     title: "Payment Request Example",
     method: "Payment Method",
-    bankTransfer: "Bank transfer to HiSpeed company account only",
+    bankTransfer: "Bank transfer to TAISHUAI AUTO company account only",
     notConfigured: "Company bank details must be configured by Owner; real bank details are not shown in preview.",
-    proof: "Uploading proof does not confirm payment automatically. Status changes to Confirmed only after HiSpeed Finance verifies actual received funds.",
+    proof: "Uploading proof does not confirm payment automatically. Status changes to Confirmed only after TAISHUAI AUTO Finance verifies actual received funds.",
     secure: "Secure Vehicles",
     beforeShipment: "Before Shipment",
     beforeContainerClose: "Before Container Closing",
@@ -354,7 +354,7 @@ const paymentCopy = {
   th: {
     title: "ตัวอย่าง Payment Request",
     method: "วิธีชำระเงิน",
-    bankTransfer: "โอนเข้าบัญชีธนาคารชื่อบริษัท HiSpeed เท่านั้น",
+    bankTransfer: "โอนเข้าบัญชีธนาคารชื่อบริษัท TAISHUAI AUTO เท่านั้น",
     notConfigured: "ข้อมูลบัญชีบริษัทต้องให้ Owner ตั้งค่า ยังไม่แสดงบัญชีจริงใน preview",
     proof: "การอัปโหลดสลิปยังไม่ถือว่าชำระสำเร็จ สถานะจะเป็น Confirmed หลัง Finance ตรวจพบยอดเงินจริงเท่านั้น",
     secure: "Secure Vehicles",
@@ -577,11 +577,11 @@ function HiSpeedShell({ view, children }: { view: BuyingBrowserView; children: R
       <header className="hs-header">
         <Link className="hs-brand" href="/hispeed" aria-label="TAISHUAI AUTO home"><TaishuaiAutoLogo /><div><b>TAISHUAI AUTO</b><small>{text.logoLine}</small></div></Link>
         <div className="hs-search-area"><MapPin size={16} /><span>{text.searchArea}</span></div>
-        <nav className="hs-desktop-nav" aria-label="HiSpeed navigation">{navItems.slice(0, 4).map((item, index) => { const Icon = item.icon; return <Link key={item.href} className={selected === item.view ? "active" : ""} href={item.href}><Icon size={17} />{text.nav[index]}</Link>; })}</nav>
+        <nav className="hs-desktop-nav" aria-label="TAISHUAI AUTO navigation">{navItems.slice(0, 4).map((item, index) => { const Icon = item.icon; return <Link key={item.href} className={selected === item.view ? "active" : ""} href={item.href}><Icon size={17} />{text.nav[index]}</Link>; })}</nav>
         <label className="hs-lang" title={text.language}><Globe2 size={16} /><select value={language} onChange={(event) => setLanguage(event.target.value as CustomerLanguage)} aria-label={text.language}><option value="zh-CN">中文</option><option value="en">EN</option><option value="th">ไทย</option></select></label>
       </header>
       <main className="hs-main">{children}</main>
-      <nav className="hs-bottom-nav" aria-label="HiSpeed mobile navigation">{navItems.map((item, index) => { const Icon = item.icon; const count = item.view === "saved" ? state.savedListingIds.length : item.view === "cases" ? state.cases.length : 0; return <Link key={item.href} className={selected === item.view ? "active" : ""} href={item.href}><span><Icon size={20} />{count > 0 && <i>{count > 9 ? "9+" : count}</i>}</span><b>{text.nav[index]}</b></Link>; })}</nav>
+      <nav className="hs-bottom-nav" aria-label="TAISHUAI AUTO mobile navigation">{navItems.map((item, index) => { const Icon = item.icon; const count = item.view === "saved" ? state.savedListingIds.length : item.view === "cases" ? state.cases.length : 0; return <Link key={item.href} className={selected === item.view ? "active" : ""} href={item.href}><span><Icon size={20} />{count > 0 && <i>{count > 9 ? "9+" : count}</i>}</span><b>{text.nav[index]}</b></Link>; })}</nav>
     </div>
   );
 }
@@ -605,7 +605,7 @@ function SearchControls({ filters, setFilter }: { filters: BrowseFilters; setFil
   const money = useHiSpeedMoney();
   const locationOptions = ["Bangkok Metro", "All Thailand", "Bangkok", "Nonthaburi", "Pathum Thani", "Samut Prakan", "Chon Buri"];
   return (
-    <section className="hs-filter-row" aria-label="HiSpeed vehicle search">
+    <section className="hs-filter-row" aria-label="TAISHUAI AUTO vehicle search">
       <label className="hs-search"><Search size={19} /><input value={filters.query} onChange={(event) => setFilter("query", event.target.value)} placeholder={text.searchPlaceholder} /></label>
       <label><span>{text.location}</span><select value={filters.location} onChange={(event) => setFilter("location", event.target.value)}>{locationOptions.map((location) => <option key={location} value={location}>{location === "Bangkok Metro" ? text.bangkokMetro : location === "All Thailand" ? text.allThailand : location}</option>)}</select></label>
       <label><span>{text.year}</span><select value={filters.yearFrom} onChange={(event) => setFilter("yearFrom", event.target.value)}>{["", "2020", "2021", "2022", "2023", "2024", "2025"].map((year) => <option key={year || "any"} value={year}>{year || text.any}</option>)}</select></label>
@@ -654,12 +654,12 @@ function BrowseScreen({ savedOnly = false }: { savedOnly?: boolean }) {
   }
   return (
     <>
-      {!savedOnly && <section className="hs-hero"><div><span>HiSpeed Export Marketplace</span><h1>{text.heroTitle}</h1><p>{text.heroSub}</p><a href="#hispeed-vehicles">{text.heroCta}</a></div><div className="hs-hero-stats"><b>{visibleListings.length}</b><span>{text.verified}</span><strong>{money.disclosure}</strong></div></section>}
+      {!savedOnly && <section className="hs-hero"><div><span>TAISHUAI AUTO Export Marketplace</span><h1>{text.heroTitle}</h1><p>{text.heroSub}</p><a href="#hispeed-vehicles">{text.heroCta}</a></div><div className="hs-hero-stats"><b>{visibleListings.length}</b><span>{text.verified}</span><strong>{money.disclosure}</strong></div></section>}
       {savedOnly && <section className="hs-page-title"><div><span>{text.shortlist}</span><h1>{text.saved}</h1></div><button className="hs-primary" disabled={!selectedIds.length} onClick={addSelectedToShipment}><Ship size={18} />{text.addShipment}</button></section>}
       <SearchControls filters={filters} setFilter={setFilter} />
       {savedOnly && <section className="hs-shortlist"><b>{selectedIds.length} selected</b><button disabled={selectedIds.length < 2}>{text.compare}</button><button disabled={!selectedIds.length} onClick={addSelectedToShipment}>{text.addShipment}</button></section>}
       {!savedOnly && <section className="hs-commerce-band"><article><ShieldCheck size={22} /><b>{text.trust[0]}</b></article><article><Gauge size={22} /><b>{text.trust[1]}</b></article><article><CheckCircle2 size={22} /><b>{text.trust[2]}</b></article></section>}
-      <section id="hispeed-vehicles" className="hs-grid" aria-label="HiSpeed vehicles">{visibleListings.length ? visibleListings.map((listing) => <HiSpeedVehicleCard key={listing.id} listing={listing} selectable={savedOnly} selected={selectedIds.includes(listing.id)} onSelect={(id) => setSelectedIds((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id])} />) : <div className="hs-empty">{savedOnly ? text.emptySaved : "No matches"}</div>}</section>
+      <section id="hispeed-vehicles" className="hs-grid" aria-label="TAISHUAI AUTO vehicles">{visibleListings.length ? visibleListings.map((listing) => <HiSpeedVehicleCard key={listing.id} listing={listing} selectable={savedOnly} selected={selectedIds.includes(listing.id)} onSelect={(id) => setSelectedIds((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id])} />) : <div className="hs-empty">{savedOnly ? text.emptySaved : "No matches"}</div>}</section>
       {!savedOnly && <section className="hs-how"><h2>How it works</h2><ol>{[...text.how.slice(0, 3), c.choosePlan, ...text.how.slice(3)].map((step, index) => <li key={step}><span>{index + 1}</span>{step}</li>)}</ol></section>}
     </>
   );
@@ -726,7 +726,7 @@ function VehicleDetailScreen({ sourceId }: { sourceId?: string }) {
       <PaymentTimeline listing={listing} planId={selectedPlan} />
       <InspectionWalletPanel />
       <section className="hs-section"><h2>{text.keySpecs}</h2><dl className="hs-specs"><div><dt>{text.year}</dt><dd>{listing.year ?? "Pending"}</dd></div><div><dt>{text.transmission}</dt><dd>{listing.transmission}</dd></div><div><dt>{text.mileage}</dt><dd>{formatMileage(listing.mileageKm)}</dd></div><div><dt>{text.location}</dt><dd>{listing.generalLocation}</dd></div></dl><p>{listing.summary}</p></section>
-      <section className="hs-section hs-price-detail"><h2>{text.priceDetail}</h2><div><span>{c.vehicleSellingPrice}</span><b>{money.fromThb(purchase.vehicleSellingPriceThb)}</b></div><p>{c.included}</p><p>Final quotation stays pending until HiSpeed/NK verifies availability, vehicle price, inspection, and shipping.</p></section>
+      <section className="hs-section hs-price-detail"><h2>{text.priceDetail}</h2><div><span>{c.vehicleSellingPrice}</span><b>{money.fromThb(purchase.vehicleSellingPriceThb)}</b></div><p>{c.included}</p><p>Final quotation stays pending until TAISHUAI AUTO/NK verifies availability, vehicle price, inspection, and shipping.</p></section>
       <section className="hs-shipping-promo"><Ship size={28} /><div><h2>{text.shippingTitle}</h2><p>{text.shippingSub}</p><Link href="/hispeed/shipments">{text.shipping}</Link></div></section>
       {fullscreenOpen && <section className="hs-photo-viewer" role="dialog" aria-modal="true" aria-label={openPhotoLabel} data-hispeed-fullscreen-viewer>
         <header><button type="button" onClick={() => setFullscreenOpen(false)} aria-label={closePhotoLabel} autoFocus><X size={30} /></button><strong>{imageIndex + 1} / {listing.imageUrls.length}</strong></header>
@@ -811,7 +811,7 @@ function CaseTimeline({ vehicleCase }: { vehicleCase: VehicleCase }) {
 function AccountScreen() {
   const { customer, sourceStatus, state, workspaceSync } = useBuyingBrowser();
   const text = useCopy();
-  return <section className="hs-account"><div className="hs-page-title"><div><span>HiSpeed</span><h1>{text.account}</h1><p>{text.accountIntro}</p></div></div><dl><div><dt>Customer</dt><dd>{customer.displayName}</dd></div><div><dt>Channel</dt><dd>{customer.acquisitionChannel || "hispeed"}</dd></div><div><dt>Inventory</dt><dd>{sourceStatus.label} · {sourceStatus.mode}</dd></div><div><dt>Workspace</dt><dd>{workspaceSync.mode}</dd></div><div><dt>{text.saved}</dt><dd>{state.savedListingIds.length}</dd></div><div><dt>{text.cases}</dt><dd>{state.cases.length}</dd></div></dl></section>;
+  return <section className="hs-account"><div className="hs-page-title"><div><span>TAISHUAI AUTO</span><h1>{text.account}</h1><p>{text.accountIntro}</p></div></div><dl><div><dt>Customer</dt><dd>{customer.displayName}</dd></div><div><dt>Channel</dt><dd>{customer.acquisitionChannel || "hispeed"}</dd></div><div><dt>Inventory</dt><dd>{sourceStatus.label} · {sourceStatus.mode}</dd></div><div><dt>Workspace</dt><dd>{workspaceSync.mode}</dd></div><div><dt>{text.saved}</dt><dd>{state.savedListingIds.length}</dd></div><div><dt>{text.cases}</dt><dd>{state.cases.length}</dd></div></dl></section>;
 }
 
 export default function HiSpeedApp({ view, sourceId, caseId }: { view: BuyingBrowserView; sourceId?: string; caseId?: string }) {

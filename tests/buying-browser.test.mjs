@@ -1207,7 +1207,7 @@ test("multi-brand visibility defaults to shared inventory without duplicating ve
   assert.equal(hispeedCase.channel, "hispeed");
 });
 
-test("HiSpeed Standard and Flex purchase plans calculate brand-specific selling prices", () => {
+test("TAISHUAI AUTO Standard and Flex purchase plans calculate brand-specific selling prices", () => {
   const standard = calculateHiSpeedPurchasePlan({ sourceCostThb: 500000, planId: "standard" });
   assert.equal(standard.vehicleSellingPriceThb, 550000);
   assert.deepEqual(standard.schedule.map((step) => [step.key, step.percent, step.amountThb]), [["deposit", 30, 165000], ["beforeContainerClose", 50, 275000], ["containerClose", 20, 110000]]);
@@ -1221,7 +1221,7 @@ test("HiSpeed Standard and Flex purchase plans calculate brand-specific selling 
   assert.match(flex.customerMarginDisclosure.en, /sourcing and service margin/i);
 });
 
-test("HiSpeed quote snapshot records selected payment plan without changing NK pricing", () => {
+test("TAISHUAI AUTO quote snapshot records selected payment plan without changing NK pricing", () => {
   const nkPricing = calculatePricing({ vehiclePriceThb: 500000, platformTransactionRate: 6, buyingServiceRate: 4, inspectionTravelThb: null, domesticTransportThb: null, repairModificationThb: null, exportShippingThb: null, otherAgreedThb: null });
   const flexSnapshot = buildHiSpeedQuoteSnapshot({
     vehicleId: "listing-1",
@@ -1243,7 +1243,7 @@ test("HiSpeed quote snapshot records selected payment plan without changing NK p
   assert.equal(flexSnapshot.flexStatus, "FLEX_REQUESTED");
 });
 
-test("HiSpeed currency presentation follows the selected language", () => {
+test("TAISHUAI AUTO currency presentation follows the selected language", () => {
   assert.equal(formatHiSpeedMoneyFromThb(350000, "en"), "USD 10,000");
   assert.equal(formatHiSpeedMoneyFromThb(350000, "zh-CN"), "CNY 70,000");
   assert.equal(formatHiSpeedMoneyFromThb(350000, "th"), "THB 350,000");
@@ -1252,7 +1252,7 @@ test("HiSpeed currency presentation follows the selected language", () => {
   assert.equal(hiSpeedMoneyInputToThb("350000", "th"), "350000");
 });
 
-test("renders additive HiSpeed routes from the shared customer-safe inventory", async () => {
+test("renders additive TAISHUAI AUTO routes from the shared customer-safe inventory", async () => {
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
   workerUrl.searchParams.set("test", `hispeed-${process.pid}-${Date.now()}`);
   const { default: worker } = await import(workerUrl.href);
@@ -1272,7 +1272,7 @@ test("renders additive HiSpeed routes from the shared customer-safe inventory", 
     assert.equal(response.status, 200, route);
     const html = await response.text();
     assert.match(html, /data-hispeed-preview-v1/i, route);
-    assert.match(html, /HiSpeed/i, route);
+    assert.match(html, /TAISHUAI AUTO/i, route);
     assert.doesNotMatch(html, /facebook\.com\/marketplace\/item|sellerPhone|sourceUrl|internalNotes|Pranee Pra Jaideaw|080 632 3247/i, route);
     if (route === "/hispeed") {
       assert.match(html, /data-hispeed-vehicle-card/i);
@@ -1288,7 +1288,7 @@ test("renders additive HiSpeed routes from the shared customer-safe inventory", 
       assert.match(html, /data-hispeed-payment-timeline/i);
       assert.match(html, /data-hispeed-inspection-wallet/i);
       assert.match(html, /Top up to 80% before container closing|关柜前补足至80%|จ่ายเพิ่มให้ครบ 80% ก่อนปิดตู้/i);
-      assert.match(html, /HiSpeed Flex Plan|HiSpeed 灵活付款方案/i);
+      assert.match(html, /TAISHUAI AUTO Flex Plan|TAISHUAI AUTO 灵活付款方案/i);
       assert.match(html, /确认车辆是否可购买/);
       assert.match(html, /透明价格明细/);
     }
@@ -1312,7 +1312,7 @@ test("renders additive HiSpeed routes from the shared customer-safe inventory", 
   }
 });
 
-test("NK Cars routes do not render HiSpeed payment plan UI", async () => {
+test("NK Cars routes do not render TAISHUAI AUTO payment plan UI", async () => {
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
   workerUrl.searchParams.set("test", `nk-no-hispeed-payment-${process.pid}-${Date.now()}`);
   const { default: worker } = await import(workerUrl.href);
@@ -1321,5 +1321,5 @@ test("NK Cars routes do not render HiSpeed payment plan UI", async () => {
   const response = await worker.fetch(new Request("http://localhost/buy/vehicle/nk-market-2026-0825-01", { headers: { accept: "text/html" } }), env, ctx);
   assert.equal(response.status, 200);
   const html = await response.text();
-  assert.doesNotMatch(html, /data-hispeed-payment-plans|data-hispeed-payment-request-example|HiSpeed Flex Plan|HiSpeed Inspection Wallet/i);
+  assert.doesNotMatch(html, /data-hispeed-payment-plans|data-hispeed-payment-request-example|TAISHUAI AUTO Flex Plan|TAISHUAI AUTO Inspection Wallet/i);
 });

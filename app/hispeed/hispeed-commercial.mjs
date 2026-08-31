@@ -21,9 +21,9 @@ export const HISPEED_PURCHASE_PLANS = Object.freeze({
     flexStatus: "FLEX_REQUESTED",
     badge: "Flexible Cash Flow / Subject to Approval",
     positioning: {
-      en: "Pay less before shipment and keep more working capital. HiSpeed funds part of the transaction until the agreed destination milestone. Subject to approval.",
-      "zh-CN": "发运前支付更少，保留更多流动资金。HiSpeed 为部分交易提供资金支持，余款在约定目的地节点支付。需审核批准。",
-      th: "จ่ายก่อนส่งน้อยลง ช่วยรักษาเงินหมุนเวียน HiSpeed ร่วมออกเงินบางส่วนจนถึงจุดหมายที่ตกลง ต้องผ่านการอนุมัติ",
+      en: "Pay less before shipment and keep more working capital. TAISHUAI AUTO funds part of the transaction until the agreed destination milestone. Subject to approval.",
+      "zh-CN": "发运前支付更少，保留更多流动资金。TAISHUAI AUTO 为部分交易提供资金支持，余款在约定目的地节点支付。需审核批准。",
+      th: "จ่ายก่อนส่งน้อยลง ช่วยรักษาเงินหมุนเวียน TAISHUAI AUTO ร่วมออกเงินบางส่วนจนถึงจุดหมายที่ตกลง ต้องผ่านการอนุมัติ",
     },
     schedule: [
       { key: "initial", percent: 50, timing: { en: "Initial payment to secure/start purchase", "zh-CN": "首付款锁定并启动采购", th: "ชำระงวดแรกเพื่อล็อกและเริ่มจัดซื้อ" } },
@@ -99,9 +99,9 @@ export function calculateHiSpeedPurchasePlan(input = {}) {
     schedule,
     flexStatus: planId === "flex" ? (input.flexStatus && HISPEED_FLEX_STATUSES.includes(input.flexStatus) ? input.flexStatus : "FLEX_REQUESTED") : "FLEX_NOT_REQUESTED",
     customerMarginDisclosure: {
-      en: "Vehicle price includes HiSpeed sourcing and service margin.",
-      "zh-CN": "车辆价格已包含 HiSpeed 采购及服务费用。",
-      th: "ราคารถรวมค่าจัดหาและบริการของ HiSpeed แล้ว",
+      en: "Vehicle price includes TAISHUAI AUTO sourcing and service margin.",
+      "zh-CN": "车辆价格已包含 TAISHUAI AUTO 采购及服务费用。",
+      th: "ราคารถรวมค่าจัดหาและบริการของ TAISHUAI AUTO แล้ว",
     },
   };
 }

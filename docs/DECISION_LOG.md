@@ -416,50 +416,50 @@ Decision:
 - Empty slots link the customer back to Browse, Paste Link, or Ask NK AI so they can add more cars toward a three-car shipment.
 - This slot planner remains customer planning UI only. It does not create a confirmed grouped shipment, issue a final quotation, book freight, take payment, send external messages, or purchase vehicles without NK verification.
 
-## 2026-08-29 - HiSpeed multi-brand storefront preview
+## 2026-08-29 - TAISHUAI AUTO multi-brand storefront preview
 
 Status: IMPLEMENTED AS ADDITIVE PREVIEW / NOT PRODUCTION-DNS ACTIVATED
 
 Decision:
-- Add HiSpeed as a second customer-facing brand/channel at `/hispeed` while keeping NK Cars `/buy` intact.
-- HiSpeed uses the same customer-safe inventory DTOs, QNAP/repository inventory adapter, Vehicle Case, pricing, inspection, shipping planner, quotation, and PI domain logic.
-- Do not duplicate vehicle inventory, create a new QNAP stack, create a new Hermes runtime, or fork pricing/shipping engines for HiSpeed.
+- Add TAISHUAI AUTO as a second customer-facing brand/channel at `/hispeed` while keeping NK Cars `/buy` intact.
+- TAISHUAI AUTO uses the same customer-safe inventory DTOs, QNAP/repository inventory adapter, Vehicle Case, pricing, inspection, shipping planner, quotation, and PI domain logic.
+- Do not duplicate vehicle inventory, create a new QNAP stack, create a new Hermes runtime, or fork pricing/shipping engines for TAISHUAI AUTO.
 - Vehicle channel visibility is represented as backward-compatible presentation metadata: `visibleOnNk` / `visibleOnHispeed` in application DTOs, corresponding to future QNAP `visible_on_nk` / `visible_on_hispeed` fields. Missing values default to visible on both brands so existing records continue to work.
-- HiSpeed customer/case activity is marked with channel `hispeed` so reporting can distinguish customer origin without changing the underlying vehicle identity.
-- HiSpeed defaults to Simplified Chinese and uses a separate red/white marketplace-style presentation system, not a recolored NK Cars route.
+- TAISHUAI AUTO customer/case activity is marked with channel `hispeed` so reporting can distinguish customer origin without changing the underlying vehicle identity.
+- TAISHUAI AUTO defaults to Simplified Chinese and uses a separate red/white marketplace-style presentation system, not a recolored NK Cars route.
 - Future `hispeed.nkautotrade.com` routing can point at the same app path, but DNS/domain changes still require Owner approval.
 
 Safety:
-- HiSpeed customer pages continue to exclude source URL, seller identity/contact, internal evidence, internal notes, source cost/margin, and private QNAP identifiers.
+- TAISHUAI AUTO customer pages continue to exclude source URL, seller identity/contact, internal evidence, internal notes, source cost/margin, and private QNAP identifiers.
 - Real payment, real purchase, real seller messaging, QNAP infrastructure, Hermes runtime, and production DNS are unchanged.
 
-## 2026-08-31 - HiSpeed taishuaiauto.com host alias supersedes xiangshihai.com
+## 2026-08-31 - TAISHUAI AUTO taishuaiauto.com host alias supersedes xiangshihai.com
 
 Status: OWNER APPROVED AND IMPLEMENTED
 
 Decision:
-- Replace the prior `xiangshihai.com` HiSpeed host alias with `taishuaiauto.com` and `www.taishuaiauto.com` on the existing `nk-cars-platform-v1` Vercel project.
-- Host-based routing sends the domain root to the existing `/hispeed` presentation layer and maps short storefront paths such as `/vehicles/[id]`, `/saved`, `/shipments`, `/cases`, and `/account` into the same HiSpeed routes.
-- Requests for `/buy` on the HiSpeed host redirect to `/hispeed` so the HiSpeed domain does not expose the NK Cars storefront as its primary customer route.
+- Replace the prior `xiangshihai.com` TAISHUAI AUTO host alias with `taishuaiauto.com` and `www.taishuaiauto.com` on the existing `nk-cars-platform-v1` Vercel project.
+- Host-based routing sends the domain root to the existing `/hispeed` presentation layer and maps short storefront paths such as `/vehicles/[id]`, `/saved`, `/shipments`, `/cases`, and `/account` into the same TAISHUAI AUTO routes.
+- Requests for `/buy` on the TAISHUAI AUTO host redirect to `/hispeed` so the TAISHUAI AUTO domain does not expose the NK Cars storefront as its primary customer route.
 - This is a domain/routing change only. It does not create a new backend, duplicate inventory, create a QNAP stack, create a Hermes runtime, change NK Cars pricing, activate real payments, or change customer/internal DTO boundaries.
 
-## 2026-08-31 - TAISHUAI AUTO logo for HiSpeed storefront
+## 2026-08-31 - TAISHUAI AUTO logo for TAISHUAI AUTO storefront
 
 Status: OWNER APPROVED AND IMPLEMENTED
 
 Decision:
-- Use the TAISHUAI AUTO wordmark with a red shield/car/check logo mark in the HiSpeed storefront header and HiSpeed route metadata.
-- Keep the change in the HiSpeed presentation layer only. This does not rename or fork the shared inventory, QNAP adapter, Vehicle Case, pricing, shipping, quotation, PI, payment, or NK Cars `/buy` surfaces.
+- Use the TAISHUAI AUTO wordmark with a red shield/car/check logo mark in the TAISHUAI AUTO storefront header and TAISHUAI AUTO route metadata.
+- Keep the change in the TAISHUAI AUTO presentation layer only. This does not rename or fork the shared inventory, QNAP adapter, Vehicle Case, pricing, shipping, quotation, PI, payment, or NK Cars `/buy` surfaces.
 
-## 2026-08-29 - HiSpeed Standard and Flex commercial plans
+## 2026-08-29 - TAISHUAI AUTO Standard and Flex commercial plans
 
 Status: IMPLEMENTED AS PREVIEW / OWNER APPROVAL REQUIRED FOR CREDIT ACTIVATION
 
 Decision:
-- HiSpeed has two brand-specific purchase plan presentations while continuing to use the same underlying vehicle identity and shared inventory source.
-- Standard Plan calculates the HiSpeed customer vehicle selling price as vehicle source/purchase cost plus a 10% HiSpeed sourcing/service margin. Customer schedule is 30% deposit to secure the vehicle, 50% top-up before container closing so paid total reaches 80%, and 20% final payment at container closing.
-- HiSpeed Flex Plan calculates the HiSpeed customer vehicle selling price as vehicle source/purchase cost plus a 20% HiSpeed sourcing/service margin. Customer schedule is 50% initial payment, 20% before shipment, and 30% at an approved destination/gateway milestone before controlled vehicle or shipping-document release.
-- HiSpeed customer UI presents the benefit and payment timing, not profit language. Customer-facing copy may say the vehicle price includes HiSpeed sourcing and service margin.
+- TAISHUAI AUTO has two brand-specific purchase plan presentations while continuing to use the same underlying vehicle identity and shared inventory source.
+- Standard Plan calculates the TAISHUAI AUTO customer vehicle selling price as vehicle source/purchase cost plus a 10% TAISHUAI AUTO sourcing/service margin. Customer schedule is 30% deposit to secure the vehicle, 50% top-up before container closing so paid total reaches 80%, and 20% final payment at container closing.
+- TAISHUAI AUTO Flex Plan calculates the TAISHUAI AUTO customer vehicle selling price as vehicle source/purchase cost plus a 20% TAISHUAI AUTO sourcing/service margin. Customer schedule is 50% initial payment, 20% before shipment, and 30% at an approved destination/gateway milestone before controlled vehicle or shipping-document release.
+- TAISHUAI AUTO customer UI presents the benefit and payment timing, not profit language. Customer-facing copy may say the vehicle price includes TAISHUAI AUTO sourcing and service margin.
 - NK Cars pricing remains unchanged and continues to use the existing configurable NK 6% platform/transaction plus 4% buying-service model.
 
 Flex safety:
@@ -470,18 +470,18 @@ Flex safety:
 Inspection/wallet policy:
 - Check Availability may occur before paid inspection.
 - Before physical inspection/travel dispatch, the customer must approve/pay the configured inspection and travel price unless a separately approved credit policy exists.
-- HiSpeed may present an Inspection Wallet / Inspection Credit concept for future use by regular customers or approved dealers/VIP customers, but credit is not granted automatically based on membership.
+- TAISHUAI AUTO may present an Inspection Wallet / Inspection Credit concept for future use by regular customers or approved dealers/VIP customers, but credit is not granted automatically based on membership.
 - If Owner configures it later, eligible inspection cost may be credited toward a successful purchase. The preview does not hard-code the credit amount.
 
 Currency presentation:
-- HiSpeed keeps the authoritative calculation basis in THB and changes only the customer presentation currency by selected language.
+- TAISHUAI AUTO keeps the authoritative calculation basis in THB and changes only the customer presentation currency by selected language.
 - English displays USD, Simplified Chinese displays CNY, and Thai displays THB.
-- The preview uses deterministic configurable presentation FX in the HiSpeed layer; it does not change NK Cars pricing or shared source/purchase cost records.
+- The preview uses deterministic configurable presentation FX in the TAISHUAI AUTO layer; it does not change NK Cars pricing or shared source/purchase cost records.
 
 Payment request presentation:
-- HiSpeed may show preview Payment Requests grouped by selected plan milestone across one or more vehicles. Standard contributes deposit, before-container-closing, and container-closing requests. Flex contributes initial, before-shipment, and destination/gateway milestone requests.
+- TAISHUAI AUTO may show preview Payment Requests grouped by selected plan milestone across one or more vehicles. Standard contributes deposit, before-container-closing, and container-closing requests. Flex contributes initial, before-shipment, and destination/gateway milestone requests.
 - Payment Requests are customer-facing collection instructions only. Uploading transfer proof or a SWIFT reference does not confirm payment, release a vehicle, release documents, pay a seller, or create a purchase.
-- Real bank instructions must be configured by Owner/Finance and should point only to the approved HiSpeed company bank account. Finance confirmation of actual received funds remains required before any request can be treated as confirmed.
+- Real bank instructions must be configured by Owner/Finance and should point only to the approved TAISHUAI AUTO company bank account. Finance confirmation of actual received funds remains required before any request can be treated as confirmed.
 
 ## 2026-08-28 - Broader RHD-market destination coverage and transit disclosure
 

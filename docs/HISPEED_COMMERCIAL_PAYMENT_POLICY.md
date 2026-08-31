@@ -1,25 +1,25 @@
-# HiSpeed Commercial And Payment Policy
+# TAISHUAI AUTO Commercial And Payment Policy
 
 Status: preview implementation contract. This does not activate real payments, credit, vehicle release, document release, seller payment, or purchase.
 
 ## Purchase Plans
 
-HiSpeed uses the same underlying vehicle source/purchase cost and shared vehicle identity as NK Cars. HiSpeed applies brand-specific customer selling-price presentation only on the HiSpeed channel.
+TAISHUAI AUTO uses the same underlying vehicle source/purchase cost and shared vehicle identity as NK Cars. TAISHUAI AUTO applies brand-specific customer selling-price presentation only on the TAISHUAI AUTO channel.
 
 ### Standard Plan
 
 - Customer positioning: best overall vehicle price.
-- Calculation: source/purchase cost + 10% HiSpeed sourcing/service margin.
+- Calculation: source/purchase cost + 10% TAISHUAI AUTO sourcing/service margin.
 - Payment schedule:
   - 30% deposit to secure the vehicle.
   - 50% top-up before container closing so cumulative paid total reaches 80%.
   - 20% final payment at container closing.
   - 100% paid before release/shipment according to approved operational policy.
 
-### HiSpeed Flex Plan
+### TAISHUAI AUTO Flex Plan
 
 - Customer positioning: preserve working capital by paying less before shipment.
-- Calculation: source/purchase cost + 20% HiSpeed sourcing/service margin.
+- Calculation: source/purchase cost + 20% TAISHUAI AUTO sourcing/service margin.
 - Payment schedule:
   - 50% initial payment to secure/start purchase.
   - 20% before shipment.
@@ -38,24 +38,24 @@ Owner or authorized staff approval is required before Flex can become operationa
 
 ## Customer Presentation
 
-Do not present HiSpeed plans as profit comparison. Customer-facing UI should explain:
+Do not present TAISHUAI AUTO plans as profit comparison. Customer-facing UI should explain:
 
 - Standard: pay more before shipment and save more overall.
 - Flex: pay less before shipment and preserve cash flow, subject to approval.
 
 Permitted transparent explanation:
 
-- English: Vehicle price includes HiSpeed sourcing and service margin.
-- Simplified Chinese: 车辆价格已包含 HiSpeed 采购及服务费用。
-- Thai: ราคารถรวมค่าจัดหาและบริการของ HiSpeed แล้ว
+- English: Vehicle price includes TAISHUAI AUTO sourcing and service margin.
+- Simplified Chinese: 车辆价格已包含 TAISHUAI AUTO 采购及服务费用。
+- Thai: ราคารถรวมค่าจัดหาและบริการของ TAISHUAI AUTO แล้ว
 
-HiSpeed displays customer money by selected language:
+TAISHUAI AUTO displays customer money by selected language:
 
 - English: USD
 - Simplified Chinese: CNY
 - Thai: THB
 
-The authoritative cost basis remains THB. Currency conversion is presentation-only and must use configured HiSpeed FX policy at quote issue.
+The authoritative cost basis remains THB. Currency conversion is presentation-only and must use configured TAISHUAI AUTO FX policy at quote issue.
 
 Do not expose source cost, source URL, seller identity/contact, internal evidence, internal notes, private QNAP identifiers, or internal margin calculations through customer DTOs.
 
@@ -66,7 +66,7 @@ Check Availability can occur before paid inspection.
 Before physical inspection or travel dispatch:
 
 - New customers must approve/pay inspection and travel.
-- Regular customers may use HiSpeed Wallet balance.
+- Regular customers may use TAISHUAI AUTO Wallet balance.
 - Approved dealer/VIP credit terms require separate Owner-approved policy.
 
 Membership status alone must not grant credit.
@@ -75,7 +75,7 @@ If configured by Owner later, part or all of eligible inspection cost may be cre
 
 ## Quotation Snapshot
 
-HiSpeed quotation presentation must snapshot:
+TAISHUAI AUTO quotation presentation must snapshot:
 
 - vehicle
 - selected payment plan
@@ -91,7 +91,7 @@ Shipping remains a planning estimate until booking and Owner/authorized confirma
 
 ## Payment Requests
 
-HiSpeed may generate customer-facing payment request presentations from the selected plan schedule. A request can group one or more vehicles by milestone:
+TAISHUAI AUTO may generate customer-facing payment request presentations from the selected plan schedule. A request can group one or more vehicles by milestone:
 
 - Secure vehicles: Standard deposit or Flex initial payment.
 - Before container closing: Standard top-up to 80% cumulative paid.
@@ -101,7 +101,7 @@ HiSpeed may generate customer-facing payment request presentations from the sele
 
 Payment Requests are not payment confirmation. Customer proof upload, remittance advice, or SWIFT reference is only evidence for Finance review. Status can become confirmed only after authorized Finance staff verify actual received funds.
 
-Real bank instructions must be configured by Owner/Finance and must use the approved HiSpeed company bank account. Preview UI must not display invented account names, bank numbers, payment rails, or payment processor instructions.
+Real bank instructions must be configured by Owner/Finance and must use the approved TAISHUAI AUTO company bank account. Preview UI must not display invented account names, bank numbers, payment rails, or payment processor instructions.
 
 Payment Requests must not automate seller payment, purchase, vehicle release, document release, customer financing, or Flex approval.
 

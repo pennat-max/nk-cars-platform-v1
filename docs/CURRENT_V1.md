@@ -19,7 +19,7 @@ Owner menu preview status: `/buy/owner-preview/sourcing` is an anonymous-safe in
 
 Vercel delivery status: the Owner registered `nkautotrade.com` in the `nkautotrade` Vercel team. The application now has a separate `nk-cars-platform-v1` Vercel project, and `https://nkautotrade.com/buy` is the active customer web domain. This does not replace `.openai/hosting.json`, the existing ChatGPT Site, QNAP storage, or the QNAP adapter boundary. `NEXT_PUBLIC_SITE_URL` controls canonical/social metadata for each runtime. Vercel Production sets `NK_ENABLE_DEMO_WORKSPACE=false`, so anonymous visitors start with a blank Guest device workspace instead of seeded demo Cases.
 
-HiSpeed domain status: the Owner approved replacing `xiangshihai.com` with `taishuaiauto.com` for HiSpeed on 2026-08-31. The same Vercel application now routes `taishuaiauto.com` / `www.taishuaiauto.com` to the existing HiSpeed presentation layer without creating a separate backend, inventory database, QNAP stack, Hermes runtime, or pricing engine. `nkautotrade.com/buy` remains the NK Cars customer route.
+TAISHUAI AUTO domain status: the Owner approved replacing `xiangshihai.com` with `taishuaiauto.com` for TAISHUAI AUTO on 2026-08-31. The same Vercel application now routes `taishuaiauto.com` / `www.taishuaiauto.com` to the existing TAISHUAI AUTO presentation layer without creating a separate backend, inventory database, QNAP stack, Hermes runtime, or pricing engine. `nkautotrade.com/buy` remains the NK Cars customer route.
 
 ## 1. Current product
 
@@ -390,26 +390,26 @@ Customer mobile visual direction: the active `/buy` customer screens now use an 
 
 Pricing update: Vehicle Case now applies the approved inspection/travel rule of THB 5,000 across the active Bangkok Metro operating group and configured outside-Bangkok-Metro distance x THB 20/km with the same THB 5,000 minimum. Customer pricing also includes a destination country/port and 1-3 car shipping planner. The shipping planner can show public-source indicative ocean-freight ranges plus a 15% upper-bound planning buffer. The customer-facing Export / Shipping line displays the midpoint per-car estimate as "about" while details retain the low/high range: 1 car uses the full route estimate, 2 cars divide by 2, and 3 cars divide by 3 plus the THB 25,000 Rushing/loading/stuffing charge divided by 3. The UI explains that 3 cars is the best value because freight and Rushing/loading are shared. The fill-the-shipment area now shows concrete shipment slots with existing Vehicle Cases and open add-car slots so the customer can understand how to complete a three-car plan. The footer can show an estimated total with selected shipping, but final quotation readiness remains Pending until Owner-confirmed freight pricing is recorded.
 
-HiSpeed preview checkpoint:
+TAISHUAI AUTO preview checkpoint:
 - `/hispeed`, `/hispeed/vehicles/[id]`, `/hispeed/saved`, `/hispeed/shipments`, `/hispeed/cases`, `/hispeed/cases/[caseId]`, `/hispeed/cases/[caseId]/pi`, and `/hispeed/account` now provide an additive second-brand storefront.
-- `taishuaiauto.com` and `www.taishuaiauto.com` are routed as HiSpeed host aliases: `/` rewrites to `/hispeed`, short HiSpeed paths such as `/vehicles/[id]`, `/saved`, `/shipments`, `/cases`, and `/account` rewrite into `/hispeed/...`, and `/buy` redirects to `/hispeed` on the HiSpeed host.
-- The HiSpeed storefront now presents a TAISHUAI AUTO header logo and route metadata while continuing to use the same shared HiSpeed/NK domain logic underneath.
-- HiSpeed defaults to Simplified Chinese, with English and Thai language switching, and uses a distinct red/white China-friendly marketplace UI.
-- HiSpeed reuses the same customer-safe inventory adapter, Vehicle Case, inspection, deterministic pricing, shipping planner, quotation, PI, and workspace contracts. `/buy` remains unchanged.
+- `taishuaiauto.com` and `www.taishuaiauto.com` are routed as TAISHUAI AUTO host aliases: `/` rewrites to `/hispeed`, short TAISHUAI AUTO paths such as `/vehicles/[id]`, `/saved`, `/shipments`, `/cases`, and `/account` rewrite into `/hispeed/...`, and `/buy` redirects to `/hispeed` on the TAISHUAI AUTO host.
+- The TAISHUAI AUTO storefront now presents a TAISHUAI AUTO header logo and route metadata while continuing to use the same shared TAISHUAI AUTO/NK domain logic underneath.
+- TAISHUAI AUTO defaults to Simplified Chinese, with English and Thai language switching, and uses a distinct red/white China-friendly marketplace UI.
+- TAISHUAI AUTO reuses the same customer-safe inventory adapter, Vehicle Case, inspection, deterministic pricing, shipping planner, quotation, PI, and workspace contracts. `/buy` remains unchanged.
 - Application DTOs now support `visibleOnNk` and `visibleOnHispeed`, mapping to future QNAP `visible_on_nk` and `visible_on_hispeed`. Missing values default to visible on both brands for backward compatibility.
-- HiSpeed-created customer Cases are tagged with channel `hispeed` for reporting while preserving the same underlying vehicle listing identity.
+- TAISHUAI AUTO-created customer Cases are tagged with channel `hispeed` for reporting while preserving the same underlying vehicle listing identity.
 - No QNAP infrastructure, Hermes runtime, production DNS, seller messaging, purchase, payment, or destructive PostgreSQL schema/data change was made.
 
-HiSpeed commercial/payment preview checkpoint:
-- HiSpeed now has two preview-only purchase plan presentations: Standard Plan and HiSpeed Flex Plan.
-- Standard calculates customer vehicle selling price from the same source/purchase cost plus a 10% HiSpeed sourcing/service margin, then displays a 30% deposit, 50% top-up before container closing so paid total reaches 80%, and 20% final payment at container closing.
-- Flex calculates customer vehicle selling price from the same source/purchase cost plus a 20% HiSpeed sourcing/service margin, then displays 50% initial, 20% before shipment, and 30% destination/gateway milestone schedule.
-- HiSpeed customer UI shows the selling price and service-included disclosure; it does not expose source cost or frame the comparison as profit percentages.
-- HiSpeed quote snapshot preview records the selected payment plan, vehicle selling price, inspection/travel, shipping estimate, other approved costs, payment schedule, FX snapshot, and three-day validity presentation.
-- HiSpeed money presentation now follows the selected language: English uses USD, Simplified Chinese uses CNY, and Thai uses THB. The underlying source/purchase cost and deterministic calculations remain THB-based and shared; only HiSpeed presentation changes.
-- HiSpeed now includes a preview Payment Request presentation that groups each selected vehicle's plan schedule by collection milestone: secure vehicle, before container closing, container closing, before shipment for Flex, and destination/gateway milestone for Flex. It shows customer-facing request totals and per-vehicle line amounts in the selected presentation currency.
-- Payment Request preview is bank-transfer only to the configured HiSpeed company account. Real company bank details are not displayed until Owner/Finance configures approved payment instructions. Uploading proof or a SWIFT reference does not confirm payment automatically; Finance must verify actual received funds.
-- HiSpeed Inspection Wallet / Inspection Credit is UX-prepared only. New customers must pay inspection/travel before dispatch; regular customers may use wallet balance; approved dealers/VIP credit terms require separate approval. No credit is automatically granted.
+TAISHUAI AUTO commercial/payment preview checkpoint:
+- TAISHUAI AUTO now has two preview-only purchase plan presentations: Standard Plan and TAISHUAI AUTO Flex Plan.
+- Standard calculates customer vehicle selling price from the same source/purchase cost plus a 10% TAISHUAI AUTO sourcing/service margin, then displays a 30% deposit, 50% top-up before container closing so paid total reaches 80%, and 20% final payment at container closing.
+- Flex calculates customer vehicle selling price from the same source/purchase cost plus a 20% TAISHUAI AUTO sourcing/service margin, then displays 50% initial, 20% before shipment, and 30% destination/gateway milestone schedule.
+- TAISHUAI AUTO customer UI shows the selling price and service-included disclosure; it does not expose source cost or frame the comparison as profit percentages.
+- TAISHUAI AUTO quote snapshot preview records the selected payment plan, vehicle selling price, inspection/travel, shipping estimate, other approved costs, payment schedule, FX snapshot, and three-day validity presentation.
+- TAISHUAI AUTO money presentation now follows the selected language: English uses USD, Simplified Chinese uses CNY, and Thai uses THB. The underlying source/purchase cost and deterministic calculations remain THB-based and shared; only TAISHUAI AUTO presentation changes.
+- TAISHUAI AUTO now includes a preview Payment Request presentation that groups each selected vehicle's plan schedule by collection milestone: secure vehicle, before container closing, container closing, before shipment for Flex, and destination/gateway milestone for Flex. It shows customer-facing request totals and per-vehicle line amounts in the selected presentation currency.
+- Payment Request preview is bank-transfer only to the configured TAISHUAI AUTO company account. Real company bank details are not displayed until Owner/Finance configures approved payment instructions. Uploading proof or a SWIFT reference does not confirm payment automatically; Finance must verify actual received funds.
+- TAISHUAI AUTO Inspection Wallet / Inspection Credit is UX-prepared only. New customers must pay inspection/travel before dispatch; regular customers may use wallet balance; approved dealers/VIP credit terms require separate approval. No credit is automatically granted.
 - Flex statuses are represented as `FLEX_NOT_REQUESTED`, `FLEX_REQUESTED`, `FLEX_UNDER_REVIEW`, `FLEX_APPROVED`, and `FLEX_DECLINED`. Flex approval, real payment movement, customer financing, seller payment, purchase, vehicle release, and document release remain disabled until Owner policy and authorized controls are implemented.
 - NK Cars `/buy` pricing remains unchanged.
 
