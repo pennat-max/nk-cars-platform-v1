@@ -1281,6 +1281,8 @@ test("renders additive HiSpeed routes from the shared customer-safe inventory", 
     }
     if (route === "/hispeed/vehicles/nk-market-2026-0825-01") {
       assert.match(html, /data-hispeed-vehicle-detail/i);
+      assert.match(html, /hs-gallery-main/i);
+      assert.match(html, /Open full screen|查看大图|ดูรูปเต็มจอ/i);
       assert.match(html, /data-hispeed-payment-plans/i);
       assert.match(html, /data-hispeed-payment-timeline/i);
       assert.match(html, /data-hispeed-inspection-wallet/i);

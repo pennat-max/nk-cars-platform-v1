@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, CheckCircle2, Clock3, CreditCard, FolderKanban, Gauge, Globe2, Heart, MapPin, MessageCircle, Search, ShieldCheck, Ship, SlidersHorizontal, UserRound, WalletCards } from "lucide-react";
-import { FormEvent, useMemo, useState } from "react";
+import { ArrowLeft, CheckCircle2, ChevronLeft, ChevronRight, Clock3, CreditCard, FolderKanban, Gauge, Globe2, Heart, MapPin, Maximize2, MessageCircle, Search, ShieldCheck, Ship, SlidersHorizontal, UserRound, WalletCards, X } from "lucide-react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useBuyingBrowser } from "../buying-browser/BuyingBrowserProvider";
 import { DEFAULT_FILTERS, filterListings, SHIPPING_DESTINATIONS, shippingPlanForSelection } from "../buying-browser/domain.mjs";
 import { CUSTOMER_FX_THB_PER_USD, formatDateTime, formatMileage } from "../buying-browser/format";
@@ -644,26 +644,52 @@ function BrowseScreen({ savedOnly = false }: { savedOnly?: boolean }) {
 }
 
 function VehicleDetailScreen({ sourceId }: { sourceId?: string }) {
-  const { listings, isSaved, toggleSaved, saveAsCase } = useBuyingBrowser();
+  const { language, listings, isSaved, toggleSaved, saveAsCase } = useBuyingBrowser();
   const [imageIndex, setImageIndex] = useState(0);
+  const [fullscreenOpen, setFullscreenOpen] = useState(false);
+  const fullscreenTrack = useRef<HTMLDivElement>(null);
   const [selectedPlan, setSelectedPlan] = useState<HiSpeedPlanId>("standard");
   const text = useCopy();
   const c = useCommercialCopy();
   const money = useHiSpeedMoney();
   const listing = listings.find((item) => item.id === sourceId);
+  useEffect(() => {
+    if (!fullscreenOpen) return;
+    const original = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = original; };
+  }, [fullscreenOpen]);
+  useEffect(() => {
+    if (!fullscreenOpen) return;
+    requestAnimationFrame(() => {
+      const track = fullscreenTrack.current;
+      if (track) track.scrollTo({ left: track.clientWidth * imageIndex });
+    });
+  }, [fullscreenOpen, imageIndex]);
   if (!listing) return <section className="hs-empty"><h1>Vehicle not found</h1><Link className="hs-primary" href="/hispeed"><ArrowLeft size={18} />Back</Link></section>;
   const purchase = calculateHiSpeedPurchasePlan({ sourceCostThb: listing.observedPriceThb, planId: selectedPlan });
+  const openPhotoLabel = language === "en" ? "Open full screen" : language === "th" ? "ดูรูปเต็มจอ" : "查看大图";
+  const closePhotoLabel = language === "en" ? "Close gallery" : language === "th" ? "ปิดรูป" : "关闭图片";
   function openCase(action?: "availability" | "inspection") {
     const caseId = saveAsCase(listing!, action);
     window.location.assign(`/hispeed/cases/${encodeURIComponent(caseId)}`);
+  }
+  function showFullscreenPhoto(index: number) {
+    const next = Math.max(0, Math.min(index, listing!.imageUrls.length - 1));
+    setImageIndex(next);
+    const track = fullscreenTrack.current;
+    if (track) track.scrollTo({ left: track.clientWidth * next, behavior: "smooth" });
   }
   return (
     <>
       <Link className="hs-back" href="/hispeed"><ArrowLeft size={18} />{text.nav[0]}</Link>
       <article className="hs-detail" data-hispeed-vehicle-detail>
         <section className="hs-gallery">
-          <VehiclePhoto listing={listing} imageUrl={listing.imageUrls[imageIndex]} />
-          <div>{listing.imageUrls.slice(0, 8).map((image, index) => <button key={image} className={index === imageIndex ? "active" : ""} onClick={() => setImageIndex(index)}><VehiclePhoto listing={listing} imageUrl={image} alt="" /></button>)}</div>
+          <button type="button" className="hs-gallery-main" onClick={() => setFullscreenOpen(true)} aria-label={openPhotoLabel}>
+            <VehiclePhoto listing={listing} imageUrl={listing.imageUrls[imageIndex]} />
+            <span><Maximize2 size={16} />{openPhotoLabel}</span>
+          </button>
+          <div>{listing.imageUrls.slice(0, 8).map((image, index) => <button type="button" key={image} className={index === imageIndex ? "active" : ""} onClick={() => setImageIndex(index)} aria-label={`${openPhotoLabel} ${index + 1}`}><VehiclePhoto listing={listing} imageUrl={image} alt="" /></button>)}</div>
         </section>
         <section className="hs-detail-summary">
           <span className="hs-chip"><CheckCircle2 size={14} />{text.inspected}</span>
@@ -680,6 +706,13 @@ function VehicleDetailScreen({ sourceId }: { sourceId?: string }) {
       <section className="hs-section"><h2>{text.keySpecs}</h2><dl className="hs-specs"><div><dt>{text.year}</dt><dd>{listing.year ?? "Pending"}</dd></div><div><dt>{text.transmission}</dt><dd>{listing.transmission}</dd></div><div><dt>{text.mileage}</dt><dd>{formatMileage(listing.mileageKm)}</dd></div><div><dt>{text.location}</dt><dd>{listing.generalLocation}</dd></div></dl><p>{listing.summary}</p></section>
       <section className="hs-section hs-price-detail"><h2>{text.priceDetail}</h2><div><span>{c.vehicleSellingPrice}</span><b>{money.fromThb(purchase.vehicleSellingPriceThb)}</b></div><p>{c.included}</p><p>Final quotation stays pending until HiSpeed/NK verifies availability, vehicle price, inspection, and shipping.</p></section>
       <section className="hs-shipping-promo"><Ship size={28} /><div><h2>{text.shippingTitle}</h2><p>{text.shippingSub}</p><Link href="/hispeed/shipments">{text.shipping}</Link></div></section>
+      {fullscreenOpen && <section className="hs-photo-viewer" role="dialog" aria-modal="true" aria-label={openPhotoLabel} data-hispeed-fullscreen-viewer>
+        <header><button type="button" onClick={() => setFullscreenOpen(false)} aria-label={closePhotoLabel} autoFocus><X size={30} /></button><strong>{imageIndex + 1} / {listing.imageUrls.length}</strong></header>
+        <div ref={fullscreenTrack} className="hs-photo-viewer-track" onScroll={(event) => { const width = event.currentTarget.clientWidth; if (width) setImageIndex(Math.round(event.currentTarget.scrollLeft / width)); }}>
+          {listing.imageUrls.map((image, index) => <div className="hs-photo-viewer-slide" key={image}><VehiclePhoto listing={listing} imageUrl={image} alt={`${listing.title} fullscreen view ${index + 1}`} /></div>)}
+        </div>
+        {listing.imageUrls.length > 1 && <><button type="button" className="hs-photo-viewer-arrow previous" onClick={() => showFullscreenPhoto(imageIndex - 1)} disabled={imageIndex === 0} aria-label="Previous photo"><ChevronLeft size={30} /></button><button type="button" className="hs-photo-viewer-arrow next" onClick={() => showFullscreenPhoto(imageIndex + 1)} disabled={imageIndex === listing.imageUrls.length - 1} aria-label="Next photo"><ChevronRight size={30} /></button></>}
+      </section>}
     </>
   );
 }
