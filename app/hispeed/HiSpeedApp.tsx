@@ -628,8 +628,6 @@ function HiSpeedVehicleCard({ listing, selectable = false, selected = false, onS
       <Link className="hs-card-copy" href={`/hispeed/vehicles/${encodeURIComponent(listing.id)}`}>
         <strong>{money.fromThb(hiSpeedVehiclePrice(listing))}</strong>
         <h2>{listing.year ?? text.year} {listing.brand} {listing.model}</h2>
-        <p>{listing.transmission} · {formatMileage(listing.mileageKm)}</p>
-        <footer><span><MapPin size={13} />{listing.generalLocation}</span><span><CheckCircle2 size={13} />{listing.availability === "Verified Available" ? "Verified" : "Check"}</span></footer>
       </Link>
     </article>
   );
