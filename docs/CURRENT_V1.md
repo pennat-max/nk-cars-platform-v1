@@ -19,6 +19,8 @@ Owner menu preview status: `/buy/owner-preview/sourcing` is an anonymous-safe in
 
 Vercel delivery status: the Owner registered `nkautotrade.com` in the `nkautotrade` Vercel team. The application now has a separate `nk-cars-platform-v1` Vercel project, and `https://nkautotrade.com/buy` is the active customer web domain. This does not replace `.openai/hosting.json`, the existing ChatGPT Site, QNAP storage, or the QNAP adapter boundary. `NEXT_PUBLIC_SITE_URL` controls canonical/social metadata for each runtime. Vercel Production sets `NK_ENABLE_DEMO_WORKSPACE=false`, so anonymous visitors start with a blank Guest device workspace instead of seeded demo Cases.
 
+HiSpeed domain status: the Owner approved using `xiangshihai.com` for HiSpeed on 2026-08-31. The same Vercel application now routes `xiangshihai.com` / `www.xiangshihai.com` to the existing HiSpeed presentation layer without creating a separate backend, inventory database, QNAP stack, Hermes runtime, or pricing engine. `nkautotrade.com/buy` remains the NK Cars customer route.
+
 ## 1. Current product
 
 NK Cars is being rebuilt as an **AI Vehicle Buying Browser / Buying Platform for Thailand**.
@@ -390,6 +392,7 @@ Pricing update: Vehicle Case now applies the approved inspection/travel rule of 
 
 HiSpeed preview checkpoint:
 - `/hispeed`, `/hispeed/vehicles/[id]`, `/hispeed/saved`, `/hispeed/shipments`, `/hispeed/cases`, `/hispeed/cases/[caseId]`, `/hispeed/cases/[caseId]/pi`, and `/hispeed/account` now provide an additive second-brand storefront.
+- `xiangshihai.com` and `www.xiangshihai.com` are routed as HiSpeed host aliases: `/` rewrites to `/hispeed`, short HiSpeed paths such as `/vehicles/[id]`, `/saved`, `/shipments`, `/cases`, and `/account` rewrite into `/hispeed/...`, and `/buy` redirects to `/hispeed` on the HiSpeed host.
 - HiSpeed defaults to Simplified Chinese, with English and Thai language switching, and uses a distinct red/white China-friendly marketplace UI.
 - HiSpeed reuses the same customer-safe inventory adapter, Vehicle Case, inspection, deterministic pricing, shipping planner, quotation, PI, and workspace contracts. `/buy` remains unchanged.
 - Application DTOs now support `visibleOnNk` and `visibleOnHispeed`, mapping to future QNAP `visible_on_nk` and `visible_on_hispeed`. Missing values default to visible on both brands for backward compatibility.

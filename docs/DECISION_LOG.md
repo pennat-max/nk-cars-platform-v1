@@ -433,6 +433,16 @@ Safety:
 - HiSpeed customer pages continue to exclude source URL, seller identity/contact, internal evidence, internal notes, source cost/margin, and private QNAP identifiers.
 - Real payment, real purchase, real seller messaging, QNAP infrastructure, Hermes runtime, and production DNS are unchanged.
 
+## 2026-08-31 - HiSpeed xiangshihai.com host alias
+
+Status: OWNER APPROVED AND IMPLEMENTED
+
+Decision:
+- Use `xiangshihai.com` and `www.xiangshihai.com` as HiSpeed-facing domains on the existing `nk-cars-platform-v1` Vercel project.
+- Host-based routing sends the domain root to the existing `/hispeed` presentation layer and maps short storefront paths such as `/vehicles/[id]`, `/saved`, `/shipments`, `/cases`, and `/account` into the same HiSpeed routes.
+- Requests for `/buy` on the HiSpeed host redirect to `/hispeed` so the HiSpeed domain does not expose the NK Cars storefront as its primary customer route.
+- This is a domain/routing change only. It does not create a new backend, duplicate inventory, create a QNAP stack, create a Hermes runtime, change NK Cars pricing, activate real payments, or change customer/internal DTO boundaries.
+
 ## 2026-08-29 - HiSpeed Standard and Flex commercial plans
 
 Status: IMPLEMENTED AS PREVIEW / OWNER APPROVAL REQUIRED FOR CREDIT ACTIVATION
