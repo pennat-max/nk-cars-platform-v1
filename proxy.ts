@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const HISPEED_DOMAINS = new Set(["xiangshihai.com", "www.xiangshihai.com"]);
+const HISPEED_DOMAINS = new Set(["taishuaiauto.com", "www.taishuaiauto.com"]);
 const HISPEED_SHORT_PATHS = new Set(["/vehicles", "/saved", "/shipments", "/cases", "/account"]);
 
 function requestHost(request: NextRequest) {
