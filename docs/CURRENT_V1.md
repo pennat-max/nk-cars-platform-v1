@@ -125,7 +125,7 @@ V1 Browse defaults to **Bangkok Metro** to reduce inspection/travel time and cos
 
 Inspection remains a first-class Vehicle Case workflow but is no longer a separate primary mobile navigation destination. Customers access inspection status and requests from My Cases. Vehicle detail presents Check Availability as the recommended first step, keeps Ask NK AI beside it, and keeps Save as a familiar photo-level heart action.
 
-Owner-approved marketplace UI direction: Browse is mobile-first and uses a two-column vehicle grid on small phones, with larger readable text, image-first vehicle cards, THB price primary, USD estimate secondary, and only key facts on the card. Saved vehicles act as a shortlist where customers can select multiple vehicles and add them to a shipment plan. The customer shipment planner guides 1, 2, or 3 cars per shipment, shows full-shipment and per-car planning estimates, explains that 3 cars share freight plus the THB 25,000 Rushing/loading service, and keeps shipping estimates separate from confirmed totals.
+Owner-approved marketplace UI direction: Browse is mobile-first and uses a two-column vehicle grid on small phones, with larger readable text, image-first vehicle cards, language-aware price priority, and only known key facts on the card. English presents USD as the primary customer estimate with THB secondary; Thai presents THB primary with USD secondary. Unknown short-card specs such as unknown drive are hidden instead of displayed as `AT - Unknown`. Saved vehicles act as a shortlist where customers can select multiple vehicles and add them to a shipment plan. The customer shipment planner guides 1, 2, or 3 cars per shipment, shows full-shipment and per-car planning estimates, explains that 3 cars share freight plus the THB 25,000 Rushing/loading service, and keeps shipping estimates separate from confirmed totals.
 
 Customer location/destination country is separate from Search Location. Do not use the overseas customer's physical location as the Thai Marketplace search area.
 
@@ -180,7 +180,7 @@ Where source login is required:
 ## 8. AI behavior
 
 AI may:
-- translate Thai <-> English / Simplified Chinese
+- translate Thai <-> English
 - extract vehicle specs
 - summarize listing details
 - rank/match vehicles
@@ -241,12 +241,11 @@ Customer shipping plan rule approved on 2026-08-28:
 
 Customer-facing V1 supports:
 - English (default)
-- Simplified Chinese
 - Thai
 
 Use one authoritative structured business record. Language switching must not duplicate or mutate underlying vehicle/pricing data.
 
-Preserve original source text separately from normalized/translated customer text.
+Preserve original source text separately from normalized/translated customer text. Chinese may still be detected as source evidence for audit/history, but it is not offered as a customer UI language.
 
 ## 11. Inspection Network
 
@@ -369,12 +368,12 @@ Do not reread the full Master Spec unless scope is ambiguous or changing.
 The maximum technically achievable Buying Browser V1 application scope is complete on `codex/app`:
 
 - Browse contains 20 Owner-reviewed customer-safe vehicle snapshots, including 16 in the default Bangkok Metro scope.
-- English, Simplified Chinese, and Thai now cover the core customer surfaces: Browse, vehicle detail/gallery, Saved, Vehicle Cases, inspection requests, Messages, Account, Paste/Share fallback, source browser companion, and NK AI search.
+- English and Thai now cover the core customer surfaces: Browse, vehicle detail/gallery, Saved, Vehicle Cases, inspection requests, Messages, Account, Paste/Share fallback, source browser companion, and NK AI search.
 - Language selection changes presentation only. It does not duplicate or mutate vehicle, pricing, quotation, PI, or Case records.
 - Deterministic commercial flow is implemented through 6% Platform & Transaction plus 4% Buying Service, configured pass-through costs, Owner verification, quotation/acceptance, and gated PI preparation.
 - Availability, inspection, messages, and AI actions record honest workflow state without pretending a provider, seller reply, payment, or purchase exists.
 - Customer/internal data boundaries and QNAP/repository fail-safe source adapters remain intact.
-- Mobile verification at 390 x 844 passed for all core routes, all three languages, galleries, images, and horizontal layout.
+- Mobile verification at 390 x 844 passed for all core routes, supported customer languages, galleries, images, and horizontal layout.
 
 Remaining items are activation blockers rather than unfinished application behavior: production identity/workspace persistence, approved legal issuer/payment instructions, authorized seller messaging/reply ingestion, inspection-provider booking, and stable authenticated QNAP Data API/media ingress. These must not be faked or activated without the required Owner/external inputs.
 

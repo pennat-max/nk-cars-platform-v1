@@ -21,7 +21,11 @@ export default function BrowseScreen({ savedOnly = false }: { savedOnly?: boolea
   const [filterOpen, setFilterOpen] = useState(false);
   const [selectedSavedIds, setSelectedSavedIds] = useState<string[]>([]);
   const sourceListings = savedOnly ? listings.filter((item) => state.savedListingIds.includes(item.id)) : listings;
-  const domainFilters = useMemo(() => ({ ...filters, priceMin: customerUsdInputToThb(filters.priceMin), priceMax: customerUsdInputToThb(filters.priceMax) }), [filters]);
+  const domainFilters = useMemo(() => ({
+    ...filters,
+    priceMin: language === "th" ? filters.priceMin : customerUsdInputToThb(filters.priceMin),
+    priceMax: language === "th" ? filters.priceMax : customerUsdInputToThb(filters.priceMax),
+  }), [filters, language]);
   const visibleListings = useMemo(() => filterListings(sourceListings, domainFilters), [domainFilters, sourceListings]);
   const activeFilterCount = [filters.location !== DEFAULT_FILTERS.location, filters.yearFrom, filters.yearTo, filters.priceMin, filters.priceMax, filters.mileageMax, filters.transmission !== "Any", filters.drive !== "Any", filters.body !== "Any"].filter(Boolean).length;
   const capturedCount = listings.filter((item) => !item.demo).length;
@@ -49,9 +53,12 @@ export default function BrowseScreen({ savedOnly = false }: { savedOnly?: boolea
     window.setTimeout(() => window.location.assign("/buy/shipments"), 80);
   }
 
-  const marketplaceHeading = language === "zh-CN" ? "为你推荐" : language === "th" ? "รถที่เหมาะกับคุณ" : "Today's picks";
-  const priceStatus = language === "zh-CN" ? "价格待核实" : language === "th" ? "ราคายังไม่ยืนยัน" : "Price not verified";
-  const reviewedVehiclesLabel = language === "zh-CN" ? `${visibleListings.length} 台已审核车辆` : language === "th" ? `รถที่ตรวจแล้ว ${visibleListings.length} คัน` : `${visibleListings.length} reviewed vehicles`;
+  const marketplaceHeading = language === "th" ? "รถที่เหมาะกับคุณ" : "Today's picks";
+  const priceStatus = language === "th" ? "ราคายังไม่ยืนยัน" : "Price not verified";
+  const reviewedVehiclesLabel = language === "th" ? `รถที่ตรวจแล้ว ${visibleListings.length} คัน` : `${visibleListings.length} reviewed vehicles`;
+  const minimumPriceLabel = language === "th" ? "ราคาต่ำสุด (THB)" : t("minPrice");
+  const maximumPriceLabel = language === "th" ? "ราคาสูงสุด (THB)" : t("maxPrice");
+  const priceFxNote = language === "th" ? "กรอกตัวกรองราคาเป็นบาทไทย ส่วนราคา USD เป็นประมาณการตาม FX ที่ตั้งค่าไว้" : customerFxDisclosure();
 
   return (
     <>
@@ -93,8 +100,8 @@ export default function BrowseScreen({ savedOnly = false }: { savedOnly?: boolea
           <div className="bb-filter-form">
             <label><span>{t("location")}</span><select value={filters.location} onChange={(event) => setFilter("location", event.target.value)}>{locations.map((location) => <option key={location} value={location}>{locationLabel(location)}</option>)}</select></label>
             <div className="bb-field-pair"><label><span>{t("yearFrom")}</span><select value={filters.yearFrom} onChange={(event) => setFilter("yearFrom", event.target.value)}>{yearOptions.map((year) => <option key={year || "from-any"} value={year}>{year || t("any")}</option>)}</select></label><label><span>{t("yearTo")}</span><select value={filters.yearTo} onChange={(event) => setFilter("yearTo", event.target.value)}>{yearOptions.map((year) => <option key={year || "to-any"} value={year}>{year || t("any")}</option>)}</select></label></div>
-            <div className="bb-field-pair"><label><span>{t("minPrice")}</span><input inputMode="numeric" value={filters.priceMin} onChange={(event) => setFilter("priceMin", event.target.value.replace(/\D/g, ""))} placeholder={t("any")} /></label><label><span>{t("maxPrice")}</span><input inputMode="numeric" value={filters.priceMax} onChange={(event) => setFilter("priceMax", event.target.value.replace(/\D/g, ""))} placeholder={t("any")} /></label></div>
-            <p className="bb-filter-fx">{customerFxDisclosure()}</p>
+            <div className="bb-field-pair"><label><span>{minimumPriceLabel}</span><input inputMode="numeric" value={filters.priceMin} onChange={(event) => setFilter("priceMin", event.target.value.replace(/\D/g, ""))} placeholder={t("any")} /></label><label><span>{maximumPriceLabel}</span><input inputMode="numeric" value={filters.priceMax} onChange={(event) => setFilter("priceMax", event.target.value.replace(/\D/g, ""))} placeholder={t("any")} /></label></div>
+            <p className="bb-filter-fx">{priceFxNote}</p>
             <label><span>{t("maxMileage")}</span><input inputMode="numeric" value={filters.mileageMax} onChange={(event) => setFilter("mileageMax", event.target.value.replace(/\D/g, ""))} placeholder={t("any")} /></label>
             <div className="bb-field-pair"><label><span>{t("transmission")}</span><select value={filters.transmission} onChange={(event) => setFilter("transmission", event.target.value)}><option value="Any">{t("any")}</option><option>AT</option><option>MT</option></select></label><label><span>{t("drive")}</span><select value={filters.drive} onChange={(event) => setFilter("drive", event.target.value)}><option value="Any">{t("any")}</option><option>2WD</option><option>4WD</option></select></label></div>
             <label><span>{t("bodyCab")}</span><select value={filters.body} onChange={(event) => setFilter("body", event.target.value)}><option value="Any">{t("any")}</option><option>Double Cab</option><option>Smart Cab</option></select></label>

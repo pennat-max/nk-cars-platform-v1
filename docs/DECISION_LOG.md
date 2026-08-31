@@ -460,3 +460,19 @@ Decision:
 - Keep daily retained candidates capped at `1` for the pilot and keep all results in `NEEDS_REVIEW`.
 - This widening does not authorize publication, seller messaging, reservation, purchase, payment, CAPTCHA/MFA bypass, or rate-limit evasion.
 - QNAP rule `7412f2fb-fe79-4469-b36b-96d3c55daa3a` was updated from revision 1 to revision 2 after backup `/share/CACHEDEV6_DATA/nk-cars/backups/postgres/nk-cars-before-hermes-rule-update-20260828T102957Z.dump`.
+
+## 2026-08-31 - Customer language and card price presentation
+
+Status: OWNER APPROVED AND IMPLEMENTED
+
+Decision:
+- Customer-facing Buying Browser language selector now offers English and Thai only.
+- Simplified Chinese is removed from the customer UI selector and stored customer UI language normalization falls back to English if an old Chinese value exists.
+- English vehicle cards and detail pages prioritize USD estimate with THB as the secondary approximate source price.
+- Thai vehicle cards and detail pages prioritize THB with USD as the secondary estimate.
+- Customer Browse price filters follow the selected language: English inputs are USD and converted through configured FX; Thai inputs are THB.
+- Short vehicle cards hide unknown compact specs such as unknown drive instead of showing text like `AT - Unknown`.
+
+Boundaries:
+- This changes customer presentation only. It does not change vehicle source records, pricing math, FX configuration, source evidence capture, QNAP/Hermes behavior, seller messaging, payments, or production data.
+- Chinese text can still be preserved/detected as source evidence for audit or translation history, but it is not offered as a customer UI language.

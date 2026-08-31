@@ -1,4 +1,5 @@
 import { CUSTOMER_FX_THB_PER_USD, customerUsdToThb, formatCustomerUsd } from "./domain.mjs";
+import type { CustomerLanguage } from "./types";
 
 export function formatThb(value: number | null | undefined) {
   return value === null || value === undefined ? "Pending" : `THB ${value.toLocaleString("en-US")}`;
@@ -8,6 +9,15 @@ export { CUSTOMER_FX_THB_PER_USD };
 
 export function formatUsdFromThb(value: number | null | undefined) {
   return formatCustomerUsd(value);
+}
+
+export function formatCustomerPrimaryPrice(value: number | null | undefined, language: CustomerLanguage) {
+  return language === "th" ? formatThb(value) : formatUsdFromThb(value);
+}
+
+export function formatCustomerSecondaryPrice(value: number | null | undefined, language: CustomerLanguage) {
+  if (value === null || value === undefined) return "";
+  return language === "th" ? `${formatUsdFromThb(value)} est.` : `${formatThb(value)} approx.`;
 }
 
 export function customerUsdInputToThb(value: string) {

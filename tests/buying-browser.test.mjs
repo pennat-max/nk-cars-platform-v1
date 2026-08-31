@@ -764,20 +764,18 @@ test("localization changes presentation without mutating authoritative listing d
   const listing = presentCustomerListing(source);
   const before = structuredClone(listing);
   assert.equal(normalizeLanguage("unsupported"), "en");
+  assert.equal(normalizeLanguage("zh-CN"), "en");
   assert.equal(translate("en", "vehiclePrice"), "Vehicle Price");
-  assert.equal(translate("zh-CN", "vehiclePrice"), "车辆价格");
   assert.equal(translate("th", "vehiclePrice"), "ราคารถ");
   assert.match(translate("en", "inventoryGroundingLive"), /QNAP storage/);
-  assert.match(translate("zh-CN", "inventoryGroundingLive"), /QNAP/);
   assert.match(translate("th", "inventoryGroundingLive"), /QNAP/);
   for (const key of ["customerWorkspace", "currentFacts", "travelZone", "noConversations", "accountIntro", "vehicleNotFound", "observedPriceCaption", "groundedVehicleSearch", "browseRealMarketplace"]) {
-    assert.notEqual(translate("zh-CN", key), key);
     assert.notEqual(translate("th", key), key);
   }
-  assert.equal(localizeAvailability("Availability Not Yet Confirmed", "zh-CN"), "可售状态尚未确认");
+  assert.equal(localizeAvailability("Availability Not Yet Confirmed", "zh-CN"), "Availability Not Yet Confirmed");
   assert.equal(detectSourceLanguage("รถสวย ไมล์น้อย"), "th");
   assert.equal(detectSourceLanguage("车辆状态很好"), "zh-CN");
-  assert.match(localizeListingSummary(listing, "zh-CN"), /Toyota Hilux Revo/);
+  assert.equal(localizeListingSummary(listing, "zh-CN"), listing.summary);
   assert.match(localizeListingSummary(listing, "th"), /Toyota Hilux Revo/);
   assert.deepEqual(listing, before);
 });
@@ -891,15 +889,15 @@ test("Vehicle Case deduplicates save and records honest pending workflows", () =
   assert.match(answered.messages.at(-1).text, /not confirmed|requested/i);
 });
 
-test("Chinese buyer question preserves original text and prepares a Thai seller translation without sending", () => {
+test("unsupported Chinese customer UI language falls back without mutating the original question", () => {
   const listing = presentCustomerListing(source);
   const created = createVehicleCase(listing, [], "customer-1", "2026-08-23T10:00:00.000Z").caseRecord;
   const question = "这辆车还在吗？最低价格是多少？";
   const answered = addCaseQuestion(created, question, "2026-08-23T10:04:00.000Z", "zh-CN");
   assert.equal(answered.messages.at(-2).text, question);
-  assert.match(answered.messages.at(-1).text, /尚未确认/);
+  assert.match(answered.messages.at(-1).text, /verified before purchase|Availability is not confirmed/i);
   assert.equal(answered.translationHistory.at(-1).originalText, question);
-  assert.equal(answered.translationHistory.at(-1).sourceLanguage, "zh-CN");
+  assert.equal(answered.translationHistory.at(-1).sourceLanguage, "en");
   assert.equal(answered.translationHistory.at(-1).translationLanguage, "th");
   assert.equal(answered.translationHistory.at(-1).status, "Prepared - not sent");
 });
@@ -958,6 +956,7 @@ test("renders additive Buying Browser routes without customer source leakage", a
       assert.match(html, /data-vehicle-card-v2/i);
       assert.match(textHtml, /<b>16<\/b> vehicles/i);
       assert.match(html, /NK Selection/i);
+      assert.doesNotMatch(html, /zh-CN|简体中文|NK 精选|AT - Unknown/i);
       assert.doesNotMatch(html, /10 selected/i);
       assert.match(html, /USD 21,686/i);
       assert.doesNotMatch(html, /data-real-source-launch/i);
