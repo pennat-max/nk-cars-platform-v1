@@ -476,3 +476,15 @@ Decision:
 Boundaries:
 - This changes customer presentation only. It does not change vehicle source records, pricing math, FX configuration, source evidence capture, QNAP/Hermes behavior, seller messaging, payments, or production data.
 - Chinese text can still be preserved/detected as source evidence for audit or translation history, but it is not offered as a customer UI language.
+
+## 2026-08-31 - Compact Browse card details
+
+Status: OWNER APPROVED AND IMPLEMENTED
+
+Decision:
+- Customer Browse cards now show only the photo, NK status badge, Save heart, selected-language primary price, and vehicle year/make/model.
+- Secondary converted price, compact transmission/drive specs, mileage, and location are removed from Browse cards to reduce visual density on mobile.
+- Full vehicle facts remain available on Vehicle Detail and Vehicle Case screens.
+
+Boundaries:
+- This is a customer presentation change only. It does not remove underlying vehicle data, change search/filter logic, pricing math, Vehicle Case snapshots, QNAP/Hermes behavior, seller messaging, payments, or production data.
