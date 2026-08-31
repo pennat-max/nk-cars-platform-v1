@@ -321,6 +321,8 @@ const paymentCopy = {
     proof: "上传付款凭证不代表自动确认收款。HiSpeed 财务确认实际到账后，状态才会变为 Confirmed。",
     secure: "Secure Vehicles",
     beforeShipment: "Before Shipment",
+    beforeContainerClose: "关柜前补足80%",
+    containerClose: "关柜付款",
     destination: "Destination Milestone",
     totalDue: "本次应付",
     status: "状态",
@@ -338,6 +340,8 @@ const paymentCopy = {
     proof: "Uploading proof does not confirm payment automatically. Status changes to Confirmed only after HiSpeed Finance verifies actual received funds.",
     secure: "Secure Vehicles",
     beforeShipment: "Before Shipment",
+    beforeContainerClose: "Before Container Closing",
+    containerClose: "Container Closing",
     destination: "Destination Milestone",
     totalDue: "Total due",
     status: "Status",
@@ -355,6 +359,8 @@ const paymentCopy = {
     proof: "การอัปโหลดสลิปยังไม่ถือว่าชำระสำเร็จ สถานะจะเป็น Confirmed หลัง Finance ตรวจพบยอดเงินจริงเท่านั้น",
     secure: "Secure Vehicles",
     beforeShipment: "Before Shipment",
+    beforeContainerClose: "ก่อนปิดตู้ให้ครบ 80%",
+    containerClose: "ตอนปิดตู้",
     destination: "Destination Milestone",
     totalDue: "ยอดเรียกเก็บ",
     status: "สถานะ",
@@ -522,7 +528,9 @@ function PaymentRequestExample({ vehicleCases }: { vehicleCases: VehicleCase[] }
   const money = useHiSpeedMoney();
   const groups = [
     { key: "secure", title: pay.secure, status: pay.awaiting, steps: ["deposit", "initial"] },
+    { key: "beforeContainerClose", title: pay.beforeContainerClose, status: pay.notIssued, steps: ["beforeContainerClose"] },
     { key: "beforeShipment", title: pay.beforeShipment, status: pay.notIssued, steps: ["beforeShipment"] },
+    { key: "containerClose", title: pay.containerClose, status: pay.notIssued, steps: ["containerClose"] },
     { key: "destination", title: pay.destination, status: pay.flexPending, steps: ["destination"] },
   ];
   const rows = groups.map((group) => {

@@ -439,7 +439,7 @@ Status: IMPLEMENTED AS PREVIEW / OWNER APPROVAL REQUIRED FOR CREDIT ACTIVATION
 
 Decision:
 - HiSpeed has two brand-specific purchase plan presentations while continuing to use the same underlying vehicle identity and shared inventory source.
-- Standard Plan calculates the HiSpeed customer vehicle selling price as vehicle source/purchase cost plus a 10% HiSpeed sourcing/service margin. Customer schedule is 30% deposit to secure the vehicle and 70% before shipment.
+- Standard Plan calculates the HiSpeed customer vehicle selling price as vehicle source/purchase cost plus a 10% HiSpeed sourcing/service margin. Customer schedule is 30% deposit to secure the vehicle, 50% top-up before container closing so paid total reaches 80%, and 20% final payment at container closing.
 - HiSpeed Flex Plan calculates the HiSpeed customer vehicle selling price as vehicle source/purchase cost plus a 20% HiSpeed sourcing/service margin. Customer schedule is 50% initial payment, 20% before shipment, and 30% at an approved destination/gateway milestone before controlled vehicle or shipping-document release.
 - HiSpeed customer UI presents the benefit and payment timing, not profit language. Customer-facing copy may say the vehicle price includes HiSpeed sourcing and service margin.
 - NK Cars pricing remains unchanged and continues to use the existing configurable NK 6% platform/transaction plus 4% buying-service model.
@@ -461,7 +461,7 @@ Currency presentation:
 - The preview uses deterministic configurable presentation FX in the HiSpeed layer; it does not change NK Cars pricing or shared source/purchase cost records.
 
 Payment request presentation:
-- HiSpeed may show preview Payment Requests grouped by selected plan milestone across one or more vehicles. Standard contributes deposit and before-shipment requests. Flex contributes initial, before-shipment, and destination/gateway milestone requests.
+- HiSpeed may show preview Payment Requests grouped by selected plan milestone across one or more vehicles. Standard contributes deposit, before-container-closing, and container-closing requests. Flex contributes initial, before-shipment, and destination/gateway milestone requests.
 - Payment Requests are customer-facing collection instructions only. Uploading transfer proof or a SWIFT reference does not confirm payment, release a vehicle, release documents, pay a seller, or create a purchase.
 - Real bank instructions must be configured by Owner/Finance and should point only to the approved HiSpeed company bank account. Finance confirmation of actual received funds remains required before any request can be treated as confirmed.
 

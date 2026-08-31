@@ -1210,7 +1210,8 @@ test("multi-brand visibility defaults to shared inventory without duplicating ve
 test("HiSpeed Standard and Flex purchase plans calculate brand-specific selling prices", () => {
   const standard = calculateHiSpeedPurchasePlan({ sourceCostThb: 500000, planId: "standard" });
   assert.equal(standard.vehicleSellingPriceThb, 550000);
-  assert.deepEqual(standard.schedule.map((step) => [step.percent, step.amountThb]), [[30, 165000], [70, 385000]]);
+  assert.deepEqual(standard.schedule.map((step) => [step.key, step.percent, step.amountThb]), [["deposit", 30, 165000], ["beforeContainerClose", 50, 275000], ["containerClose", 20, 110000]]);
+  assert.equal(standard.schedule.reduce((total, step) => total + step.percent, 0), 100);
   assert.equal(standard.flexStatus, "FLEX_NOT_REQUESTED");
 
   const flex = calculateHiSpeedPurchasePlan({ sourceCostThb: 500000, planId: "flex" });
@@ -1286,6 +1287,7 @@ test("renders additive HiSpeed routes from the shared customer-safe inventory", 
       assert.match(html, /data-hispeed-payment-plans/i);
       assert.match(html, /data-hispeed-payment-timeline/i);
       assert.match(html, /data-hispeed-inspection-wallet/i);
+      assert.match(html, /Top up to 80% before container closing|关柜前补足至80%|จ่ายเพิ่มให้ครบ 80% ก่อนปิดตู้/i);
       assert.match(html, /HiSpeed Flex Plan|HiSpeed 灵活付款方案/i);
       assert.match(html, /确认车辆是否可购买/);
       assert.match(html, /透明价格明细/);

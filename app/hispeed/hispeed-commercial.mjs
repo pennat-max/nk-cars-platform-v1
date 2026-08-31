@@ -5,13 +5,14 @@ export const HISPEED_PURCHASE_PLANS = Object.freeze({
     flexStatus: "FLEX_NOT_REQUESTED",
     badge: "Recommended / Best Price",
     positioning: {
-      en: "Best overall vehicle price. Pay 30% to secure the vehicle and complete the remaining 70% before shipment.",
-      "zh-CN": "总购车成本更优惠。支付30%订金锁定车辆，剩余70%在发运前支付。",
-      th: "ได้ราคารถโดยรวมที่ดีกว่า ชำระ 30% เพื่อล็อกรถ และชำระอีก 70% ก่อนจัดส่ง",
+      en: "Best overall vehicle price. Pay 30% to secure the vehicle, reach 80% before container closing, and complete the final 20% at container closing.",
+      "zh-CN": "总购车成本更优惠。支付30%订金锁定车辆，关柜前累计支付至80%，关柜时支付最后20%。",
+      th: "ได้ราคารถโดยรวมที่ดีกว่า ชำระ 30% เพื่อล็อกรถ ชำระให้ครบ 80% ก่อนปิดตู้ และชำระ 20% สุดท้ายตอนปิดตู้",
     },
     schedule: [
       { key: "deposit", percent: 30, timing: { en: "Deposit to secure vehicle", "zh-CN": "订金锁定车辆", th: "มัดจำเพื่อล็อกรถ" } },
-      { key: "beforeShipment", percent: 70, timing: { en: "Balance before shipment", "zh-CN": "发运前支付余款", th: "ยอดคงเหลือก่อนจัดส่ง" } },
+      { key: "beforeContainerClose", percent: 50, timing: { en: "Top up to 80% before container closing", "zh-CN": "关柜前补足至80%", th: "จ่ายเพิ่มให้ครบ 80% ก่อนปิดตู้" } },
+      { key: "containerClose", percent: 20, timing: { en: "Final 20% at container closing", "zh-CN": "关柜时支付最后20%", th: "ชำระ 20% สุดท้ายตอนปิดตู้" } },
     ],
   },
   flex: {

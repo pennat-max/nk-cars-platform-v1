@@ -12,7 +12,8 @@ HiSpeed uses the same underlying vehicle source/purchase cost and shared vehicle
 - Calculation: source/purchase cost + 10% HiSpeed sourcing/service margin.
 - Payment schedule:
   - 30% deposit to secure the vehicle.
-  - 70% balance before shipment.
+  - 50% top-up before container closing so cumulative paid total reaches 80%.
+  - 20% final payment at container closing.
   - 100% paid before release/shipment according to approved operational policy.
 
 ### HiSpeed Flex Plan
@@ -93,7 +94,9 @@ Shipping remains a planning estimate until booking and Owner/authorized confirma
 HiSpeed may generate customer-facing payment request presentations from the selected plan schedule. A request can group one or more vehicles by milestone:
 
 - Secure vehicles: Standard deposit or Flex initial payment.
-- Before shipment: Standard balance or Flex second payment.
+- Before container closing: Standard top-up to 80% cumulative paid.
+- Container closing: Standard final 20%.
+- Before shipment: Flex second payment.
 - Destination/gateway milestone: Flex remaining balance, only after approved Flex terms and route/legal/document policy.
 
 Payment Requests are not payment confirmation. Customer proof upload, remittance advice, or SWIFT reference is only evidence for Finance review. Status can become confirmed only after authorized Finance staff verify actual received funds.
