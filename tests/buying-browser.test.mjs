@@ -1306,8 +1306,9 @@ test("renders additive TAISHUAI AUTO routes from the shared customer-safe invent
       assert.match(html, /CNY 5,000/);
     }
     if (route === "/hispeed/account") {
-      assert.match(html, /hispeed/i);
-      assert.match(html, /车辆与 NK Cars 使用同一底层车辆身份/);
+      assert.match(html, /TAISHUAI AUTO/);
+      assert.match(html, /统一的安全车辆资料与订单工作区/);
+      assert.doesNotMatch(html, /<dt>Channel<\/dt>|<dd>hispeed<\/dd>|NK QNAP inventory|车辆与 NK Cars|客户来源会标记为 hispeed/i);
     }
   }
 });

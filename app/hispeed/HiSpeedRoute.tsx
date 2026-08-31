@@ -35,10 +35,17 @@ export default async function HiSpeedRoute({ view, sourceId, caseId }: { view: B
     customerMarketplaceAdapter.getStatus(),
     customerMarketplaceAdapter.search({ customerId: customer.id, searchArea: "Thailand", filters: { ...DEFAULT_FILTERS, location: "All Thailand" }, limit: 50, channel: "hispeed" }),
   ]);
+  const taishuaiSourceStatus = {
+    ...sourceStatus,
+    label: "TAISHUAI AUTO vehicle inventory",
+    message: sourceStatus.live
+      ? "TAISHUAI AUTO is reading the approved vehicle inventory."
+      : "TAISHUAI AUTO is showing the last verified vehicle inventory snapshot.",
+  };
   return (
     <BuyingBrowserProvider
       customer={customer}
-      sourceStatus={sourceStatus}
+      sourceStatus={taishuaiSourceStatus}
       initialListings={result.results}
       seedCases={signedIn || !demoWorkspaceEnabled ? [] : [hispeedSeedCase(customer.id)]}
       durableAccount={Boolean(signedIn)}

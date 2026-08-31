@@ -13,7 +13,7 @@ const copy = {
   th: { title: "Proforma Invoice", issued: "ออกเมื่อ", valid: "ใช้ได้ถึง", quote: "ใบเสนอราคาที่ยอมรับแล้ว", payment: "สถานะการชำระเงิน", notConfirmed: "ยังไม่ยืนยัน", open: "ดู / พิมพ์ PI", expired: "หมดอายุ - ต้องให้ Owner ตรวจใหม่", superseded: "ถูกแทนที่แล้ว", note: "PI นี้บันทึกยอดที่อนุมัติ เฉพาะฝ่ายการเงินที่ได้รับสิทธิ์จึงยืนยันเงินที่รับจริงได้" },
 } satisfies Record<CustomerLanguage, Record<string, string>>;
 
-export default function ProformaInvoicePanel({ vehicleCase }: { vehicleCase: VehicleCase }) {
+export default function ProformaInvoicePanel({ vehicleCase, basePath = "/buy" }: { vehicleCase: VehicleCase; basePath?: string }) {
   const { language } = useBuyingBrowser();
   const invoice = vehicleCase.proformaInvoice;
   if (!invoice) return null;
@@ -24,7 +24,7 @@ export default function ProformaInvoicePanel({ vehicleCase }: { vehicleCase: Veh
     <header><div><p className="bb-kicker">{invoice.number}</p><h2>{text.title}</h2></div><span className={`bb-status-chip ${status === "Issued - Awaiting Payment" ? "requested" : "pending"}`}><Clock3 size={13} />{statusLabel}</span></header>
     <dl><div><dt>{text.issued}</dt><dd>{formatDateTime(invoice.issuedAt)}</dd></div><div><dt>{text.valid}</dt><dd>{formatDateTime(invoice.validUntil)}</dd></div><div><dt>{text.quote}</dt><dd>{invoice.quotationNumber}</dd></div><div><dt>{text.payment}</dt><dd>{text.notConfirmed}</dd></div></dl>
     <div className="bb-pi-total"><span>USD</span><strong>{invoice.totalUsd.toLocaleString("en-US")}</strong></div>
-    <Link className="bb-button primary" href={`/buy/cases/${encodeURIComponent(vehicleCase.id)}/pi`}><FileText size={17} />{text.open}</Link>
+    <Link className="bb-button primary" href={`${basePath}/cases/${encodeURIComponent(vehicleCase.id)}/pi`}><FileText size={17} />{text.open}</Link>
     <p><LockKeyhole size={15} />{text.note}</p>
   </section>;
 }

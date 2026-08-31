@@ -483,6 +483,10 @@ Payment request presentation:
 - Payment Requests are customer-facing collection instructions only. Uploading transfer proof or a SWIFT reference does not confirm payment, release a vehicle, release documents, pay a seller, or create a purchase.
 - Real bank instructions must be configured by Owner/Finance and should point only to the approved TAISHUAI AUTO company bank account. Finance confirmation of actual received funds remains required before any request can be treated as confirmed.
 
+Brand presentation cleanup:
+- TAISHUAI AUTO customer-facing pages must not present legacy NK Cars or internal hispeed labels as visible brand, channel, or case terminology.
+- Internal route and contract identifiers such as `/hispeed`, `channel: "hispeed"`, shared vehicle IDs, and existing NK case/source IDs remain unchanged until a separate migration is approved. This preserves routing, reporting, shared inventory identity, and NK Cars `/buy` behavior.
+
 ## 2026-08-28 - Broader RHD-market destination coverage and transit disclosure
 
 Status: APPROVED AND IMPLEMENTED

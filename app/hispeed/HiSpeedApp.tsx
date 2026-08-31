@@ -122,7 +122,7 @@ const copy: Record<CustomerLanguage, Copy> = {
     timeline: "订单进度",
     selected: "已选择车辆",
     quotePi: "报价 / PI",
-    accountIntro: "TAISHUAI AUTO 客户来源会标记为 hispeed，车辆与 NK Cars 使用同一底层车辆身份。",
+    accountIntro: "TAISHUAI AUTO 使用统一的安全车辆资料与订单工作区。",
   },
   en: {
     nav: ["Vehicles", "Saved", "Shipping", "Cases", "Account"],
@@ -176,7 +176,7 @@ const copy: Record<CustomerLanguage, Copy> = {
     timeline: "Order timeline",
     selected: "Vehicle selected",
     quotePi: "Quote / PI",
-    accountIntro: "TAISHUAI AUTO customer activity is marked as hispeed while vehicles keep the shared NK identity.",
+    accountIntro: "TAISHUAI AUTO uses one secure vehicle record and customer workspace.",
   },
   th: {
     nav: ["รถ", "บันทึก", "ขนส่ง", "เคส", "บัญชี"],
@@ -230,7 +230,7 @@ const copy: Record<CustomerLanguage, Copy> = {
     timeline: "ไทม์ไลน์คำสั่งซื้อ",
     selected: "เลือกรถแล้ว",
     quotePi: "ใบเสนอราคา / PI",
-    accountIntro: "กิจกรรมลูกค้า TAISHUAI AUTO จะถูกระบุเป็น hispeed โดยรถยังใช้ identity เดียวกับ NK Cars",
+    accountIntro: "TAISHUAI AUTO ใช้ข้อมูลรถและพื้นที่คำสั่งซื้อที่ปลอดภัยชุดเดียวกัน",
   },
 };
 
@@ -415,6 +415,10 @@ function useHiSpeedMoney() {
 
 function hiSpeedVehiclePrice(listing: CustomerListing, planId: HiSpeedPlanId = "standard") {
   return calculateHiSpeedPurchasePlan({ sourceCostThb: listing.observedPriceThb, planId }).vehicleSellingPriceThb;
+}
+
+function taishuaiCaseNumber(caseId: string) {
+  return caseId.replace(/^NK-CASE-/i, "TS-CASE-").replace(/^NK-/i, "TS-");
 }
 
 function PaymentPlanSelector({
@@ -724,7 +728,7 @@ function VehicleDetailScreen({ sourceId }: { sourceId?: string }) {
       <PaymentTimeline listing={listing} planId={selectedPlan} />
       <InspectionWalletPanel />
       <section className="hs-section"><h2>{text.keySpecs}</h2><dl className="hs-specs"><div><dt>{text.year}</dt><dd>{listing.year ?? "Pending"}</dd></div><div><dt>{text.transmission}</dt><dd>{listing.transmission}</dd></div><div><dt>{text.mileage}</dt><dd>{formatMileage(listing.mileageKm)}</dd></div><div><dt>{text.location}</dt><dd>{listing.generalLocation}</dd></div></dl><p>{listing.summary}</p></section>
-      <section className="hs-section hs-price-detail"><h2>{text.priceDetail}</h2><div><span>{c.vehicleSellingPrice}</span><b>{money.fromThb(purchase.vehicleSellingPriceThb)}</b></div><p>{c.included}</p><p>Final quotation stays pending until TAISHUAI AUTO/NK verifies availability, vehicle price, inspection, and shipping.</p></section>
+      <section className="hs-section hs-price-detail"><h2>{text.priceDetail}</h2><div><span>{c.vehicleSellingPrice}</span><b>{money.fromThb(purchase.vehicleSellingPriceThb)}</b></div><p>{c.included}</p><p>Final quotation stays pending until TAISHUAI AUTO verifies availability, vehicle price, inspection, and shipping.</p></section>
       <section className="hs-shipping-promo"><Ship size={28} /><div><h2>{text.shippingTitle}</h2><p>{text.shippingSub}</p><Link href="/hispeed/shipments">{text.shipping}</Link></div></section>
       {fullscreenOpen && <section className="hs-photo-viewer" role="dialog" aria-modal="true" aria-label={openPhotoLabel} data-hispeed-fullscreen-viewer>
         <header><button type="button" onClick={() => setFullscreenOpen(false)} aria-label={closePhotoLabel} autoFocus><X size={30} /></button><strong>{imageIndex + 1} / {listing.imageUrls.length}</strong></header>
@@ -760,7 +764,7 @@ function ShipmentPlanner() {
         <div className="hs-shipment-metrics"><article><span>{text.planning}</span><b>{money.fromUsd(plan.planningShipmentUsdMid)}</b></article><article><span>{text.perVehicle}</span><b>{money.fromUsd(plan.planningPerVehicleUsdMid)}</b></article><article><span>{text.savings}</span><b>{money.fromUsd(saving)}</b></article></div>
         <div className="hs-route-note"><b>{text.route}</b><p>{plan.routeType || "Choose destination"} · {plan.routeNote || text.inland}</p><p>3 cars include rushing/loading: about {money.fromThb(25000)} per shipment, {money.fromThb(Math.round(25000 / 3))} per car.</p></div>
         <section className="hs-shipment-slots">{Array.from({ length: selectedQuantity }, (_, index) => state.cases[index] || null).map((item, index) => item ? <article key={item.id}><VehiclePhoto listing={item.vehicle} /><div><small>Car {index + 1}</small><b>{item.vehicle.year} {item.vehicle.brand} {item.vehicle.model}</b><span>{money.fromThb(hiSpeedVehiclePrice(item.vehicle, normalizeHiSpeedPlan(item.hispeedPaymentPlan) as HiSpeedPlanId))}</span></div><Link href={`/hispeed/cases/${encodeURIComponent(item.id)}`}>Open</Link></article> : <article key={index} className="empty"><span>{index + 1}</span><div><small>Open slot</small><b>{text.addShipment}</b></div><Link href="/hispeed/saved">Add</Link></article>)}</section>
-        <footer><p>{text.planning}. Base freight comes from configured estimate/rate data; final freight requires NK confirmation.</p><button className="hs-primary" disabled={!selectedCountry} onClick={() => state.cases.slice(0, selectedQuantity).forEach((item) => requestCaseQuotation(item.id))}>{text.requestQuote}</button></footer>
+        <footer><p>{text.planning}. Base freight comes from configured estimate/rate data; final freight requires authorized confirmation.</p><button className="hs-primary" disabled={!selectedCountry} onClick={() => state.cases.slice(0, selectedQuantity).forEach((item) => requestCaseQuotation(item.id))}>{text.requestQuote}</button></footer>
       </section>
       <PaymentRequestExample vehicleCases={state.cases.slice(0, selectedQuantity)} />
     </>
@@ -784,19 +788,19 @@ function CasesScreen({ caseId }: { caseId?: string }) {
   if (current) return (
     <>
       <Link className="hs-back" href="/hispeed/cases"><ArrowLeft size={18} />{text.cases}</Link>
-      <section className="hs-case-detail"><VehiclePhoto listing={current.vehicle} /><div><span>{current.id}</span><h1>{current.vehicle.title}</h1><p>{current.vehicle.generalLocation} · {money.fromThb(hiSpeedVehiclePrice(current.vehicle, normalizeHiSpeedPlan(current.hispeedPaymentPlan) as HiSpeedPlanId))}</p><div className="hs-actions"><button className="hs-primary" onClick={() => requestCaseAvailability(current.id)}>{text.checkAvailability}</button><button onClick={() => requestCaseInspection(current.id)}>Inspection</button></div></div></section>
+      <section className="hs-case-detail"><VehiclePhoto listing={current.vehicle} /><div><span>{taishuaiCaseNumber(current.id)}</span><h1>{current.vehicle.title}</h1><p>{current.vehicle.generalLocation} · {money.fromThb(hiSpeedVehiclePrice(current.vehicle, normalizeHiSpeedPlan(current.hispeedPaymentPlan) as HiSpeedPlanId))}</p><div className="hs-actions"><button className="hs-primary" onClick={() => requestCaseAvailability(current.id)}>{text.checkAvailability}</button><button onClick={() => requestCaseInspection(current.id)}>Inspection</button></div></div></section>
       <PaymentPlanSelector listing={current.vehicle} selectedPlan={normalizeHiSpeedPlan(current.hispeedPaymentPlan) as HiSpeedPlanId} onChange={(planId) => updateCaseHiSpeedPaymentPlan(current.id, planId)} />
       <InspectionWalletPanel vehicleCase={current} />
       <HiSpeedQuoteSnapshot vehicleCase={current} selectedPlan={normalizeHiSpeedPlan(current.hispeedPaymentPlan) as HiSpeedPlanId} />
       <PaymentRequestExample vehicleCases={[current]} />
       <CaseTimeline vehicleCase={current} />
       <QuotationPanel vehicleCase={current} />
-      <ProformaInvoicePanel vehicleCase={current} />
+      <ProformaInvoicePanel vehicleCase={current} basePath="/hispeed" />
       <form className="hs-case-chat" onSubmit={submit}><label><MessageCircle size={18} /><input value={question} onChange={(event) => setQuestion(event.target.value)} placeholder={text.ask} /></label><button>{text.ask}</button></form>
     </>
   );
   if (!state.cases.length) return <section className="hs-empty"><FolderKanban size={30} /><h1>{text.noCases}</h1><Link className="hs-primary" href="/hispeed">{text.nav[0]}</Link></section>;
-  return <section className="hs-case-list"><div className="hs-page-title"><div><span>{text.timeline}</span><h1>{text.cases}</h1></div></div>{state.cases.map((item) => <Link key={item.id} href={`/hispeed/cases/${encodeURIComponent(item.id)}`}><VehiclePhoto listing={item.vehicle} /><div><small>{item.id}</small><h2>{item.vehicle.title}</h2><p>{item.availability} · {money.fromThb(hiSpeedVehiclePrice(item.vehicle, normalizeHiSpeedPlan(item.hispeedPaymentPlan) as HiSpeedPlanId))}</p></div><Clock3 size={18} /></Link>)}</section>;
+  return <section className="hs-case-list"><div className="hs-page-title"><div><span>{text.timeline}</span><h1>{text.cases}</h1></div></div>{state.cases.map((item) => <Link key={item.id} href={`/hispeed/cases/${encodeURIComponent(item.id)}`}><VehiclePhoto listing={item.vehicle} /><div><small>{taishuaiCaseNumber(item.id)}</small><h2>{item.vehicle.title}</h2><p>{item.availability} · {money.fromThb(hiSpeedVehiclePrice(item.vehicle, normalizeHiSpeedPlan(item.hispeedPaymentPlan) as HiSpeedPlanId))}</p></div><Clock3 size={18} /></Link>)}</section>;
 }
 
 function CaseTimeline({ vehicleCase }: { vehicleCase: VehicleCase }) {
@@ -809,7 +813,7 @@ function CaseTimeline({ vehicleCase }: { vehicleCase: VehicleCase }) {
 function AccountScreen() {
   const { customer, sourceStatus, state, workspaceSync } = useBuyingBrowser();
   const text = useCopy();
-  return <section className="hs-account"><div className="hs-page-title"><div><span>TAISHUAI AUTO</span><h1>{text.account}</h1><p>{text.accountIntro}</p></div></div><dl><div><dt>Customer</dt><dd>{customer.displayName}</dd></div><div><dt>Channel</dt><dd>{customer.acquisitionChannel || "hispeed"}</dd></div><div><dt>Inventory</dt><dd>{sourceStatus.label} · {sourceStatus.mode}</dd></div><div><dt>Workspace</dt><dd>{workspaceSync.mode}</dd></div><div><dt>{text.saved}</dt><dd>{state.savedListingIds.length}</dd></div><div><dt>{text.cases}</dt><dd>{state.cases.length}</dd></div></dl></section>;
+  return <section className="hs-account"><div className="hs-page-title"><div><span>TAISHUAI AUTO</span><h1>{text.account}</h1><p>{text.accountIntro}</p></div></div><dl><div><dt>Customer</dt><dd>{customer.displayName}</dd></div><div><dt>Brand</dt><dd>TAISHUAI AUTO</dd></div><div><dt>Inventory</dt><dd>Verified vehicle inventory · {sourceStatus.mode}</dd></div><div><dt>Workspace</dt><dd>{workspaceSync.mode}</dd></div><div><dt>{text.saved}</dt><dd>{state.savedListingIds.length}</dd></div><div><dt>{text.cases}</dt><dd>{state.cases.length}</dd></div></dl></section>;
 }
 
 export default function HiSpeedApp({ view, sourceId, caseId }: { view: BuyingBrowserView; sourceId?: string; caseId?: string }) {
