@@ -142,10 +142,10 @@ export function normalizeCompletion(value) {
 
 export function publicError(error) {
   const code = error instanceof Error ? error.message : "internal_error";
-  if (code === "owner_role_required") return { status: 403, code };
+  if (code === "owner_role_required" || code === "jaklaen_role_required" || code === "customer_standing_search_forbidden") return { status: 403, code };
   if (code === "rule_not_found" || code === "command_not_found" || code === "candidate_not_found" || code === "media_not_found") return { status: 404, code };
   if (code === "sourcing_revision_conflict" || code === "command_already_claimed" || code === "daily_limit_reached" || code === "candidate_rule_mismatch") return { status: 409, code };
   if (code === "worker_not_configured") return { status: 503, code };
-  if (code.startsWith("invalid_" ) || code === "conflicting_keywords") return { status: 400, code };
+  if (code.startsWith("invalid_" ) || code === "conflicting_keywords" || code === "customer_case_reference_required") return { status: 400, code };
   return { status: 500, code: "internal_error" };
 }

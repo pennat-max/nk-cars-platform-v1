@@ -187,3 +187,121 @@ Before Owner approval for production, Jaklaen must submit one real Toyota Hilux 
 - QNAP database row and internal media storage location
 
 No mock/demo/placeholder data can be used as final proof.
+
+## App-Driven Search Queue V1 Preview
+
+Owner-approved Preview scope adds an app-first workflow so Owner/Staff/eligible Customer users do not need to ask Codex to start every search.
+
+Workflow:
+
+```text
+App
+-> Search Request
+-> Jaklaen Job Queue
+-> Jaklaen claims job with worker token
+-> Jaklaen searches only approved/authorized sources
+-> Jaklaen sends Candidate back
+-> Candidate enters NEEDS_REVIEW
+-> Owner/Staff reviews before any publish workflow
+```
+
+Admin app endpoints:
+
+- `GET /v1/admin/jaklaen/search-requests`
+- `POST /v1/admin/jaklaen/search-requests`
+
+Worker endpoints:
+
+- `POST /v1/worker/jaklaen/jobs/claim`
+- `POST /v1/worker/jaklaen/jobs/:jobId/complete`
+- `POST /v1/worker/jaklaen/candidates`
+
+`SEARCH_NOW` request example:
+
+```json
+{
+  "requestType": "SEARCH_NOW",
+  "idempotencyKey": "case-001-search-now-20260901-0900",
+  "priority": "high",
+  "customerCaseReference": "CASE-001",
+  "criteria": {
+    "make": "Toyota",
+    "model": "Hilux Revo",
+    "grade": "UNKNOWN",
+    "yearFrom": 2020,
+    "yearTo": 2026,
+    "transmission": "AT",
+    "engineFuel": "Diesel",
+    "driveType": "4WD",
+    "color": "Any",
+    "maxPriceThb": 850000,
+    "maxMileageKm": 120000,
+    "location": "Bangkok Metro",
+    "radiusKm": 120,
+    "quantityRequired": 3,
+    "sources": ["facebook_marketplace", "facebook_group"]
+  }
+}
+```
+
+`STANDING_SEARCH` request example:
+
+```json
+{
+  "requestType": "STANDING_SEARCH",
+  "idempotencyKey": "company-revo-standing-20260901",
+  "priority": "normal",
+  "customerCaseReference": "Company shortlist",
+  "criteria": {
+    "make": "Toyota",
+    "model": "Hilux Revo",
+    "grade": "UNKNOWN",
+    "yearFrom": 2020,
+    "yearTo": 2026,
+    "transmission": "AT",
+    "engineFuel": "Diesel",
+    "driveType": "UNKNOWN",
+    "color": "Any",
+    "maxPriceThb": 850000,
+    "maxMileageKm": 120000,
+    "location": "Bangkok Metro",
+    "radiusKm": 120,
+    "quantityRequired": 3,
+    "sources": ["facebook_marketplace", "facebook_group"]
+  },
+  "schedule": {
+    "frequency": "daily",
+    "timezone": "Asia/Bangkok",
+    "weekdays": ["mon", "tue", "wed", "thu", "fri"],
+    "startHour": 9,
+    "endHour": 17
+  }
+}
+```
+
+Permissions:
+
+- Owner can manage all Search Requests and Standing Searches.
+- Staff can create Search Now and Standing Search only within granted internal scopes.
+- Customer can create `SEARCH_NOW` only when `customerCaseReference` points to their own Case.
+- Customer cannot create or edit company `STANDING_SEARCH`.
+
+Operational controls:
+
+- `SEARCH_NOW` creates a `jaklaen_search_jobs` row immediately.
+- `STANDING_SEARCH` stores schedule criteria; a scheduler must create future jobs only during active hours.
+- Worker claim/complete endpoints require `NK_HERMES_WORKER_TOKEN`, not the Owner admin token.
+- App endpoints require authenticated app/Owner API token and actor headers.
+- Search Request creation is idempotent and rate-limited by requester per Bangkok day.
+- Audit events are append-only.
+- Job completion can report `BLOCKED` with safe reasons: `LOGIN_REQUIRED`, `MFA_REQUIRED`, `CAPTCHA`, `CHECKPOINT`, `RATE_LIMIT`, or `ACCOUNT_RISK`.
+- Candidates still use the existing candidate intake schema and must enter `NEEDS_REVIEW`.
+
+Preview UI:
+
+- `/buy/owner-preview/jaklaen-candidates` now shows:
+  - Search Now
+  - Standing Searches
+  - Candidate Review
+
+The preview UI uses TEST/MOCK data only and is not final proof. Production activation still requires one real Toyota Hilux Revo candidate with real source URL, images, screenshot, Candidate ID, `NEEDS_REVIEW`, QNAP database row, and internal media storage references.

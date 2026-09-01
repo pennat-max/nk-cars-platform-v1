@@ -3,6 +3,7 @@ import http from "node:http";
 import { pathToFileURL } from "node:url";
 import { createPool } from "./db.mjs";
 import { normalizeCandidateSubmission } from "./candidate-domain.mjs";
+import { normalizeJaklaenJobCompletion, normalizeJaklaenSearchRequest } from "./jaklaen-search-domain.mjs";
 import { QnapMediaStore } from "./media-store.mjs";
 import {
   normalizeActor,
@@ -59,6 +60,21 @@ function normalizeJaklaenReviewMutation(value) {
   }) : [];
   if (action === "FIELD_EDITED" && !fields.length) throw new Error("candidate_review_fields_required");
   return { action, fields, note };
+}
+
+function normalizeJaklaenActor(headers) {
+  const clean = (value, label, max) => {
+    const normalized = typeof value === "string" ? value.replace(/\s+/g, " ").trim() : "";
+    if (!normalized || normalized.length > max) throw new Error(`invalid_${label}`);
+    return normalized;
+  };
+  const roles = [...new Set(String(headers["x-nk-actor-roles"] || "").split(",").map((role) => role.trim()).filter(Boolean))].sort();
+  if (!roles.some((role) => ["OWNER", "STAFF", "CUSTOMER"].includes(role))) throw new Error("jaklaen_role_required");
+  return {
+    id: clean(headers["x-nk-actor-id"], "actor_id", 200),
+    email: clean(headers["x-nk-actor-email"], "actor_email", 320),
+    roles,
+  };
 }
 
 function binary(response, bytes, record, cacheControl) {
@@ -122,6 +138,14 @@ export function createDataService({ pool, apiToken, workerToken, sourcingReposit
         if (request.method === "POST" && url.pathname === "/v1/worker/sourcing/commands/claim") {
           const command = await sourcing.claimNext(workerId);
           return json(response, 200, { command });
+        }
+        if (request.method === "POST" && url.pathname === "/v1/worker/jaklaen/jobs/claim") {
+          const job = await sourcing.claimNextJaklaenJob(workerId);
+          return json(response, 200, { job });
+        }
+        const jaklaenJobMatch = url.pathname.match(/^\/v1\/worker\/jaklaen\/jobs\/([0-9a-f-]+)\/complete$/i);
+        if (request.method === "POST" && jaklaenJobMatch) {
+          return json(response, 200, await sourcing.completeJaklaenJob(jaklaenJobMatch[1], workerId, normalizeJaklaenJobCompletion(await readJson(request))));
         }
         if (request.method === "POST" && (url.pathname === "/v1/worker/sourcing/candidates" || url.pathname === "/v1/worker/jaklaen/candidates")) {
           const candidate = normalizeCandidateSubmission(await readJson(request));
@@ -244,6 +268,18 @@ export function createDataService({ pool, apiToken, workerToken, sourcingReposit
         if (request.method === "POST" && candidateMatch) {
           const vehicleId = mediaId(candidateMatch[1], 180);
           return json(response, 200, await sourcing.reviewJaklaenCandidate(vehicleId, normalizeJaklaenReviewMutation(await readJson(request)), actor));
+        }
+        return json(response, 404, { error: "not_found" });
+      }
+
+      if (url.pathname.startsWith("/v1/admin/jaklaen/search-requests")) {
+        const actor = normalizeJaklaenActor(request.headers);
+        if (request.method === "GET" && url.pathname === "/v1/admin/jaklaen/search-requests") {
+          return json(response, 200, await sourcing.listJaklaenSearchRequests());
+        }
+        if (request.method === "POST" && url.pathname === "/v1/admin/jaklaen/search-requests") {
+          const payload = await readJson(request);
+          return json(response, 201, await sourcing.createJaklaenSearchRequest(normalizeJaklaenSearchRequest(payload, actor), actor));
         }
         return json(response, 404, { error: "not_found" });
       }

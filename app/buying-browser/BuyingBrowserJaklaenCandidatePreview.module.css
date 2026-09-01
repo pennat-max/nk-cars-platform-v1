@@ -11,6 +11,38 @@
   margin: 16px 0;
 }
 
+.tabs {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  padding: 8px 0 12px;
+  background: var(--page);
+}
+
+.tabs button {
+  min-height: 48px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--muted);
+  font: inherit;
+  font-weight: 900;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+
+.tabs .activeTab {
+  background: var(--navy);
+  border-color: var(--navy);
+  color: #fff;
+}
+
+.panel,
 .gallery,
 .summary,
 .fields,
@@ -20,6 +52,101 @@
   border-radius: 8px;
   padding: 14px;
   box-shadow: 0 8px 24px rgba(16, 38, 61, .06);
+}
+
+.panel {
+  margin: 16px 0;
+}
+
+.criteria {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.criteria div,
+.scheduleBox div,
+.queue article {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  background: #fff;
+}
+
+.criteria dt,
+.scheduleBox b {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.criteria dd,
+.scheduleBox span,
+.queue b,
+.queue span {
+  display: block;
+  margin: 4px 0 0;
+  color: var(--ink);
+  font-weight: 900;
+  overflow-wrap: anywhere;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.formGrid label {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.formGrid input,
+.formGrid select {
+  min-height: 48px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-weight: 900;
+  text-transform: none;
+}
+
+.queue,
+.scheduleBox {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.queue article {
+  display: grid;
+  gap: 5px;
+}
+
+.queue span {
+  color: var(--green);
+}
+
+.queue p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.queue small {
+  color: var(--muted);
+  font-weight: 800;
 }
 
 .cover {
@@ -203,8 +330,16 @@
 
   .reviewGrid,
   .field,
+  .criteria,
+  .formGrid,
+  .queue,
+  .scheduleBox,
   .summary dl,
   .audit li {
+    grid-template-columns: 1fr;
+  }
+
+  .tabs {
     grid-template-columns: 1fr;
   }
 

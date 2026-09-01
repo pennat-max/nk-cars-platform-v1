@@ -1,4 +1,58 @@
 export type JaklaenCandidateStatus = "NEEDS_REVIEW" | "APPROVED" | "REJECTED" | "NEED_MORE_INFO";
+export type JaklaenSearchMode = "SEARCH_NOW" | "STANDING_SEARCH";
+export type JaklaenQueueStatus = "QUEUED" | "CLAIMED" | "RUNNING" | "CANDIDATE_RETURNED" | "BLOCKED";
+export type JaklaenRequestPriority = "normal" | "high" | "urgent";
+
+export type JaklaenSearchCriteria = {
+  make: string;
+  model: string;
+  grade: string;
+  yearFrom: number;
+  yearTo: number;
+  transmission: string;
+  engineFuel: string;
+  driveType: string;
+  color: string;
+  maxPriceThb: number;
+  maxMileageKm: number;
+  location: string;
+  radiusKm: number;
+  quantityRequired: number;
+  sources: string[];
+};
+
+export type JaklaenSchedule = {
+  frequency: "daily" | "weekly";
+  weekdays: string[];
+  startTime: string;
+  endTime: string;
+  timezone: "Asia/Bangkok";
+};
+
+export type JaklaenSearchRequest = {
+  requestId: string;
+  mode: JaklaenSearchMode;
+  criteria: JaklaenSearchCriteria;
+  schedule: JaklaenSchedule | null;
+  priority: JaklaenRequestPriority;
+  requestedByRole: "OWNER" | "STAFF" | "CUSTOMER";
+  requestedBy: string;
+  customerCaseReference: string;
+  active: boolean;
+  createdAt: string;
+};
+
+export type JaklaenQueueJob = {
+  jobId: string;
+  requestId: string;
+  mode: JaklaenSearchMode;
+  status: JaklaenQueueStatus;
+  workerId: string;
+  safeStatus: string;
+  createdAt: string;
+  claimedAt: string | null;
+  returnedCandidateId: string | null;
+};
 
 export type JaklaenReviewField = {
   key: string;
@@ -38,11 +92,83 @@ export type JaklaenCandidate = {
 
 export type JaklaenAuditEvent = {
   id: string;
-  action: "CREATED" | "FIELD_EDITED" | "APPROVED" | "REJECTED" | "NEED_MORE_INFO";
+  action: "SEARCH_REQUEST_CREATED" | "JOB_QUEUED" | "JOB_CLAIMED" | "CANDIDATE_RETURNED" | "CREATED" | "FIELD_EDITED" | "APPROVED" | "REJECTED" | "NEED_MORE_INFO";
   actor: string;
   note: string;
   createdAt: string;
 };
+
+export const jaklaenPreviewSearchRequest: JaklaenSearchRequest = {
+  requestId: "srch_test_20260901_001",
+  mode: "SEARCH_NOW",
+  criteria: {
+    make: "Toyota",
+    model: "Hilux Revo",
+    grade: "UNKNOWN",
+    yearFrom: 2020,
+    yearTo: 2024,
+    transmission: "AT",
+    engineFuel: "Diesel",
+    driveType: "2WD or 4WD",
+    color: "Any",
+    maxPriceThb: 850000,
+    maxMileageKm: 120000,
+    location: "Bangkok Metro",
+    radiusKm: 120,
+    quantityRequired: 3,
+    sources: ["facebook_marketplace", "facebook_group"],
+  },
+  schedule: null,
+  priority: "high",
+  requestedByRole: "OWNER",
+  requestedBy: "owner@nktrade.internal",
+  customerCaseReference: "CASE-TEST-REVO-001",
+  active: true,
+  createdAt: "2026-09-01T09:00:00.000+07:00",
+};
+
+export const jaklaenPreviewStandingSearch: JaklaenSearchRequest = {
+  ...jaklaenPreviewSearchRequest,
+  requestId: "stand_test_20260901_001",
+  mode: "STANDING_SEARCH",
+  schedule: {
+    frequency: "daily",
+    weekdays: ["mon", "tue", "wed", "thu", "fri"],
+    startTime: "09:00",
+    endTime: "17:00",
+    timezone: "Asia/Bangkok",
+  },
+  priority: "normal",
+  requestedByRole: "STAFF",
+  requestedBy: "staff@nktrade.internal",
+  customerCaseReference: "Company shortlist",
+  createdAt: "2026-09-01T09:05:00.000+07:00",
+};
+
+export const jaklaenPreviewQueueJobs: JaklaenQueueJob[] = [
+  {
+    jobId: "job_test_search_now_001",
+    requestId: jaklaenPreviewSearchRequest.requestId,
+    mode: "SEARCH_NOW",
+    status: "CANDIDATE_RETURNED",
+    workerId: "jaklaen-hermes-preview",
+    safeStatus: "Jaklaen claimed the job, searched approved sources, and returned one TEST/MOCK candidate for Owner review.",
+    createdAt: "2026-09-01T09:00:05.000+07:00",
+    claimedAt: "2026-09-01T09:00:12.000+07:00",
+    returnedCandidateId: "cand_test_jaklaen_preview_001",
+  },
+  {
+    jobId: "job_test_standing_001",
+    requestId: jaklaenPreviewStandingSearch.requestId,
+    mode: "STANDING_SEARCH",
+    status: "QUEUED",
+    workerId: "PENDING",
+    safeStatus: "Next scheduled run will create a job inside active hours.",
+    createdAt: "2026-09-01T09:05:00.000+07:00",
+    claimedAt: null,
+    returnedCandidateId: null,
+  },
+];
 
 export const jaklaenPreviewCandidate: JaklaenCandidate = {
   candidateId: "cand_test_jaklaen_preview_001",
@@ -89,6 +215,27 @@ export const jaklaenPreviewFields: JaklaenReviewField[] = [
 ];
 
 export const jaklaenPreviewAudit: JaklaenAuditEvent[] = [
+  {
+    id: "audit_test_queue_003",
+    action: "CANDIDATE_RETURNED",
+    actor: "worker:jaklaen-hermes-preview",
+    note: "TEST/MOCK Candidate ID cand_test_jaklaen_preview_001 returned to NEEDS_REVIEW. No publish or seller contact.",
+    createdAt: "2026-09-01T09:01:40.000+07:00",
+  },
+  {
+    id: "audit_test_queue_002",
+    action: "JOB_CLAIMED",
+    actor: "worker:jaklaen-hermes-preview",
+    note: "SEARCH_NOW job claimed from the Jaklaen queue with worker token authentication.",
+    createdAt: "2026-09-01T09:00:12.000+07:00",
+  },
+  {
+    id: "audit_test_queue_001",
+    action: "JOB_QUEUED",
+    actor: "owner-preview",
+    note: "Search Request created from app and queued for Jaklaen.",
+    createdAt: "2026-09-01T09:00:05.000+07:00",
+  },
   {
     id: "audit_test_001",
     action: "CREATED",

@@ -7,6 +7,7 @@ import sharp from "sharp";
 import { createDataService } from "../deploy/qnap/data-service/server.mjs";
 import { candidateMatchesRule, normalizeCandidateSubmission } from "../deploy/qnap/data-service/candidate-domain.mjs";
 import { QnapMediaStore } from "../deploy/qnap/data-service/media-store.mjs";
+import { normalizeJaklaenJobCompletion, normalizeJaklaenSearchRequest } from "../deploy/qnap/data-service/jaklaen-search-domain.mjs";
 import {
   normalizeCommand,
   normalizeCompletion,
@@ -103,6 +104,10 @@ async function withService(run) {
     complete: async (id, workerId, completion) => { calls.push({ method: "complete", id, workerId, completion }); return { accepted: true }; },
     ingestCandidate: async (id, workerId, candidate) => { calls.push({ method: "ingestCandidate", id, workerId, candidate }); return { status: "retained", vehicleId: candidate.vehicleId, idempotent: false }; },
     attachCandidateMedia: async (vehicleId, media) => { calls.push({ method: "attachCandidateMedia", vehicleId, media }); return { stored: media.length }; },
+    listJaklaenSearchRequests: async () => ({ observedAt: "2026-09-01T02:00:00.000Z", requests: [], jobs: [] }),
+    createJaklaenSearchRequest: async (request, actor) => { calls.push({ method: "createJaklaenSearchRequest", request, actor }); return { accepted: true, requestId: "srch_test", queuedJobId: request.requestType === "SEARCH_NOW" ? commandId : null, published: false }; },
+    claimNextJaklaenJob: async (workerId) => { calls.push({ method: "claimNextJaklaenJob", workerId }); return { id: commandId, requestId: "srch_test", jobType: "SEARCH_NOW", status: "CLAIMED" }; },
+    completeJaklaenJob: async (jobId, workerId, completion) => { calls.push({ method: "completeJaklaenJob", jobId, workerId, completion }); return { accepted: true, published: false }; },
   };
   const pool = { query: async () => ({ rows: [{ ok: 1 }] }) };
   const mediaStore = { retainCandidateImages: async () => ({ media: [], failures: [{ index: 1, code: "image_unavailable" }] }) };
@@ -149,6 +154,40 @@ test("candidate ingestion normalizes confidential review data and enforces the a
   assert.equal(candidateMatchesRule({ ...candidate, location: "Phetchaburi, Thailand" }, { ...validRule, locations: ["Phetchaburi"] }).matches, true);
   assert.throws(() => normalizeCandidateSubmission({ ...candidatePayload, candidate: { ...candidatePayload.candidate, source: { ...candidatePayload.candidate.source, source_url: "https://example.com/marketplace/item/1" } } }), /invalid_candidate_source_url/);
   assert.throws(() => normalizeCandidateSubmission({ ...candidatePayload, candidate: { ...candidatePayload.candidate, candidate_status: "PUBLISHED" } }), /candidate_auto_publish_forbidden/);
+});
+
+test("Jaklaen Search Request domain separates SEARCH_NOW, STANDING_SEARCH, and Customer permissions", () => {
+  const actor = { id: "owner-1", email: "owner@example.com", roles: ["OWNER"] };
+  const payload = {
+    requestType: "SEARCH_NOW",
+    idempotencyKey: "search-now-test-001",
+    priority: "high",
+    customerCaseReference: "CASE-001",
+    criteria: {
+      make: "Toyota",
+      model: "Hilux Revo",
+      grade: "",
+      yearFrom: 2020,
+      yearTo: 2026,
+      transmission: "AT",
+      engineFuel: "",
+      driveType: "4WD",
+      color: "",
+      maxPriceThb: 850000,
+      maxMileageKm: 120000,
+      location: "Bangkok Metro",
+      radiusKm: 120,
+      quantityRequired: 3,
+      sources: ["facebook_marketplace", "facebook_group"],
+    },
+  };
+  const normalized = normalizeJaklaenSearchRequest(payload, actor);
+  assert.equal(normalized.requestType, "SEARCH_NOW");
+  assert.equal(normalized.criteria.grade, "UNKNOWN");
+  assert.equal(normalized.criteria.engineFuel, "PENDING");
+  assert.equal(normalized.requestedBy.role, "OWNER");
+  assert.throws(() => normalizeJaklaenSearchRequest({ ...payload, requestType: "STANDING_SEARCH" }, { id: "customer-1", email: "buyer@example.com", roles: ["CUSTOMER"] }), /customer_standing_search_forbidden/);
+  assert.deepEqual(normalizeJaklaenJobCompletion({ status: "BLOCKED", blockedReason: "CAPTCHA", listingsFound: 0, candidatesReturned: 0, message: "CAPTCHA encountered; stopped." }).blockedReason, "CAPTCHA");
 });
 
 test("admin sourcing API requires the server token and an independent Owner role", async () => {
@@ -237,6 +276,50 @@ test("worker candidate endpoint retains only a review record and reports partial
     assert.equal(calls[0].method, "ingestCandidate");
     assert.equal(calls[0].candidate.internalRecord.visibility, "INTERNAL_ONLY");
     assert.equal(calls[1].method, "attachCandidateMedia");
+  });
+});
+
+test("Jaklaen app queue API creates SEARCH_NOW jobs and lets the worker claim and complete them", async () => {
+  await withService(async ({ baseUrl, calls }) => {
+    const searchRequest = {
+      requestType: "SEARCH_NOW",
+      idempotencyKey: "search-now-test-002",
+      priority: "high",
+      customerCaseReference: "CASE-REVO-002",
+      criteria: {
+        make: "Toyota",
+        model: "Hilux Revo",
+        grade: "UNKNOWN",
+        yearFrom: 2020,
+        yearTo: 2026,
+        transmission: "AT",
+        engineFuel: "Diesel",
+        driveType: "4WD",
+        color: "Any",
+        maxPriceThb: 850000,
+        maxMileageKm: 120000,
+        location: "Bangkok Metro",
+        radiusKm: 120,
+        quantityRequired: 3,
+        sources: ["facebook_marketplace"],
+      },
+    };
+    const created = await fetch(`${baseUrl}/v1/admin/jaklaen/search-requests`, { method: "POST", headers: ownerHeaders(), body: JSON.stringify(searchRequest) });
+    assert.equal(created.status, 201);
+    assert.equal((await created.json()).queuedJobId, commandId);
+    const claimed = await fetch(`${baseUrl}/v1/worker/jaklaen/jobs/claim`, { method: "POST", headers: { authorization: `Bearer ${workerToken}`, "x-nk-worker-id": "jaklaen-hermes" } });
+    assert.equal(claimed.status, 200);
+    assert.equal((await claimed.json()).job.status, "CLAIMED");
+    const completed = await fetch(`${baseUrl}/v1/worker/jaklaen/jobs/${commandId}/complete`, {
+      method: "POST",
+      headers: { authorization: `Bearer ${workerToken}`, "content-type": "application/json", "x-nk-worker-id": "jaklaen-hermes" },
+      body: JSON.stringify({ status: "COMPLETED", listingsFound: 4, candidatesReturned: 1, message: "One candidate returned for NEEDS_REVIEW." }),
+    });
+    assert.equal(completed.status, 200);
+    assert.equal((await completed.json()).published, false);
+    assert.equal(calls.find((call) => call.method === "createJaklaenSearchRequest").request.requestType, "SEARCH_NOW");
+    assert.equal(calls.find((call) => call.method === "claimNextJaklaenJob").workerId, "jaklaen-hermes");
+    assert.equal(calls.find((call) => call.method === "completeJaklaenJob").completion.candidatesReturned, 1);
   });
 });
 
@@ -359,7 +442,9 @@ test("QNAP HTTPS ingress exposes only the bounded Data API allowlist", () => {
   assert.equal(allowedQnapIngressPath("/v1/admin/sourcing/rules/df73ef9f-b5e0-4f12-91a4-30a2f70c95d8"), true);
   assert.equal(allowedQnapIngressPath("/v1/admin/jaklaen/candidates"), true);
   assert.equal(allowedQnapIngressPath("/v1/admin/jaklaen/candidates/nk-auto-test/review"), true);
+  assert.equal(allowedQnapIngressPath("/v1/admin/jaklaen/search-requests"), true);
   assert.equal(allowedQnapIngressPath("/v1/worker/sourcing/commands/claim"), false);
+  assert.equal(allowedQnapIngressPath("/v1/worker/jaklaen/jobs/claim"), false);
   assert.equal(allowedQnapIngressPath("/v1/worker/jaklaen/candidates"), false);
   assert.equal(allowedQnapIngressPath("/v1/admin/media/internal-secret"), false);
   assert.equal(allowedQnapIngressPath("/v1/admin/sourcing/../media"), false);
@@ -368,10 +453,11 @@ test("QNAP HTTPS ingress exposes only the bounded Data API allowlist", () => {
 });
 
 test("QNAP sourcing schema is append-only and deployment migrates existing volumes", async () => {
-  const [schema, candidateSchema, jaklaenReviewSchema, compose, deployment] = await Promise.all([
+  const [schema, candidateSchema, jaklaenReviewSchema, jaklaenQueueSchema, compose, deployment] = await Promise.all([
     fs.readFile(new URL("../deploy/qnap/postgres/init/020_sourcing_automation.sql", import.meta.url), "utf8"),
     fs.readFile(new URL("../deploy/qnap/postgres/init/030_candidate_ingestion.sql", import.meta.url), "utf8"),
     fs.readFile(new URL("../deploy/qnap/postgres/init/040_jaklaen_candidate_review.sql", import.meta.url), "utf8"),
+    fs.readFile(new URL("../deploy/qnap/postgres/init/050_jaklaen_search_queue.sql", import.meta.url), "utf8"),
     fs.readFile(new URL("../deploy/qnap/docker-compose.full.yml", import.meta.url), "utf8"),
     fs.readFile(new URL("../deploy/qnap/deploy-full.sh", import.meta.url), "utf8"),
   ]);
@@ -385,6 +471,12 @@ test("QNAP sourcing schema is append-only and deployment migrates existing volum
   assert.match(candidateSchema, /REVOKE DELETE, UPDATE/);
   assert.match(jaklaenReviewSchema, /jaklaen_candidate_review_events/);
   assert.match(jaklaenReviewSchema, /REVOKE DELETE, UPDATE/);
+  assert.match(jaklaenQueueSchema, /jaklaen_search_requests/);
+  assert.match(jaklaenQueueSchema, /jaklaen_search_jobs/);
+  assert.match(jaklaenQueueSchema, /jaklaen_search_audit_events/);
+  assert.match(jaklaenQueueSchema, /CUSTOMER/);
+  assert.match(jaklaenQueueSchema, /ON DELETE RESTRICT/);
+  assert.match(jaklaenQueueSchema, /REVOKE DELETE/);
   assert.match(compose, /NK_HERMES_WORKER_TOKEN:\s+"\$\{NK_HERMES_WORKER_TOKEN:-\}"/);
   assert.match(compose, /internal-only:\/data\/media\/internal-only/);
   assert.match(compose, /customer-visible:\/data\/media\/customer-visible:ro/);
@@ -392,6 +484,7 @@ test("QNAP sourcing schema is append-only and deployment migrates existing volum
   assert.match(deployment, /020_sourcing_automation\.sql/);
   assert.match(deployment, /030_candidate_ingestion\.sql/);
   assert.match(deployment, /040_jaklaen_candidate_review\.sql/);
+  assert.match(deployment, /050_jaklaen_search_queue\.sql/);
   assert.match(deployment, /psql -v ON_ERROR_STOP=1/);
   assert.doesNotMatch(deployment, /PASSWORD=/);
 });

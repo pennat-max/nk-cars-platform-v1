@@ -506,3 +506,18 @@ Decision:
 Boundaries:
 - No production deployment is authorized by this preview approval.
 - No automatic publication, seller contact, payment, purchase, destructive migration, credential storage, or Facebook security bypass is authorized.
+
+## 2026-09-01 - Jaklaen app-driven Search Queue V1 preview approved
+
+Status: OWNER APPROVED FOR PREVIEW IMPLEMENTATION ONLY
+
+Decision:
+- Extend Jaklaen Candidate Intake V1 so Owner, Staff, or eligible Customer users can create `SEARCH_NOW` requests from the app.
+- Extend the same workflow so Owner/Staff can create `STANDING_SEARCH` schedules with frequency, weekdays, active hours, source scope, priority, and vehicle criteria.
+- App-created Search Requests must create or schedule Jaklaen queue jobs. Jaklaen receives jobs through a worker-token endpoint and returns candidates through the existing candidate intake boundary.
+- Customer accounts may create `SEARCH_NOW` only for their own Case reference and may not edit company Standing Searches.
+- Queue, review, and correction activity must be audited. Duplicate detection, rate limits, and candidate `NEEDS_REVIEW` defaults remain mandatory.
+
+Boundaries:
+- This approval is for Preview on `codex/app` only.
+- No production deployment, automatic publish, seller contact, negotiation, reservation, purchase, payment, credential storage, CAPTCHA/MFA bypass, or account-risk workaround is authorized.

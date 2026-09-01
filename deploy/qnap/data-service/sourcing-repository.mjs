@@ -23,6 +23,37 @@ function mapCommand(row) {
   };
 }
 
+function mapJaklaenSearchRequest(row) {
+  return {
+    id: row.id,
+    requestType: row.request_type,
+    status: row.status,
+    criteria: row.criteria_json,
+    schedule: row.schedule_json,
+    priority: row.priority,
+    requestedBy: row.requested_by_json,
+    customerCaseReference: row.customer_case_reference,
+    active: row.active,
+    createdAt: new Date(row.created_at).toISOString(),
+    updatedAt: new Date(row.updated_at).toISOString(),
+  };
+}
+
+function mapJaklaenJob(row) {
+  return {
+    id: row.id,
+    requestId: row.request_id,
+    jobType: row.job_type,
+    status: row.status,
+    workerId: row.worker_id,
+    request: row.request_snapshot_json,
+    safeDetail: row.safe_detail_json || {},
+    createdAt: new Date(row.created_at).toISOString(),
+    claimedAt: row.claimed_at ? new Date(row.claimed_at).toISOString() : null,
+    completedAt: row.completed_at ? new Date(row.completed_at).toISOString() : null,
+  };
+}
+
 function bangkokDate(value) {
   const parts = new Intl.DateTimeFormat("en", {
     timeZone: "Asia/Bangkok",
@@ -140,6 +171,119 @@ export class PostgresSourcingRepository {
         );
       }
       return this.snapshot(client);
+    });
+  }
+
+  async listJaklaenSearchRequests() {
+    const [requests, jobs] = await Promise.all([
+      this.pool.query(
+        `SELECT id, request_type, status, criteria_json, schedule_json, priority, requested_by_json, customer_case_reference, active, created_at, updated_at
+         FROM jaklaen_search_requests
+         ORDER BY created_at DESC, id
+         LIMIT 100`,
+      ),
+      this.pool.query(
+        `SELECT id, request_id, job_type, status, worker_id, request_snapshot_json, safe_detail_json, created_at, claimed_at, completed_at
+         FROM jaklaen_search_jobs
+         ORDER BY created_at DESC, id
+         LIMIT 100`,
+      ),
+    ]);
+    return {
+      observedAt: this.now().toISOString(),
+      requests: requests.rows.map(mapJaklaenSearchRequest),
+      jobs: jobs.rows.map(mapJaklaenJob),
+    };
+  }
+
+  async createJaklaenSearchRequest(request, actor) {
+    return this.transaction(async (client) => {
+      const duplicate = await client.query("SELECT id FROM jaklaen_search_requests WHERE idempotency_key = $1", [request.idempotencyKey]);
+      if (duplicate.rows[0]) return { accepted: true, idempotent: true, requestId: duplicate.rows[0].id, published: false };
+      const todayCount = await client.query(
+        `SELECT count(*)::int AS count
+         FROM jaklaen_search_requests
+         WHERE requested_by_json->>'id' = $1
+           AND request_type = 'SEARCH_NOW'
+           AND (timezone('Asia/Bangkok', created_at))::date = (timezone('Asia/Bangkok', $2::timestamptz))::date`,
+        [request.requestedBy.id, this.now()],
+      );
+      const dailyLimit = request.requestedBy.role === "CUSTOMER" ? 5 : 50;
+      if ((todayCount.rows[0]?.count || 0) >= dailyLimit) throw new Error("daily_limit_reached");
+      const id = crypto.randomUUID();
+      const now = this.now();
+      const status = request.requestType === "SEARCH_NOW" ? "QUEUED" : "ACTIVE";
+      await client.query(
+        `INSERT INTO jaklaen_search_requests
+         (id, idempotency_key, request_type, status, criteria_json, schedule_json, priority, requested_by_json, customer_case_reference, active, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5::jsonb, $6::jsonb, $7, $8::jsonb, $9, $10, $11, $11)`,
+        [id, request.idempotencyKey, request.requestType, status, JSON.stringify(request.criteria), request.schedule ? JSON.stringify(request.schedule) : null, request.priority, JSON.stringify(request.requestedBy), request.customerCaseReference, request.active, now],
+      );
+      await client.query(
+        `INSERT INTO jaklaen_search_audit_events
+         (id, request_id, job_id, actor_id, actor_email, action, safe_detail_json, created_at)
+         VALUES ($1, $2, NULL, $3, $4, 'SEARCH_REQUEST_CREATED', $5::jsonb, $6)`,
+        [crypto.randomUUID(), id, actor.id, actor.email, JSON.stringify({ requestType: request.requestType, priority: request.priority, requestedByRole: request.requestedBy.role }), now],
+      );
+      if (request.requestType === "SEARCH_NOW") {
+        const jobId = crypto.randomUUID();
+        await client.query(
+          `INSERT INTO jaklaen_search_jobs
+           (id, request_id, job_type, status, request_snapshot_json, safe_detail_json, created_at)
+           VALUES ($1, $2, 'SEARCH_NOW', 'QUEUED', $3::jsonb, $4::jsonb, $5)`,
+          [jobId, id, JSON.stringify(request), JSON.stringify({ source: "app_search_now", publish: false }), now],
+        );
+        await client.query(
+          `INSERT INTO jaklaen_search_audit_events
+           (id, request_id, job_id, actor_id, actor_email, action, safe_detail_json, created_at)
+           VALUES ($1, $2, $3, $4, $5, 'JOB_QUEUED', $6::jsonb, $7)`,
+          [crypto.randomUUID(), id, jobId, actor.id, actor.email, JSON.stringify({ jobType: "SEARCH_NOW" }), now],
+        );
+        return { accepted: true, requestId: id, status, queuedJobId: jobId, published: false };
+      }
+      return { accepted: true, requestId: id, status, queuedJobId: null, published: false };
+    });
+  }
+
+  async claimNextJaklaenJob(workerId) {
+    return this.transaction(async (client) => {
+      const selected = await client.query(
+        `SELECT id, request_id, job_type, status, worker_id, request_snapshot_json, safe_detail_json, created_at, claimed_at, completed_at
+         FROM jaklaen_search_jobs
+         WHERE status = 'QUEUED'
+         ORDER BY CASE WHEN job_type = 'SEARCH_NOW' THEN 0 ELSE 1 END, created_at, id
+         FOR UPDATE SKIP LOCKED
+         LIMIT 1`,
+      );
+      if (!selected.rows[0]) return null;
+      const now = this.now();
+      await client.query("UPDATE jaklaen_search_jobs SET status = 'CLAIMED', worker_id = $2, claimed_at = $3 WHERE id = $1", [selected.rows[0].id, workerId, now]);
+      await client.query(
+        `INSERT INTO jaklaen_search_audit_events
+         (id, request_id, job_id, actor_id, actor_email, action, safe_detail_json, created_at)
+         VALUES ($1, $2, $3, $4, $4, 'JOB_CLAIMED', '{}'::jsonb, $5)`,
+        [crypto.randomUUID(), selected.rows[0].request_id, selected.rows[0].id, workerId, now],
+      );
+      return mapJaklaenJob({ ...selected.rows[0], status: "CLAIMED", worker_id: workerId, claimed_at: now });
+    });
+  }
+
+  async completeJaklaenJob(jobId, workerId, completion) {
+    return this.transaction(async (client) => {
+      const selected = await client.query(
+        "SELECT id, request_id FROM jaklaen_search_jobs WHERE id = $1 AND worker_id = $2 AND status = 'CLAIMED' FOR UPDATE",
+        [jobId, workerId],
+      );
+      if (!selected.rows[0]) throw new Error("command_not_found");
+      const now = this.now();
+      await client.query("UPDATE jaklaen_search_jobs SET status = $2, safe_detail_json = $3::jsonb, completed_at = $4 WHERE id = $1", [jobId, completion.status, JSON.stringify(completion), now]);
+      await client.query(
+        `INSERT INTO jaklaen_search_audit_events
+         (id, request_id, job_id, actor_id, actor_email, action, safe_detail_json, created_at)
+         VALUES ($1, $2, $3, $4, $4, $5, $6::jsonb, $7)`,
+        [crypto.randomUUID(), selected.rows[0].request_id, jobId, workerId, completion.status === "BLOCKED" ? "JOB_BLOCKED" : "JOB_COMPLETED", JSON.stringify(completion), now],
+      );
+      return { accepted: true, published: false };
     });
   }
 
