@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import { candidateMatchesRule } from "./candidate-domain.mjs";
+import { deriveJaklaenOverallStatus } from "./jaklaen-search-domain.mjs";
 
 function mapRule(row) {
   return {
@@ -193,6 +194,83 @@ export class PostgresSourcingRepository {
       observedAt: this.now().toISOString(),
       requests: requests.rows.map(mapJaklaenSearchRequest),
       jobs: jobs.rows.map(mapJaklaenJob),
+    };
+  }
+
+  async jaklaenReadinessSnapshot() {
+    const [runtime, lastJob, lastCandidate] = await Promise.all([
+      this.pool.query("SELECT hermes_state, browser_profile_state, last_heartbeat_at, last_run_at, message FROM sourcing_runtime_state WHERE singleton = true").catch(() => ({ rows: [] })),
+      this.pool.query(
+        `SELECT id, request_id, job_type, status, worker_id, safe_detail_json, created_at, claimed_at, completed_at
+         FROM jaklaen_search_jobs
+         ORDER BY created_at DESC, id
+         LIMIT 1`,
+      ).catch(() => ({ rows: [] })),
+      this.pool.query(
+        `SELECT vehicle_id, internal_record, observed_at
+         FROM inventory_vehicles
+         WHERE publication_status = 'NEEDS_REVIEW'
+           AND source_adapter IN ('facebook_marketplace_worker', 'jaklaen_vehicle_sourcing_agent')
+         ORDER BY observed_at DESC NULLS LAST, vehicle_id
+         LIMIT 1`,
+      ).catch(() => ({ rows: [] })),
+    ]);
+    const state = runtime.rows[0] || {};
+    const job = lastJob.rows[0] || null;
+    const candidate = lastCandidate.rows[0] || null;
+    const profileState = state.browser_profile_state || "not_configured";
+    const hermesState = state.hermes_state || "not_configured";
+    const hasSuccessfulEndToEnd = Boolean(candidate?.internal_record?.sourceUrl && candidate?.internal_record?.screenshotCount > 0 && candidate?.internal_record?.candidateStatus === "NEEDS_REVIEW");
+    const checks = [
+      { key: "hermes_connection", label: "Hermes Connection", status: hermesState === "running" || hermesState === "ready" ? "PASS" : "FAIL", detail: state.message || "No Hermes/Jaklaen runtime state is configured.", observedAt: state.last_heartbeat_at ? new Date(state.last_heartbeat_at).toISOString() : null },
+      { key: "last_heartbeat", label: "Last Heartbeat", status: state.last_heartbeat_at ? "PASS" : "NOT_TESTED", detail: state.last_heartbeat_at ? "Worker heartbeat received." : "No worker heartbeat recorded.", observedAt: state.last_heartbeat_at ? new Date(state.last_heartbeat_at).toISOString() : null },
+      { key: "last_job_received", label: "Last Job Received", status: job ? "PASS" : "NOT_TESTED", detail: job ? `Latest job ${job.status}.` : "No Jaklaen queue job recorded.", observedAt: job?.created_at ? new Date(job.created_at).toISOString() : null },
+      { key: "browser_control", label: "Browser Control", status: profileState === "ready" ? "PASS" : profileState === "login_required" ? "FAIL" : "NOT_TESTED", detail: `Browser profile state: ${profileState}.`, observedAt: state.last_heartbeat_at ? new Date(state.last_heartbeat_at).toISOString() : null },
+      { key: "facebook_login", label: "Facebook Login", status: profileState === "ready" ? "PASS" : profileState === "login_required" ? "FAIL" : "NOT_TESTED", detail: profileState === "ready" ? "Profile reports ready." : "Facebook login has not been verified.", observedAt: state.last_heartbeat_at ? new Date(state.last_heartbeat_at).toISOString() : null },
+      { key: "session_persistence", label: "Session Persistence", status: "NOT_TESTED", detail: "Restart/session persistence proof is required before READY.", observedAt: null },
+      { key: "marketplace_access", label: "Marketplace Access", status: hasSuccessfulEndToEnd ? "PASS" : "NOT_TESTED", detail: "Requires a real Marketplace listing search proof.", observedAt: candidate?.observed_at ? new Date(candidate.observed_at).toISOString() : null },
+      { key: "search_box_access", label: "Search Box Access", status: hasSuccessfulEndToEnd ? "PASS" : "NOT_TESTED", detail: "Requires real Marketplace search-box interaction proof.", observedAt: candidate?.observed_at ? new Date(candidate.observed_at).toISOString() : null },
+      { key: "image_capture", label: "Image Capture", status: candidate?.internal_record?.screenshotCount > 0 ? "PASS" : "NOT_TESTED", detail: candidate ? "Candidate screenshot/image evidence exists internally." : "No real candidate image/screenshot proof.", observedAt: candidate?.observed_at ? new Date(candidate.observed_at).toISOString() : null },
+      { key: "nk_api_connection", label: "NK API Connection", status: "PASS", detail: "Data API responded and readiness snapshot was generated.", observedAt: this.now().toISOString() },
+      { key: "last_successful_search", label: "Last Successful Search", status: hasSuccessfulEndToEnd ? "PASS" : "FAIL", detail: hasSuccessfulEndToEnd ? "Latest NEEDS_REVIEW candidate has source URL and screenshot evidence." : "No successful real E2E candidate proof yet.", observedAt: candidate?.observed_at ? new Date(candidate.observed_at).toISOString() : null },
+    ];
+    return {
+      observedAt: this.now().toISOString(),
+      overallStatus: deriveJaklaenOverallStatus(checks, hasSuccessfulEndToEnd),
+      currentBlocker: hasSuccessfulEndToEnd ? null : "Real end-to-end Toyota Hilux Revo proof has not passed yet.",
+      lastHeartbeat: state.last_heartbeat_at ? new Date(state.last_heartbeat_at).toISOString() : null,
+      lastJobReceived: job?.created_at ? new Date(job.created_at).toISOString() : null,
+      lastSuccessfulSearch: hasSuccessfulEndToEnd && candidate?.observed_at ? new Date(candidate.observed_at).toISOString() : null,
+      checks,
+      proof: {
+        requestId: job?.request_id || "PENDING_REAL_TEST",
+        candidateId: candidate?.internal_record?.candidateId || "PENDING_REAL_TEST",
+        sourceUrl: candidate?.internal_record?.sourceUrl || "PENDING_REAL_SOURCE_URL",
+        screenshot: candidate?.internal_record?.screenshotCount > 0 ? `${candidate.internal_record.screenshotCount} internal screenshot(s)` : "PENDING_REAL_SCREENSHOT",
+        foundAt: candidate?.observed_at ? new Date(candidate.observed_at).toISOString() : "PENDING",
+        durationSeconds: null,
+        testResult: hasSuccessfulEndToEnd ? "PASS" : "NOT_RUN",
+      },
+    };
+  }
+
+  async runJaklaenReadinessAction(action, actor) {
+    const now = this.now();
+    await this.pool.query(
+      `INSERT INTO jaklaen_search_audit_events
+       (id, request_id, job_id, actor_id, actor_email, action, safe_detail_json, created_at)
+       VALUES ($1, NULL, NULL, $2, $3, $4, $5::jsonb, $6)`,
+      [crypto.randomUUID(), actor.id, actor.email, "READINESS_ACTION", JSON.stringify({ action: action.action, note: action.note, published: false, sellerContact: false }), now],
+    ).catch(() => null);
+    return {
+      accepted: true,
+      action: action.action,
+      published: false,
+      sellerContact: false,
+      message: action.action === "run_test_search"
+        ? "Readiness test search command recorded. Jaklaen remains not READY until a real candidate reaches NEEDS_REVIEW with real source URL and screenshot."
+        : "Readiness action recorded.",
+      readiness: await this.jaklaenReadinessSnapshot(),
     };
   }
 

@@ -537,3 +537,18 @@ Decision:
 Boundaries:
 - This is not Production approval.
 - Jaklaen remains prohibited from automatic publish, seller contact, negotiation, reservation, purchase, payment, availability confirmation, credential storage, or Facebook security/rate-limit bypass.
+
+## 2026-09-01 - Jaklaen Health and Readiness gate
+
+Status: OWNER APPROVED FOR PREVIEW IMPLEMENTATION ONLY
+
+Decision:
+- Add Jaklaen Health & Readiness Status to the NK Cars Admin App / Vehicle Sourcing Center.
+- Readiness must show Hermes connection, heartbeat, job receipt, browser control, Facebook login/session, Marketplace and search-box access, image capture, NK API connection, last successful search, current blocker, and overall status.
+- Overall status values are `READY`, `DEGRADED`, `OFFLINE`, and `BLOCKED`.
+- `READY` requires every core check to pass and a real Toyota Hilux Revo end-to-end test to succeed.
+- The real test must show Request ID, Candidate ID, real Source URL, real screenshot, found time, duration, and test result, with Candidate visible in Review as `NEEDS_REVIEW`.
+- Until the real end-to-end proof exists, Jaklaen must not be shown as READY.
+
+Boundaries:
+- No seller contact, automatic publish, availability confirmation, negotiation, reservation, purchase, payment, credential storage, CAPTCHA/MFA/checkpoint bypass, or rate-limit/account-risk workaround is authorized.

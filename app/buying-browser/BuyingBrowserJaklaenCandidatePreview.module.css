@@ -22,6 +22,98 @@
   background: var(--page);
 }
 
+.readinessHero,
+.readinessGrid,
+.proofBox {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.readinessHero {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.readinessGrid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.proofBox {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.readinessHero div,
+.proofBox div,
+.readinessGrid article {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  background: #fff;
+}
+
+.readinessHero span,
+.proofBox span,
+.readinessGrid span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.readinessHero b,
+.proofBox b,
+.readinessGrid b {
+  display: block;
+  margin-top: 5px;
+  color: var(--ink);
+  font-weight: 900;
+  overflow-wrap: anywhere;
+}
+
+.readinessGrid article {
+  display: grid;
+  gap: 5px;
+}
+
+.readinessGrid p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.readinessGrid small {
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.readinessGrid .checkPASS {
+  border-color: rgba(0, 128, 96, .35);
+  background: #f4fbf8;
+}
+
+.readinessGrid .checkPASS span {
+  color: var(--green);
+}
+
+.readinessGrid .checkWARN,
+.readinessGrid .checkNOT_TESTED {
+  border-color: rgba(176, 113, 0, .35);
+  background: #fffaf0;
+}
+
+.readinessGrid .checkWARN span,
+.readinessGrid .checkNOT_TESTED span {
+  color: #9a5f00;
+}
+
+.readinessGrid .checkFAIL {
+  border-color: rgba(191, 42, 42, .35);
+  background: #fff5f5;
+}
+
+.readinessGrid .checkFAIL span {
+  color: #b42318;
+}
+
 .tabs button {
   min-height: 48px;
   border: 1px solid var(--line);
@@ -334,6 +426,9 @@
   .formGrid,
   .queue,
   .scheduleBox,
+  .readinessHero,
+  .readinessGrid,
+  .proofBox,
   .summary dl,
   .audit li {
     grid-template-columns: 1fr;

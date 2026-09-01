@@ -7,7 +7,7 @@ import sharp from "sharp";
 import { createDataService } from "../deploy/qnap/data-service/server.mjs";
 import { candidateMatchesRule, normalizeCandidateSubmission } from "../deploy/qnap/data-service/candidate-domain.mjs";
 import { QnapMediaStore } from "../deploy/qnap/data-service/media-store.mjs";
-import { normalizeJaklaenJobCompletion, normalizeJaklaenSearchRequest } from "../deploy/qnap/data-service/jaklaen-search-domain.mjs";
+import { deriveJaklaenOverallStatus, normalizeJaklaenJobCompletion, normalizeJaklaenReadinessAction, normalizeJaklaenSearchRequest } from "../deploy/qnap/data-service/jaklaen-search-domain.mjs";
 import {
   normalizeCommand,
   normalizeCompletion,
@@ -108,6 +108,8 @@ async function withService(run) {
     createJaklaenSearchRequest: async (request, actor) => { calls.push({ method: "createJaklaenSearchRequest", request, actor }); return { accepted: true, requestId: "srch_test", queuedJobId: request.requestType === "SEARCH_NOW" ? commandId : null, published: false }; },
     claimNextJaklaenJob: async (workerId) => { calls.push({ method: "claimNextJaklaenJob", workerId }); return { id: commandId, requestId: "srch_test", jobType: "SEARCH_NOW", status: "CLAIMED" }; },
     completeJaklaenJob: async (jobId, workerId, completion) => { calls.push({ method: "completeJaklaenJob", jobId, workerId, completion }); return { accepted: true, published: false }; },
+    jaklaenReadinessSnapshot: async () => ({ overallStatus: "BLOCKED", currentBlocker: "Real end-to-end Toyota Hilux Revo proof has not passed yet.", checks: [], proof: { requestId: "PENDING_REAL_TEST", candidateId: "PENDING_REAL_TEST", testResult: "NOT_RUN" } }),
+    runJaklaenReadinessAction: async (action, actor) => { calls.push({ method: "runJaklaenReadinessAction", action, actor }); return { accepted: true, action: action.action, published: false, sellerContact: false, readiness: { overallStatus: "BLOCKED" } }; },
   };
   const pool = { query: async () => ({ rows: [{ ok: 1 }] }) };
   const mediaStore = { retainCandidateImages: async () => ({ media: [], failures: [{ index: 1, code: "image_unavailable" }] }) };
@@ -188,6 +190,9 @@ test("Jaklaen Search Request domain separates SEARCH_NOW, STANDING_SEARCH, and C
   assert.equal(normalized.requestedBy.role, "OWNER");
   assert.throws(() => normalizeJaklaenSearchRequest({ ...payload, requestType: "STANDING_SEARCH" }, { id: "customer-1", email: "buyer@example.com", roles: ["CUSTOMER"] }), /customer_standing_search_forbidden/);
   assert.deepEqual(normalizeJaklaenJobCompletion({ status: "BLOCKED", blockedReason: "CAPTCHA", listingsFound: 0, candidatesReturned: 0, message: "CAPTCHA encountered; stopped." }).blockedReason, "CAPTCHA");
+  assert.equal(normalizeJaklaenReadinessAction({ action: "run_test_search", idempotencyKey: "ready-test-001" }).action, "run_test_search");
+  assert.equal(deriveJaklaenOverallStatus([{ key: "nk_api_connection", label: "NK API Connection", status: "PASS", detail: "ok" }], false), "BLOCKED");
+  assert.equal(deriveJaklaenOverallStatus([{ key: "marketplace_access", label: "Marketplace Access", status: "FAIL", detail: "CAPTCHA" }], false), "BLOCKED");
 });
 
 test("admin sourcing API requires the server token and an independent Owner role", async () => {
@@ -323,6 +328,27 @@ test("Jaklaen app queue API creates SEARCH_NOW jobs and lets the worker claim an
   });
 });
 
+test("Jaklaen readiness API stays BLOCKED until real end-to-end proof exists", async () => {
+  await withService(async ({ baseUrl, calls }) => {
+    const snapshot = await fetch(`${baseUrl}/v1/admin/jaklaen/readiness`, { headers: ownerHeaders() });
+    assert.equal(snapshot.status, 200);
+    assert.equal((await snapshot.json()).overallStatus, "BLOCKED");
+    const customer = await fetch(`${baseUrl}/v1/admin/jaklaen/readiness`, { headers: { ...ownerHeaders(), "x-nk-actor-roles": "CUSTOMER" } });
+    assert.equal(customer.status, 403);
+    const action = await fetch(`${baseUrl}/v1/admin/jaklaen/readiness/actions`, {
+      method: "POST",
+      headers: ownerHeaders(),
+      body: JSON.stringify({ action: "run_test_search", idempotencyKey: "ready-test-002", note: "Toyota Hilux Revo readiness proof" }),
+    });
+    assert.equal(action.status, 202);
+    const payload = await action.json();
+    assert.equal(payload.published, false);
+    assert.equal(payload.sellerContact, false);
+    assert.equal(payload.readiness.overallStatus, "BLOCKED");
+    assert.equal(calls.find((call) => call.method === "runJaklaenReadinessAction").action.action, "run_test_search");
+  });
+});
+
 test("Jaklaen worker alias and Owner review endpoint keep candidates internal-only", async () => {
   await withService(async ({ baseUrl, calls }) => {
     const received = await fetch(`${baseUrl}/v1/worker/jaklaen/candidates`, {
@@ -443,6 +469,8 @@ test("QNAP HTTPS ingress exposes only the bounded Data API allowlist", () => {
   assert.equal(allowedQnapIngressPath("/v1/admin/jaklaen/candidates"), true);
   assert.equal(allowedQnapIngressPath("/v1/admin/jaklaen/candidates/nk-auto-test/review"), true);
   assert.equal(allowedQnapIngressPath("/v1/admin/jaklaen/search-requests"), true);
+  assert.equal(allowedQnapIngressPath("/v1/admin/jaklaen/readiness"), true);
+  assert.equal(allowedQnapIngressPath("/v1/admin/jaklaen/readiness/actions"), true);
   assert.equal(allowedQnapIngressPath("/v1/worker/sourcing/commands/claim"), false);
   assert.equal(allowedQnapIngressPath("/v1/worker/jaklaen/jobs/claim"), false);
   assert.equal(allowedQnapIngressPath("/v1/worker/jaklaen/candidates"), false);
@@ -475,6 +503,7 @@ test("QNAP sourcing schema is append-only and deployment migrates existing volum
   assert.match(jaklaenQueueSchema, /jaklaen_search_jobs/);
   assert.match(jaklaenQueueSchema, /jaklaen_search_audit_events/);
   assert.match(jaklaenQueueSchema, /CUSTOMER/);
+  assert.match(jaklaenQueueSchema, /READINESS_ACTION/);
   assert.match(jaklaenQueueSchema, /ON DELETE RESTRICT/);
   assert.match(jaklaenQueueSchema, /REVOKE DELETE/);
   assert.match(compose, /NK_HERMES_WORKER_TOKEN:\s+"\$\{NK_HERMES_WORKER_TOKEN:-\}"/);

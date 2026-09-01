@@ -77,6 +77,74 @@ Vehicle Sourcing Center should contain:
 6. Candidate Review
 7. Pause / Resume / Run Now controls
 8. Search History and Audit Log
+9. Jaklaen Health & Readiness Status
+
+## Jaklaen Health & Readiness Status
+
+Admin App must show a readiness panel before Owner treats Jaklaen as operational.
+
+Required health rows:
+- Hermes Connection.
+- Last Heartbeat.
+- Last Job Received.
+- Browser Control.
+- Facebook Login.
+- Session Persistence.
+- Marketplace Access.
+- Search Box Access.
+- Image Capture.
+- NK API Connection.
+- Last Successful Search.
+- Current Blocker.
+- Overall Status.
+
+Allowed overall statuses:
+- `READY`
+- `DEGRADED`
+- `OFFLINE`
+- `BLOCKED`
+
+READY criteria:
+- All core checks must be `PASS`.
+- A real end-to-end Toyota Hilux Revo test must have completed successfully.
+- The real test must prove: Search Request -> Jaklaen job claim -> real Marketplace search -> real Candidate submission -> Candidate visible in Review -> `NEEDS_REVIEW`.
+- Mock, demo, fixture, or placeholder data must never count toward READY.
+
+Health action buttons:
+- `Test Connection`
+- `Run Readiness Check`
+- `Run Test Search`
+- `Pause Jaklaen`
+- `Resume Jaklaen`
+
+Safety behavior:
+- If Login Required, MFA, CAPTCHA, checkpoint, rate limit, or account risk is detected, status must become `BLOCKED` immediately.
+- Jaklaen must stop. It must not bypass, retry aggressively, rotate identity, contact sellers, publish, reserve, buy, pay, or confirm availability.
+
+Real test result must display:
+- Request ID.
+- Candidate ID.
+- Real Source URL.
+- Real screenshot.
+- Found time.
+- Duration.
+- Test result.
+
+Until this real test passes, the UI must show Jaklaen as not ready even when API connectivity works.
+
+Admin readiness endpoints:
+
+- `GET /v1/admin/jaklaen/readiness`
+- `POST /v1/admin/jaklaen/readiness/actions`
+
+Allowed readiness actions:
+- `test_connection`
+- `run_readiness_check`
+- `run_test_search`
+- `pause_jaklaen`
+- `resume_jaklaen`
+
+Readiness actions must write audit events and return `published: false` and `sellerContact: false`.
 
 ## Data Schema
 

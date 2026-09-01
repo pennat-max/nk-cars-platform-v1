@@ -7,6 +7,8 @@ const EXACT_PATHS = new Set([
   "/v1/admin/sourcing/commands",
   "/v1/admin/jaklaen/candidates",
   "/v1/admin/jaklaen/search-requests",
+  "/v1/admin/jaklaen/readiness",
+  "/v1/admin/jaklaen/readiness/actions",
 ]);
 
 const RULE_PATH = /^\/v1\/admin\/sourcing\/rules\/[0-9a-f-]{36}$/i;

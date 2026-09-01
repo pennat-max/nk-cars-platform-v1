@@ -5,6 +5,7 @@ const PRIORITIES = new Set(["normal", "high", "urgent"]);
 const SOURCES = new Set(["facebook_marketplace", "facebook_group", "authorized_source"]);
 const WEEKDAYS = new Set(["mon", "tue", "wed", "thu", "fri", "sat", "sun"]);
 const BLOCKED_REASONS = new Set(["LOGIN_REQUIRED", "MFA_REQUIRED", "CAPTCHA", "CHECKPOINT", "RATE_LIMIT", "ACCOUNT_RISK"]);
+const READINESS_ACTIONS = new Set(["test_connection", "run_readiness_check", "run_test_search", "pause_jaklaen", "resume_jaklaen"]);
 
 function text(value, label, max, optional = false) {
   const normalized = typeof value === "string" ? value.replace(/\s+/g, " ").trim() : "";
@@ -117,4 +118,25 @@ export function normalizeJaklaenJobCompletion(value) {
     candidatesReturned: integer(value.candidatesReturned ?? 0, "candidates_returned", 0, 100),
     message: text(value.message || "Jaklaen job completed.", "jaklaen_completion_message", 500),
   };
+}
+
+export function normalizeJaklaenReadinessAction(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("invalid_jaklaen_readiness_action");
+  const action = text(value.action, "jaklaen_readiness_action", 40);
+  if (!READINESS_ACTIONS.has(action)) throw new Error("invalid_jaklaen_readiness_action");
+  return {
+    action,
+    idempotencyKey: idempotency(value.idempotencyKey || crypto.randomUUID()),
+    criteria: value.criteria && typeof value.criteria === "object" && !Array.isArray(value.criteria) ? value.criteria : null,
+    note: text(value.note || "", "jaklaen_readiness_note", 500, true),
+  };
+}
+
+export function deriveJaklaenOverallStatus(checks, hasSuccessfulEndToEnd) {
+  if (!Array.isArray(checks) || checks.length === 0) return "OFFLINE";
+  if (checks.some((check) => check.status === "FAIL" && /login|captcha|checkpoint|rate|risk|marketplace/i.test(`${check.key} ${check.label} ${check.detail}`))) return "BLOCKED";
+  if (checks.some((check) => check.status === "FAIL")) return "OFFLINE";
+  if (!hasSuccessfulEndToEnd) return "BLOCKED";
+  if (checks.some((check) => check.status === "WARN" || check.status === "NOT_TESTED")) return "DEGRADED";
+  return "READY";
 }

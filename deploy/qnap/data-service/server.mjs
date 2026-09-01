@@ -3,7 +3,7 @@ import http from "node:http";
 import { pathToFileURL } from "node:url";
 import { createPool } from "./db.mjs";
 import { normalizeCandidateSubmission } from "./candidate-domain.mjs";
-import { normalizeJaklaenJobCompletion, normalizeJaklaenSearchRequest } from "./jaklaen-search-domain.mjs";
+import { normalizeJaklaenJobCompletion, normalizeJaklaenReadinessAction, normalizeJaklaenSearchRequest } from "./jaklaen-search-domain.mjs";
 import { QnapMediaStore } from "./media-store.mjs";
 import {
   normalizeActor,
@@ -75,6 +75,12 @@ function normalizeJaklaenActor(headers) {
     email: clean(headers["x-nk-actor-email"], "actor_email", 320),
     roles,
   };
+}
+
+function normalizeJaklaenAdminActor(headers) {
+  const actor = normalizeJaklaenActor(headers);
+  if (!actor.roles.some((role) => role === "OWNER" || role === "STAFF")) throw new Error("owner_role_required");
+  return actor;
 }
 
 function binary(response, bytes, record, cacheControl) {
@@ -280,6 +286,17 @@ export function createDataService({ pool, apiToken, workerToken, sourcingReposit
         if (request.method === "POST" && url.pathname === "/v1/admin/jaklaen/search-requests") {
           const payload = await readJson(request);
           return json(response, 201, await sourcing.createJaklaenSearchRequest(normalizeJaklaenSearchRequest(payload, actor), actor));
+        }
+        return json(response, 404, { error: "not_found" });
+      }
+
+      if (url.pathname.startsWith("/v1/admin/jaklaen/readiness")) {
+        const actor = normalizeJaklaenAdminActor(request.headers);
+        if (request.method === "GET" && url.pathname === "/v1/admin/jaklaen/readiness") {
+          return json(response, 200, await sourcing.jaklaenReadinessSnapshot());
+        }
+        if (request.method === "POST" && url.pathname === "/v1/admin/jaklaen/readiness/actions") {
+          return json(response, 202, await sourcing.runJaklaenReadinessAction(normalizeJaklaenReadinessAction(await readJson(request)), actor));
         }
         return json(response, 404, { error: "not_found" });
       }

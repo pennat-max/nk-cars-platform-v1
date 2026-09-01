@@ -2,6 +2,8 @@ export type JaklaenCandidateStatus = "NEEDS_REVIEW" | "APPROVED" | "REJECTED" | 
 export type JaklaenSearchMode = "SEARCH_NOW" | "STANDING_SEARCH";
 export type JaklaenQueueStatus = "QUEUED" | "CLAIMED" | "RUNNING" | "CANDIDATE_RETURNED" | "BLOCKED";
 export type JaklaenRequestPriority = "normal" | "high" | "urgent";
+export type JaklaenReadinessStatus = "PASS" | "WARN" | "FAIL" | "NOT_TESTED";
+export type JaklaenOverallStatus = "READY" | "DEGRADED" | "OFFLINE" | "BLOCKED";
 
 export type JaklaenSearchCriteria = {
   make: string;
@@ -52,6 +54,35 @@ export type JaklaenQueueJob = {
   createdAt: string;
   claimedAt: string | null;
   returnedCandidateId: string | null;
+};
+
+export type JaklaenReadinessCheck = {
+  key: string;
+  label: string;
+  status: JaklaenReadinessStatus;
+  detail: string;
+  observedAt: string | null;
+};
+
+export type JaklaenEndToEndProof = {
+  requestId: string;
+  candidateId: string;
+  sourceUrl: string;
+  screenshot: string;
+  foundAt: string;
+  durationSeconds: number | null;
+  testResult: "NOT_RUN" | "PASS" | "BLOCKED" | "FAILED";
+  note: string;
+};
+
+export type JaklaenReadinessSnapshot = {
+  overallStatus: JaklaenOverallStatus;
+  currentBlocker: string;
+  lastHeartbeat: string | null;
+  lastJobReceived: string | null;
+  lastSuccessfulSearch: string | null;
+  checks: JaklaenReadinessCheck[];
+  proof: JaklaenEndToEndProof;
 };
 
 export type JaklaenReviewField = {
@@ -169,6 +200,37 @@ export const jaklaenPreviewQueueJobs: JaklaenQueueJob[] = [
     returnedCandidateId: null,
   },
 ];
+
+export const jaklaenPreviewReadiness: JaklaenReadinessSnapshot = {
+  overallStatus: "BLOCKED",
+  currentBlocker: "Real end-to-end Toyota Hilux Revo proof has not passed yet.",
+  lastHeartbeat: null,
+  lastJobReceived: "TEST/MOCK job only - not counted as readiness proof",
+  lastSuccessfulSearch: null,
+  checks: [
+    { key: "hermes_connection", label: "Hermes Connection", status: "FAIL", detail: "No live Jaklaen/Hermes worker heartbeat is recorded in Preview.", observedAt: null },
+    { key: "last_heartbeat", label: "Last Heartbeat", status: "NOT_TESTED", detail: "Waiting for worker heartbeat from the real runtime.", observedAt: null },
+    { key: "last_job_received", label: "Last Job Received", status: "WARN", detail: "Only TEST/MOCK queue evidence exists. Real job not proven.", observedAt: "2026-09-01T09:00:12.000+07:00" },
+    { key: "browser_control", label: "Browser Control", status: "NOT_TESTED", detail: "Real browser control has not been checked in this Preview run.", observedAt: null },
+    { key: "facebook_login", label: "Facebook Login", status: "NOT_TESTED", detail: "No real logged-in Facebook session has been verified.", observedAt: null },
+    { key: "session_persistence", label: "Session Persistence", status: "NOT_TESTED", detail: "No restart/session persistence proof exists for Jaklaen.", observedAt: null },
+    { key: "marketplace_access", label: "Marketplace Access", status: "NOT_TESTED", detail: "Real Facebook Marketplace access is not confirmed.", observedAt: null },
+    { key: "search_box_access", label: "Search Box Access", status: "NOT_TESTED", detail: "Search field automation has not passed a real run.", observedAt: null },
+    { key: "image_capture", label: "Image Capture", status: "NOT_TESTED", detail: "Real listing image and screenshot capture proof is missing.", observedAt: null },
+    { key: "nk_api_connection", label: "NK API Connection", status: "PASS", detail: "Preview API contract and worker-token tests pass locally, but not a live E2E proof.", observedAt: "2026-09-01T09:10:00.000+07:00" },
+    { key: "last_successful_search", label: "Last Successful Search", status: "FAIL", detail: "No real Toyota Hilux Revo search has completed with Candidate in NEEDS_REVIEW.", observedAt: null },
+  ],
+  proof: {
+    requestId: "PENDING_REAL_TEST",
+    candidateId: "PENDING_REAL_TEST",
+    sourceUrl: "PENDING_REAL_SOURCE_URL",
+    screenshot: "PENDING_REAL_SCREENSHOT",
+    foundAt: "PENDING",
+    durationSeconds: null,
+    testResult: "NOT_RUN",
+    note: "Jaklaen is not READY until a real Toyota Hilux Revo listing is searched, captured, submitted, and visible in Candidate Review as NEEDS_REVIEW.",
+  },
+};
 
 export const jaklaenPreviewCandidate: JaklaenCandidate = {
   candidateId: "cand_test_jaklaen_preview_001",

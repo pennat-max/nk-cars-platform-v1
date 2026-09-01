@@ -11,10 +11,13 @@ import {
   ExternalLink,
   EyeOff,
   FilePenLine,
+  Gauge,
   Info,
   LockKeyhole,
   MessageCircleQuestion,
+  Pause,
   Play,
+  RefreshCw,
   Search,
   ShieldCheck,
   XCircle,
@@ -25,6 +28,7 @@ import {
   jaklaenPreviewCandidate,
   jaklaenPreviewFields,
   jaklaenPreviewQueueJobs,
+  jaklaenPreviewReadiness,
   jaklaenPreviewSearchRequest,
   jaklaenPreviewStandingSearch,
   type JaklaenAuditEvent,
@@ -34,18 +38,12 @@ import {
 } from "./jaklaen-candidates";
 import styles from "./BuyingBrowserJaklaenCandidatePreview.module.css";
 
-type Tab = "search" | "standing" | "review";
+type Tab = "health" | "search" | "standing" | "review";
 
 function statusLabel(status: JaklaenCandidateStatus) {
   if (status === "NEEDS_REVIEW") return "Needs review";
   if (status === "NEED_MORE_INFO") return "Need more info";
   return status.charAt(0) + status.slice(1).toLowerCase();
-}
-
-function statusClass(status: JaklaenCandidateStatus) {
-  if (status === "APPROVED") return "market";
-  if (status === "REJECTED") return "danger";
-  return "pending";
 }
 
 function money(value: number) {
@@ -73,12 +71,13 @@ function CriteriaSummary({ request }: { request: JaklaenSearchRequest }) {
 }
 
 export default function BuyingBrowserJaklaenCandidatePreview() {
-  const [tab, setTab] = useState<Tab>("search");
+  const [tab, setTab] = useState<Tab>("health");
   const [status, setStatus] = useState<JaklaenCandidateStatus>(jaklaenPreviewCandidate.status);
   const [fields, setFields] = useState<JaklaenReviewField[]>(jaklaenPreviewFields);
   const [audit, setAudit] = useState<JaklaenAuditEvent[]>(jaklaenPreviewAudit);
   const [note, setNote] = useState("");
   const [queueStatus, setQueueStatus] = useState("CANDIDATE_RETURNED");
+  const [readinessAction, setReadinessAction] = useState("No live readiness command has been sent from this Preview.");
   const candidate = jaklaenPreviewCandidate;
   const editedCount = useMemo(() => fields.filter((field) => field.value !== jaklaenPreviewFields.find((item) => item.key === field.key)?.value).length, [fields]);
 
@@ -110,6 +109,10 @@ export default function BuyingBrowserJaklaenCandidatePreview() {
     ]);
   }
 
+  function readinessButton(label: string) {
+    setReadinessAction(`${label}: BLOCKED in Preview. A real Jaklaen worker, persistent Facebook session, and one real Toyota Hilux Revo E2E proof are required before READY.`);
+  }
+
   return (
     <div className={`buying-browser bb-jaklaen-preview ${styles.root}`} data-jaklaen-candidate-review-preview>
       <header className="bb-owner-header">
@@ -120,10 +123,10 @@ export default function BuyingBrowserJaklaenCandidatePreview() {
         <section className="bb-page-heading">
           <div>
             <p className="bb-kicker">TEST/MOCK PREVIEW</p>
-            <h1>Jaklaen Workbench</h1>
-            <p>Owner and Staff can create search jobs from the app, schedule recurring searches, and review returned candidates before any publish step.</p>
+            <h1>Vehicle Sourcing Center</h1>
+            <p>Owner controls Jaklaen readiness, search jobs, scheduled searches, and candidate review from the Admin App.</p>
           </div>
-          <span className={`bb-status-chip ${statusClass(status)}`}>{statusLabel(status)}</span>
+          <span className="bb-status-chip danger">{jaklaenPreviewReadiness.overallStatus}</span>
         </section>
 
         <section className="bb-owner-warning">
@@ -135,10 +138,54 @@ export default function BuyingBrowserJaklaenCandidatePreview() {
         </section>
 
         <nav className={styles.tabs} aria-label="Jaklaen workbench sections">
+          <button className={tab === "health" ? styles.activeTab : ""} onClick={() => setTab("health")}><Gauge size={16} />Health</button>
           <button className={tab === "search" ? styles.activeTab : ""} onClick={() => setTab("search")}><Search size={16} />Search Now</button>
           <button className={tab === "standing" ? styles.activeTab : ""} onClick={() => setTab("standing")}><CalendarClock size={16} />Standing Searches</button>
           <button className={tab === "review" ? styles.activeTab : ""} onClick={() => setTab("review")}><ClipboardCheck size={16} />Candidate Review</button>
         </nav>
+
+        {tab === "health" && (
+          <section className={styles.panel} data-jaklaen-readiness-status>
+            <div className="bb-section-heading">
+              <div><p className="bb-kicker">Jaklaen Health & Readiness</p><h2>Overall Status: {jaklaenPreviewReadiness.overallStatus}</h2></div>
+              <span className="bb-status-chip danger">Not ready</span>
+            </div>
+            <div className={styles.readinessHero}>
+              <div><span>Last Heartbeat</span><b>{jaklaenPreviewReadiness.lastHeartbeat || "Not received"}</b></div>
+              <div><span>Last Job Received</span><b>{jaklaenPreviewReadiness.lastJobReceived}</b></div>
+              <div><span>Last Successful Search</span><b>{jaklaenPreviewReadiness.lastSuccessfulSearch || "No real E2E pass"}</b></div>
+              <div><span>Current Blocker</span><b>{jaklaenPreviewReadiness.currentBlocker}</b></div>
+            </div>
+            <div className={styles.readinessGrid}>
+              {jaklaenPreviewReadiness.checks.map((check) => (
+                <article key={check.key} className={styles[`check${check.status}`]}>
+                  <span>{check.status}</span>
+                  <b>{check.label}</b>
+                  <p>{check.detail}</p>
+                  <small>{check.observedAt || "No live observation"}</small>
+                </article>
+              ))}
+            </div>
+            <div className={styles.actions}>
+              <button className="bb-button secondary" onClick={() => readinessButton("Test Connection")}><RefreshCw size={16} />Test Connection</button>
+              <button className="bb-button secondary" onClick={() => readinessButton("Run Readiness Check")}><Gauge size={16} />Run Readiness Check</button>
+              <button className="bb-button primary" onClick={() => readinessButton("Run Test Search")}><Play size={16} />Run Test Search</button>
+              <button className="bb-button danger" onClick={() => readinessButton("Pause Jaklaen")}><Pause size={16} />Pause Jaklaen</button>
+              <button className="bb-button secondary" onClick={() => readinessButton("Resume Jaklaen")}><RefreshCw size={16} />Resume Jaklaen</button>
+            </div>
+            <p className="bb-security-note"><ShieldCheck size={16} />{readinessAction}</p>
+            <div className={styles.proofBox}>
+              <div><span>Request ID</span><b>{jaklaenPreviewReadiness.proof.requestId}</b></div>
+              <div><span>Candidate ID</span><b>{jaklaenPreviewReadiness.proof.candidateId}</b></div>
+              <div><span>Source URL จริง</span><b>{jaklaenPreviewReadiness.proof.sourceUrl}</b></div>
+              <div><span>Screenshot จริง</span><b>{jaklaenPreviewReadiness.proof.screenshot}</b></div>
+              <div><span>เวลาที่พบ</span><b>{jaklaenPreviewReadiness.proof.foundAt}</b></div>
+              <div><span>ระยะเวลาที่ใช้</span><b>{jaklaenPreviewReadiness.proof.durationSeconds === null ? "PENDING" : `${jaklaenPreviewReadiness.proof.durationSeconds}s`}</b></div>
+              <div><span>Test result</span><b>{jaklaenPreviewReadiness.proof.testResult}</b></div>
+            </div>
+            <p className="bb-honesty-note"><Info size={15} />{jaklaenPreviewReadiness.proof.note}</p>
+          </section>
+        )}
 
         {tab === "search" && (
           <section className={styles.panel} data-jaklaen-search-now>
