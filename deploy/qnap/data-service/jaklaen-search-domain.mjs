@@ -120,6 +120,20 @@ export function normalizeJaklaenJobCompletion(value) {
   };
 }
 
+export function normalizeJaklaenJobHeartbeat(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("invalid_jaklaen_job_heartbeat");
+  const browserProfileState = text(value.browserProfileState || "not_configured", "browser_profile_state", 30);
+  if (!new Set(["ready", "login_required", "paused", "error", "not_configured"]).has(browserProfileState)) throw new Error("invalid_browser_profile_state");
+  const currentStage = text(value.currentStage || "claimed", "jaklaen_current_stage", 80, true) || "claimed";
+  return {
+    browserProfileState,
+    currentStage,
+    listingsInspected: integer(value.listingsInspected ?? 0, "listings_inspected", 0, 500),
+    candidatesReturned: integer(value.candidatesReturned ?? 0, "candidates_returned", 0, 100),
+    message: text(value.message || "Jaklaen worker heartbeat received.", "jaklaen_heartbeat_message", 500),
+  };
+}
+
 export function normalizeJaklaenReadinessAction(value) {
   if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("invalid_jaklaen_readiness_action");
   const action = text(value.action, "jaklaen_readiness_action", 40);

@@ -382,6 +382,31 @@ Response:
 }
 ```
 
+`POST /v1/worker/jaklaen/jobs/:jobId/heartbeat`
+
+Jaklaen reports that the claimed job is still alive. This is required after claim and during long searches so Owner can see Last Heartbeat and current blocker/state.
+
+Headers:
+
+```http
+Authorization: Bearer <NK_HERMES_WORKER_TOKEN>
+x-nk-worker-id: jaklaen-hermes
+```
+
+Body:
+
+```json
+{
+  "browserProfileState": "ready",
+  "currentStage": "marketplace_search",
+  "listingsInspected": 2,
+  "candidatesReturned": 0,
+  "message": "Searching Toyota Hilux Revo in Bangkok Metro."
+}
+```
+
+Allowed `browserProfileState` values are `ready`, `login_required`, `paused`, `error`, and `not_configured`. If Login Required, MFA, CAPTCHA, checkpoint, rate limit, or account risk appears, Jaklaen must stop and complete the job as `BLOCKED`.
+
 `POST /v1/worker/jaklaen/jobs/:jobId/complete`
 
 Jaklaen reports safe completion, blocker, or failure.
@@ -408,6 +433,25 @@ Blocked example:
 `POST /v1/worker/jaklaen/candidates`
 
 Jaklaen submits found Candidate evidence through the existing Candidate Intake contract. The Candidate must remain `NEEDS_REVIEW`.
+
+## Preview Worker Setup
+
+Worker ID for Issue #1:
+
+```text
+jaklaen-hermes
+```
+
+The worker token is a runtime secret only. Do not commit it and do not paste it into chat. Set the API origin without a trailing `/v1`, then start the worker locally on the Jaklaen machine:
+
+```powershell
+$env:NK_API_BASE_URL = "https://<preview-nk-data-api-base>"
+$env:NK_WORKER_ID = "jaklaen-hermes"
+$env:NK_HERMES_WORKER_TOKEN = "<paste token locally only>"
+powershell -ExecutionPolicy Bypass -File .\scripts\run-jaklaen-preview-worker.ps1 -Once -ConnectivityOnly
+```
+
+`-ConnectivityOnly` proves claim/heartbeat/complete plumbing only. It does not search Facebook and does not count as the required final readiness proof. The final proof requires the real Jaklaen runtime to search Toyota Hilux Revo, submit a real Candidate with source URL/images/screenshot, and leave it in `NEEDS_REVIEW`.
 
 ## Permission Rules
 

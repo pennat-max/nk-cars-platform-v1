@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS jaklaen_search_audit_events (
   job_id uuid REFERENCES jaklaen_search_jobs(id) ON DELETE RESTRICT,
   actor_id text NOT NULL,
   actor_email text NOT NULL,
-  action text NOT NULL CHECK (action IN ('SEARCH_REQUEST_CREATED', 'JOB_QUEUED', 'JOB_CLAIMED', 'JOB_COMPLETED', 'JOB_BLOCKED', 'READINESS_ACTION')),
+  action text NOT NULL CHECK (action IN ('SEARCH_REQUEST_CREATED', 'JOB_QUEUED', 'JOB_CLAIMED', 'JOB_HEARTBEAT', 'JOB_COMPLETED', 'JOB_BLOCKED', 'READINESS_ACTION')),
   safe_detail_json jsonb NOT NULL DEFAULT '{}'::jsonb,
   created_at timestamptz NOT NULL
 );
@@ -41,7 +41,7 @@ ALTER TABLE jaklaen_search_audit_events
   DROP CONSTRAINT IF EXISTS jaklaen_search_audit_events_action_check;
 ALTER TABLE jaklaen_search_audit_events
   ADD CONSTRAINT jaklaen_search_audit_events_action_check
-  CHECK (action IN ('SEARCH_REQUEST_CREATED', 'JOB_QUEUED', 'JOB_CLAIMED', 'JOB_COMPLETED', 'JOB_BLOCKED', 'READINESS_ACTION'));
+  CHECK (action IN ('SEARCH_REQUEST_CREATED', 'JOB_QUEUED', 'JOB_CLAIMED', 'JOB_HEARTBEAT', 'JOB_COMPLETED', 'JOB_BLOCKED', 'READINESS_ACTION'));
 
 CREATE INDEX IF NOT EXISTS idx_jaklaen_search_requests_created ON jaklaen_search_requests (created_at DESC, id);
 CREATE INDEX IF NOT EXISTS idx_jaklaen_search_requests_requested_by ON jaklaen_search_requests ((requested_by_json->>'id'), created_at DESC);

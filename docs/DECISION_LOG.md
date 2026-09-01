@@ -552,3 +552,19 @@ Decision:
 
 Boundaries:
 - No seller contact, automatic publish, availability confirmation, negotiation, reservation, purchase, payment, credential storage, CAPTCHA/MFA/checkpoint bypass, or rate-limit/account-risk workaround is authorized.
+
+## 2026-09-01 - Jaklaen Search Job Queue Preview connection
+
+Status: OWNER APPROVED FOR PREVIEW IMPLEMENTATION ONLY
+
+Decision:
+- GitHub Issue #1 authorizes connecting NK Cars Web App and the Jaklaen Hermes worker through the shared Search Job Queue on Preview only.
+- The NK API remains the durable mailbox/source of truth: app creates Search Request, API queues Job, Jaklaen claims with worker token, sends heartbeat, submits Candidate evidence, completes or blocks the Job, and Candidate remains `NEEDS_REVIEW`.
+- Worker ID for this connection is `jaklaen-hermes`.
+- `NK_HERMES_WORKER_TOKEN` is a runtime secret only. It must not be committed to GitHub, pasted into chat, or logged.
+- Heartbeat events are recorded as `JOB_HEARTBEAT` audit entries and update the Jaklaen readiness Last Heartbeat.
+
+Boundaries:
+- No Production deployment is authorized.
+- No automatic publish, seller contact, availability confirmation, negotiation, reservation, purchase, payment, credential storage, CAPTCHA/MFA/checkpoint bypass, or rate-limit/account-risk workaround is authorized.
+- Jaklaen must not be marked `READY` until the real Toyota Hilux Revo end-to-end proof creates a `NEEDS_REVIEW` Candidate with real Source URL, image/screenshot evidence, found time, and Candidate ID.

@@ -213,6 +213,7 @@ Admin app endpoints:
 Worker endpoints:
 
 - `POST /v1/worker/jaklaen/jobs/claim`
+- `POST /v1/worker/jaklaen/jobs/:jobId/heartbeat`
 - `POST /v1/worker/jaklaen/jobs/:jobId/complete`
 - `POST /v1/worker/jaklaen/candidates`
 
@@ -290,12 +291,23 @@ Operational controls:
 
 - `SEARCH_NOW` creates a `jaklaen_search_jobs` row immediately.
 - `STANDING_SEARCH` stores schedule criteria; a scheduler must create future jobs only during active hours.
-- Worker claim/complete endpoints require `NK_HERMES_WORKER_TOKEN`, not the Owner admin token.
+- Worker claim/heartbeat/complete endpoints require `NK_HERMES_WORKER_TOKEN`, not the Owner admin token.
 - App endpoints require authenticated app/Owner API token and actor headers.
 - Search Request creation is idempotent and rate-limited by requester per Bangkok day.
 - Audit events are append-only.
 - Job completion can report `BLOCKED` with safe reasons: `LOGIN_REQUIRED`, `MFA_REQUIRED`, `CAPTCHA`, `CHECKPOINT`, `RATE_LIMIT`, or `ACCOUNT_RISK`.
 - Candidates still use the existing candidate intake schema and must enter `NEEDS_REVIEW`.
+
+Worker setup for Issue #1 uses the API origin without a trailing `/v1`:
+
+```powershell
+$env:NK_API_BASE_URL = "https://<preview-nk-data-api-base>"
+$env:NK_WORKER_ID = "jaklaen-hermes"
+$env:NK_HERMES_WORKER_TOKEN = "<paste token locally only>"
+powershell -ExecutionPolicy Bypass -File .\scripts\run-jaklaen-preview-worker.ps1 -Once -ConnectivityOnly
+```
+
+Do not store `NK_HERMES_WORKER_TOKEN` in GitHub, logs, screenshots, or chat. The connectivity-only command proves API claim/heartbeat/complete wiring only; it is not the final real Marketplace readiness proof.
 
 Preview UI:
 

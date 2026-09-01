@@ -3,7 +3,7 @@ import http from "node:http";
 import { pathToFileURL } from "node:url";
 import { createPool } from "./db.mjs";
 import { normalizeCandidateSubmission } from "./candidate-domain.mjs";
-import { normalizeJaklaenJobCompletion, normalizeJaklaenReadinessAction, normalizeJaklaenSearchRequest } from "./jaklaen-search-domain.mjs";
+import { normalizeJaklaenJobCompletion, normalizeJaklaenJobHeartbeat, normalizeJaklaenReadinessAction, normalizeJaklaenSearchRequest } from "./jaklaen-search-domain.mjs";
 import { QnapMediaStore } from "./media-store.mjs";
 import {
   normalizeActor,
@@ -149,8 +149,11 @@ export function createDataService({ pool, apiToken, workerToken, sourcingReposit
           const job = await sourcing.claimNextJaklaenJob(workerId);
           return json(response, 200, { job });
         }
-        const jaklaenJobMatch = url.pathname.match(/^\/v1\/worker\/jaklaen\/jobs\/([0-9a-f-]+)\/complete$/i);
-        if (request.method === "POST" && jaklaenJobMatch) {
+        const jaklaenJobMatch = url.pathname.match(/^\/v1\/worker\/jaklaen\/jobs\/([0-9a-f-]+)\/(heartbeat|complete)$/i);
+        if (request.method === "POST" && jaklaenJobMatch?.[2] === "heartbeat") {
+          return json(response, 200, await sourcing.heartbeatJaklaenJob(jaklaenJobMatch[1], workerId, normalizeJaklaenJobHeartbeat(await readJson(request))));
+        }
+        if (request.method === "POST" && jaklaenJobMatch?.[2] === "complete") {
           return json(response, 200, await sourcing.completeJaklaenJob(jaklaenJobMatch[1], workerId, normalizeJaklaenJobCompletion(await readJson(request))));
         }
         if (request.method === "POST" && (url.pathname === "/v1/worker/sourcing/candidates" || url.pathname === "/v1/worker/jaklaen/candidates")) {

@@ -346,6 +346,34 @@ export class PostgresSourcingRepository {
     });
   }
 
+  async heartbeatJaklaenJob(jobId, workerId, heartbeat) {
+    return this.transaction(async (client) => {
+      const selected = await client.query(
+        "SELECT id, request_id, safe_detail_json FROM jaklaen_search_jobs WHERE id = $1 AND worker_id = $2 AND status = 'CLAIMED' FOR UPDATE",
+        [jobId, workerId],
+      );
+      if (!selected.rows[0]) throw new Error("command_not_found");
+      const now = this.now();
+      const safeDetail = {
+        ...(selected.rows[0].safe_detail_json || {}),
+        lastHeartbeatAt: now.toISOString(),
+        heartbeat,
+      };
+      await client.query("UPDATE jaklaen_search_jobs SET safe_detail_json = $2::jsonb WHERE id = $1", [jobId, JSON.stringify(safeDetail)]);
+      await client.query(
+        "UPDATE sourcing_runtime_state SET hermes_state = 'running', browser_profile_state = $1, last_heartbeat_at = $2, message = $3, updated_at = $2 WHERE singleton = true",
+        [heartbeat.browserProfileState, now, heartbeat.message],
+      );
+      await client.query(
+        `INSERT INTO jaklaen_search_audit_events
+         (id, request_id, job_id, actor_id, actor_email, action, safe_detail_json, created_at)
+         VALUES ($1, $2, $3, $4, $4, 'JOB_HEARTBEAT', $5::jsonb, $6)`,
+        [crypto.randomUUID(), selected.rows[0].request_id, jobId, workerId, JSON.stringify({ currentStage: heartbeat.currentStage, browserProfileState: heartbeat.browserProfileState, listingsInspected: heartbeat.listingsInspected, candidatesReturned: heartbeat.candidatesReturned }), now],
+      );
+      return { accepted: true, lastHeartbeatAt: now.toISOString(), published: false };
+    });
+  }
+
   async completeJaklaenJob(jobId, workerId, completion) {
     return this.transaction(async (client) => {
       const selected = await client.query(

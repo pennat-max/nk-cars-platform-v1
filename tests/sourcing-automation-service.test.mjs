@@ -7,7 +7,7 @@ import sharp from "sharp";
 import { createDataService } from "../deploy/qnap/data-service/server.mjs";
 import { candidateMatchesRule, normalizeCandidateSubmission } from "../deploy/qnap/data-service/candidate-domain.mjs";
 import { QnapMediaStore } from "../deploy/qnap/data-service/media-store.mjs";
-import { deriveJaklaenOverallStatus, normalizeJaklaenJobCompletion, normalizeJaklaenReadinessAction, normalizeJaklaenSearchRequest } from "../deploy/qnap/data-service/jaklaen-search-domain.mjs";
+import { deriveJaklaenOverallStatus, normalizeJaklaenJobCompletion, normalizeJaklaenJobHeartbeat, normalizeJaklaenReadinessAction, normalizeJaklaenSearchRequest } from "../deploy/qnap/data-service/jaklaen-search-domain.mjs";
 import {
   normalizeCommand,
   normalizeCompletion,
@@ -107,6 +107,7 @@ async function withService(run) {
     listJaklaenSearchRequests: async () => ({ observedAt: "2026-09-01T02:00:00.000Z", requests: [], jobs: [] }),
     createJaklaenSearchRequest: async (request, actor) => { calls.push({ method: "createJaklaenSearchRequest", request, actor }); return { accepted: true, requestId: "srch_test", queuedJobId: request.requestType === "SEARCH_NOW" ? commandId : null, published: false }; },
     claimNextJaklaenJob: async (workerId) => { calls.push({ method: "claimNextJaklaenJob", workerId }); return { id: commandId, requestId: "srch_test", jobType: "SEARCH_NOW", status: "CLAIMED" }; },
+    heartbeatJaklaenJob: async (jobId, workerId, heartbeat) => { calls.push({ method: "heartbeatJaklaenJob", jobId, workerId, heartbeat }); return { accepted: true, lastHeartbeatAt: "2026-09-01T02:01:00.000Z", published: false }; },
     completeJaklaenJob: async (jobId, workerId, completion) => { calls.push({ method: "completeJaklaenJob", jobId, workerId, completion }); return { accepted: true, published: false }; },
     jaklaenReadinessSnapshot: async () => ({ overallStatus: "BLOCKED", currentBlocker: "Real end-to-end Toyota Hilux Revo proof has not passed yet.", checks: [], proof: { requestId: "PENDING_REAL_TEST", candidateId: "PENDING_REAL_TEST", testResult: "NOT_RUN" } }),
     runJaklaenReadinessAction: async (action, actor) => { calls.push({ method: "runJaklaenReadinessAction", action, actor }); return { accepted: true, action: action.action, published: false, sellerContact: false, readiness: { overallStatus: "BLOCKED" } }; },
@@ -315,6 +316,13 @@ test("Jaklaen app queue API creates SEARCH_NOW jobs and lets the worker claim an
     const claimed = await fetch(`${baseUrl}/v1/worker/jaklaen/jobs/claim`, { method: "POST", headers: { authorization: `Bearer ${workerToken}`, "x-nk-worker-id": "jaklaen-hermes" } });
     assert.equal(claimed.status, 200);
     assert.equal((await claimed.json()).job.status, "CLAIMED");
+    const heartbeat = await fetch(`${baseUrl}/v1/worker/jaklaen/jobs/${commandId}/heartbeat`, {
+      method: "POST",
+      headers: { authorization: `Bearer ${workerToken}`, "content-type": "application/json", "x-nk-worker-id": "jaklaen-hermes" },
+      body: JSON.stringify({ browserProfileState: "ready", currentStage: "marketplace_search", listingsInspected: 2, candidatesReturned: 0, message: "Searching Toyota Hilux Revo in Bangkok Metro." }),
+    });
+    assert.equal(heartbeat.status, 200);
+    assert.equal((await heartbeat.json()).published, false);
     const completed = await fetch(`${baseUrl}/v1/worker/jaklaen/jobs/${commandId}/complete`, {
       method: "POST",
       headers: { authorization: `Bearer ${workerToken}`, "content-type": "application/json", "x-nk-worker-id": "jaklaen-hermes" },
@@ -324,8 +332,26 @@ test("Jaklaen app queue API creates SEARCH_NOW jobs and lets the worker claim an
     assert.equal((await completed.json()).published, false);
     assert.equal(calls.find((call) => call.method === "createJaklaenSearchRequest").request.requestType, "SEARCH_NOW");
     assert.equal(calls.find((call) => call.method === "claimNextJaklaenJob").workerId, "jaklaen-hermes");
+    assert.equal(calls.find((call) => call.method === "heartbeatJaklaenJob").heartbeat.currentStage, "marketplace_search");
     assert.equal(calls.find((call) => call.method === "completeJaklaenJob").completion.candidatesReturned, 1);
   });
+});
+
+test("Jaklaen job heartbeat normalizes safe runtime state only", () => {
+  assert.deepEqual(normalizeJaklaenJobHeartbeat({
+    browserProfileState: "login_required",
+    currentStage: "facebook_login_check",
+    listingsInspected: 0,
+    candidatesReturned: 0,
+    message: "Login required; worker stopped without bypass attempt.",
+  }), {
+    browserProfileState: "login_required",
+    currentStage: "facebook_login_check",
+    listingsInspected: 0,
+    candidatesReturned: 0,
+    message: "Login required; worker stopped without bypass attempt.",
+  });
+  assert.throws(() => normalizeJaklaenJobHeartbeat({ browserProfileState: "bypass", message: "unsafe" }), /invalid_browser_profile_state/);
 });
 
 test("Jaklaen readiness API stays BLOCKED until real end-to-end proof exists", async () => {
@@ -503,6 +529,7 @@ test("QNAP sourcing schema is append-only and deployment migrates existing volum
   assert.match(jaklaenQueueSchema, /jaklaen_search_jobs/);
   assert.match(jaklaenQueueSchema, /jaklaen_search_audit_events/);
   assert.match(jaklaenQueueSchema, /CUSTOMER/);
+  assert.match(jaklaenQueueSchema, /JOB_HEARTBEAT/);
   assert.match(jaklaenQueueSchema, /READINESS_ACTION/);
   assert.match(jaklaenQueueSchema, /ON DELETE RESTRICT/);
   assert.match(jaklaenQueueSchema, /REVOKE DELETE/);
