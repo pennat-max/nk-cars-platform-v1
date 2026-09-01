@@ -57,30 +57,34 @@ export class QnapMediaStore {
     this.fetchImpl = fetchImpl;
   }
 
-  async retainCandidateImages(candidate) {
+  async retainCandidateEvidence(candidate) {
     const directory = path.join(this.internalRoot, "automated", candidate.vehicleId);
     if (!within(this.internalRoot, directory)) throw new Error("invalid_media_path");
     await fs.mkdir(directory, { recursive: true, mode: 0o700 });
     const media = [];
     const failures = [];
-    for (const [index, imageUrl] of candidate.images.entries()) {
+    const evidence = [
+      ...candidate.images.map((url) => ({ url, kind: "image" })),
+      ...(candidate.screenshots || []).map((url) => ({ url, kind: "screenshot" })),
+    ];
+    for (const [index, item] of evidence.entries()) {
       try {
-        const source = await fetchImage(imageUrl, this.fetchImpl);
+        const source = await fetchImage(item.url, this.fetchImpl);
         const output = await sharp(source, { failOn: "warning", limitInputPixels: 40_000_000 })
           .rotate()
           .resize({ width: 2400, height: 2400, fit: "inside", withoutEnlargement: true })
           .jpeg({ quality: 88, mozjpeg: true })
           .toBuffer();
         const sha256 = crypto.createHash("sha256").update(output).digest("hex");
-        const filename = `${String(index + 1).padStart(3, "0")}-${sha256.slice(0, 16)}.jpg`;
+        const filename = `${String(index + 1).padStart(3, "0")}-${item.kind}-${sha256.slice(0, 16)}.jpg`;
         const target = path.join(directory, filename);
         await fs.writeFile(target, output, { mode: 0o600 });
         media.push({
-          mediaId: `${candidate.vehicleId}:auto-${String(index + 1).padStart(3, "0")}-${sha256.slice(0, 12)}`,
+          mediaId: `${candidate.vehicleId}:auto-${String(index + 1).padStart(3, "0")}-${item.kind}-${sha256.slice(0, 12)}`,
           vehicleId: candidate.vehicleId,
           relativePath: `automated/${candidate.vehicleId}/${filename}`,
           visibility: "INTERNAL_ONLY",
-          lifecycleStage: "Source",
+          lifecycleStage: item.kind === "screenshot" ? "Evidence" : "Source",
           sha256,
           sizeBytes: output.length,
         });
@@ -89,6 +93,10 @@ export class QnapMediaStore {
       }
     }
     return { media, failures };
+  }
+
+  async retainCandidateImages(candidate) {
+    return this.retainCandidateEvidence(candidate);
   }
 
   async read(relativePath, visibility) {

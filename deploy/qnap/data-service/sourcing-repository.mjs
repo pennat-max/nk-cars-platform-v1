@@ -286,4 +286,102 @@ export class PostgresSourcingRepository {
       return { stored: media.length };
     });
   }
+
+  async listJaklaenCandidates() {
+    const [vehicles, vehicleMedia, events] = await Promise.all([
+      this.pool.query(
+        `SELECT vehicle_id, source_reference, publication_status, customer_record, internal_record, source_adapter, observed_at
+         FROM inventory_vehicles
+         WHERE publication_status = 'NEEDS_REVIEW'
+           AND source_adapter IN ('facebook_marketplace_worker', 'jaklaen_vehicle_sourcing_agent')
+         ORDER BY observed_at DESC NULLS LAST, vehicle_id`,
+      ),
+      this.pool.query(
+        `SELECT media_id, vehicle_id, visibility
+         FROM vehicle_media
+         WHERE vehicle_id IS NOT NULL AND visibility = 'INTERNAL_ONLY'
+         ORDER BY imported_at, media_id`,
+      ),
+      this.pool.query(
+        `SELECT vehicle_id, candidate_id, actor_id, actor_email, action, old_value_json, new_value_json, note, created_at
+         FROM jaklaen_candidate_review_events
+         ORDER BY created_at DESC
+         LIMIT 200`,
+      ).catch(() => ({ rows: [] })),
+    ]);
+    const byVehicle = new Map();
+    for (const item of vehicleMedia.rows) {
+      const items = byVehicle.get(item.vehicle_id) || [];
+      items.push({ mediaId: item.media_id, visibility: item.visibility });
+      byVehicle.set(item.vehicle_id, items);
+    }
+    const eventsByVehicle = new Map();
+    for (const item of events.rows) {
+      const items = eventsByVehicle.get(item.vehicle_id) || [];
+      items.push({
+        candidateId: item.candidate_id,
+        actorId: item.actor_id,
+        actorEmail: item.actor_email,
+        action: item.action,
+        oldValue: item.old_value_json,
+        newValue: item.new_value_json,
+        note: item.note,
+        createdAt: new Date(item.created_at).toISOString(),
+      });
+      eventsByVehicle.set(item.vehicle_id, items);
+    }
+    return {
+      observedAt: this.now().toISOString(),
+      records: vehicles.rows.map((row) => ({
+        vehicleId: row.vehicle_id,
+        sourceReference: row.source_reference,
+        publicationStatus: row.publication_status,
+        customerRecord: row.customer_record,
+        internalRecord: row.internal_record,
+        sourceAdapter: row.source_adapter,
+        observedAt: row.observed_at ? new Date(row.observed_at).toISOString() : null,
+        media: byVehicle.get(row.vehicle_id) || [],
+        auditEvents: eventsByVehicle.get(row.vehicle_id) || [],
+      })),
+    };
+  }
+
+  async reviewJaklaenCandidate(vehicleId, mutation, actor) {
+    return this.transaction(async (client) => {
+      const selected = await client.query(
+        `SELECT vehicle_id, internal_record, publication_status
+         FROM inventory_vehicles
+         WHERE vehicle_id = $1 AND publication_status = 'NEEDS_REVIEW'
+         FOR UPDATE`,
+        [vehicleId],
+      );
+      const vehicle = selected.rows[0];
+      if (!vehicle) throw new Error("candidate_not_found");
+      const currentRecord = vehicle.internal_record || {};
+      const oldValue = {
+        candidateStatus: currentRecord.candidateStatus || "NEEDS_REVIEW",
+        fields: mutation.fields ? Object.fromEntries(mutation.fields.map((item) => [item.field, currentRecord[item.field] ?? null])) : {},
+      };
+      const nextRecord = { ...currentRecord };
+      for (const item of mutation.fields || []) nextRecord[item.field] = item.value;
+      nextRecord.candidateStatus = mutation.action === "FIELD_EDITED" ? oldValue.candidateStatus : mutation.action;
+      nextRecord.reviewedAt = this.now().toISOString();
+      nextRecord.reviewedBy = actor.email;
+      nextRecord.reviewNote = mutation.note;
+      const now = this.now();
+      await client.query("UPDATE inventory_vehicles SET internal_record = $2::jsonb, updated_at = $3 WHERE vehicle_id = $1", [vehicleId, JSON.stringify(nextRecord), now]);
+      await client.query(
+        `INSERT INTO jaklaen_candidate_review_events
+         (id, vehicle_id, candidate_id, actor_id, actor_email, action, old_value_json, new_value_json, note, created_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8::jsonb, $9, $10)`,
+        [crypto.randomUUID(), vehicleId, currentRecord.candidateId || currentRecord.sourceReference || vehicleId, actor.id, actor.email, mutation.action, JSON.stringify(oldValue), JSON.stringify({ candidateStatus: nextRecord.candidateStatus, fields: mutation.fields || [] }), mutation.note, now],
+      );
+      return {
+        vehicleId,
+        publicationStatus: "NEEDS_REVIEW",
+        candidateStatus: nextRecord.candidateStatus,
+        published: false,
+      };
+    });
+  }
 }

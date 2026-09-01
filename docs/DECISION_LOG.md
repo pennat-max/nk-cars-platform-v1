@@ -488,3 +488,21 @@ Decision:
 
 Boundaries:
 - This is a customer presentation change only. It does not remove underlying vehicle data, change search/filter logic, pricing math, Vehicle Case snapshots, QNAP/Hermes behavior, seller messaging, payments, or production data.
+
+## 2026-09-01 - Jaklaen Candidate Intake V1 preview approved
+
+Status: OWNER APPROVED FOR PREVIEW IMPLEMENTATION ONLY
+
+Decision:
+- Build Jaklaen Candidate Intake V1 on `codex/app` as a Preview workflow.
+- Jaklaen may submit sourced vehicle candidates into NK Cars through an authenticated worker API.
+- Every new candidate must enter `NEEDS_REVIEW` and must not publish automatically.
+- Candidate payloads must preserve source URL, source platform, listing title, vehicle facts, source price, location, seller reference, description, image URLs, screenshot URLs, collected time, confidence, missing fields, and candidate status.
+- Unknown data must be represented as `UNKNOWN` or `PENDING`; AI/worker output must not guess.
+- Owner review must support field correction, comment/reason, Approve, Reject, and Need More Info.
+- Every review change must be written to append-only audit records.
+- Development may use TEST/MOCK fixtures when clearly labelled, but the final approval proof requires at least one real Toyota Hilux Revo candidate with full evidence.
+
+Boundaries:
+- No production deployment is authorized by this preview approval.
+- No automatic publication, seller contact, payment, purchase, destructive migration, credential storage, or Facebook security bypass is authorized.

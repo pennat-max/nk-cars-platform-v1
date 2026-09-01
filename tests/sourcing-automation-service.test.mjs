@@ -64,6 +64,10 @@ const candidatePayload = {
     mileage_km: 65000,
     source_price_thb: 765000,
     images: ["https://scontent.fbcdn.net/revo.jpg"],
+    screenshots: ["https://www.facebook.com/photo.php?fbid=987654321"],
+    confidence: 82,
+    missing_fields: ["grade", "engine"],
+    candidate_status: "NEEDS_REVIEW",
     source: {
       platform: "facebook_marketplace",
       source_url: "https://www.facebook.com/marketplace/item/123456789/",
@@ -135,11 +139,16 @@ test("candidate ingestion normalizes confidential review data and enforces the a
   assert.equal(candidate.vehicleId, "nk-auto-370aa049ce212e1ce994");
   assert.equal(candidate.internalRecord.visibility, "INTERNAL_ONLY");
   assert.equal(candidate.internalRecord.publicationStatus, "Needs Review");
+  assert.equal(candidate.candidateStatus, "NEEDS_REVIEW");
+  assert.deepEqual(candidate.missingFields, ["GRADE", "ENGINE"]);
+  assert.equal(candidate.screenshots.length, 1);
+  assert.equal(candidate.internalRecord.screenshotCount, 1);
   assert.equal(candidate.internalRecord.sourceUrl, candidatePayload.candidate.source.source_url);
   assert.deepEqual(candidateMatchesRule(candidate, validRule), { matches: true, failures: [] });
   assert.equal(candidateMatchesRule({ ...candidate, location: "Chiang Mai" }, validRule).matches, false);
   assert.equal(candidateMatchesRule({ ...candidate, location: "Phetchaburi, Thailand" }, { ...validRule, locations: ["Phetchaburi"] }).matches, true);
   assert.throws(() => normalizeCandidateSubmission({ ...candidatePayload, candidate: { ...candidatePayload.candidate, source: { ...candidatePayload.candidate.source, source_url: "https://example.com/marketplace/item/1" } } }), /invalid_candidate_source_url/);
+  assert.throws(() => normalizeCandidateSubmission({ ...candidatePayload, candidate: { ...candidatePayload.candidate, candidate_status: "PUBLISHED" } }), /candidate_auto_publish_forbidden/);
 });
 
 test("admin sourcing API requires the server token and an independent Owner role", async () => {
@@ -231,6 +240,48 @@ test("worker candidate endpoint retains only a review record and reports partial
   });
 });
 
+test("Jaklaen worker alias and Owner review endpoint keep candidates internal-only", async () => {
+  await withService(async ({ baseUrl, calls }) => {
+    const received = await fetch(`${baseUrl}/v1/worker/jaklaen/candidates`, {
+      method: "POST",
+      headers: { authorization: `Bearer ${workerToken}`, "content-type": "application/json", "x-nk-worker-id": "jaklaen-hermes" },
+      body: JSON.stringify(candidatePayload),
+    });
+    assert.equal(received.status, 201);
+    assert.equal(calls[0].method, "ingestCandidate");
+    assert.equal(calls[0].workerId, "jaklaen-hermes");
+    assert.equal(calls[0].candidate.internalRecord.candidateStatus, "NEEDS_REVIEW");
+  });
+
+  const calls = [];
+  const repository = {
+    listJaklaenCandidates: async () => ({ observedAt: "2026-09-01T01:00:00.000Z", records: [] }),
+    reviewJaklaenCandidate: async (vehicleId, mutation, actor) => {
+      calls.push({ vehicleId, mutation, actor });
+      return { vehicleId, publicationStatus: "NEEDS_REVIEW", candidateStatus: mutation.action, published: false };
+    },
+  };
+  const pool = { query: async () => ({ rows: [{ ok: 1 }] }) };
+  const server = createDataService({ pool, apiToken, workerToken, sourcingRepository: repository });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const address = server.address();
+  try {
+    const listed = await fetch(`http://127.0.0.1:${address.port}/v1/admin/jaklaen/candidates`, { headers: ownerHeaders() });
+    assert.equal(listed.status, 200);
+    const reviewed = await fetch(`http://127.0.0.1:${address.port}/v1/admin/jaklaen/candidates/nk-auto-test/review`, {
+      method: "POST",
+      headers: ownerHeaders(),
+      body: JSON.stringify({ action: "APPROVED", note: "Owner approved candidate for next internal workflow only." }),
+    });
+    assert.equal(reviewed.status, 200);
+    assert.deepEqual(await reviewed.json(), { vehicleId: "nk-auto-test", publicationStatus: "NEEDS_REVIEW", candidateStatus: "APPROVED", published: false });
+    assert.equal(calls[0].mutation.action, "APPROVED");
+    assert.equal(calls[0].actor.id, "owner-1");
+  } finally {
+    await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+  }
+});
+
 test("QNAP media store re-encodes permitted source images into the internal-only root", async () => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "nk-media-test-"));
   try {
@@ -242,9 +293,10 @@ test("QNAP media store re-encodes permitted source images into the internal-only
     });
     const candidate = normalizeCandidateSubmission(candidatePayload);
     const retained = await store.retainCandidateImages(candidate);
-    assert.equal(retained.media.length, 1);
+    assert.equal(retained.media.length, 2);
     assert.equal(retained.media[0].visibility, "INTERNAL_ONLY");
     assert.match(retained.media[0].relativePath, /^automated\/nk-auto-/);
+    assert.equal(retained.media[1].lifecycleStage, "Evidence");
     assert.equal((await store.read(retained.media[0].relativePath, "INTERNAL_ONLY")).subarray(0, 2).toString("hex"), "ffd8");
   } finally {
     await fs.rm(root, { recursive: true, force: true });
@@ -305,7 +357,10 @@ test("QNAP HTTPS ingress exposes only the bounded Data API allowlist", () => {
   assert.equal(allowedQnapIngressPath("/v1/public/listings"), true);
   assert.equal(allowedQnapIngressPath("/v1/admin/sourcing"), true);
   assert.equal(allowedQnapIngressPath("/v1/admin/sourcing/rules/df73ef9f-b5e0-4f12-91a4-30a2f70c95d8"), true);
+  assert.equal(allowedQnapIngressPath("/v1/admin/jaklaen/candidates"), true);
+  assert.equal(allowedQnapIngressPath("/v1/admin/jaklaen/candidates/nk-auto-test/review"), true);
   assert.equal(allowedQnapIngressPath("/v1/worker/sourcing/commands/claim"), false);
+  assert.equal(allowedQnapIngressPath("/v1/worker/jaklaen/candidates"), false);
   assert.equal(allowedQnapIngressPath("/v1/admin/media/internal-secret"), false);
   assert.equal(allowedQnapIngressPath("/v1/admin/sourcing/../media"), false);
   assert.equal(qnapIngressAuthorized(`Bearer ${apiToken}`, apiToken), true);
@@ -313,9 +368,10 @@ test("QNAP HTTPS ingress exposes only the bounded Data API allowlist", () => {
 });
 
 test("QNAP sourcing schema is append-only and deployment migrates existing volumes", async () => {
-  const [schema, candidateSchema, compose, deployment] = await Promise.all([
+  const [schema, candidateSchema, jaklaenReviewSchema, compose, deployment] = await Promise.all([
     fs.readFile(new URL("../deploy/qnap/postgres/init/020_sourcing_automation.sql", import.meta.url), "utf8"),
     fs.readFile(new URL("../deploy/qnap/postgres/init/030_candidate_ingestion.sql", import.meta.url), "utf8"),
+    fs.readFile(new URL("../deploy/qnap/postgres/init/040_jaklaen_candidate_review.sql", import.meta.url), "utf8"),
     fs.readFile(new URL("../deploy/qnap/docker-compose.full.yml", import.meta.url), "utf8"),
     fs.readFile(new URL("../deploy/qnap/deploy-full.sh", import.meta.url), "utf8"),
   ]);
@@ -327,12 +383,15 @@ test("QNAP sourcing schema is append-only and deployment migrates existing volum
   assert.match(candidateSchema, /sourcing_candidate_ingestions/);
   assert.match(candidateSchema, /outcome IN \('RETAINED', 'DUPLICATE'\)/);
   assert.match(candidateSchema, /REVOKE DELETE, UPDATE/);
+  assert.match(jaklaenReviewSchema, /jaklaen_candidate_review_events/);
+  assert.match(jaklaenReviewSchema, /REVOKE DELETE, UPDATE/);
   assert.match(compose, /NK_HERMES_WORKER_TOKEN:\s+"\$\{NK_HERMES_WORKER_TOKEN:-\}"/);
   assert.match(compose, /internal-only:\/data\/media\/internal-only/);
   assert.match(compose, /customer-visible:\/data\/media\/customer-visible:ro/);
   assert.doesNotMatch(compose, /NK_HERMES_WORKER_TOKEN:\s+[A-Za-z0-9_-]{32}/);
   assert.match(deployment, /020_sourcing_automation\.sql/);
   assert.match(deployment, /030_candidate_ingestion\.sql/);
+  assert.match(deployment, /040_jaklaen_candidate_review\.sql/);
   assert.match(deployment, /psql -v ON_ERROR_STOP=1/);
   assert.doesNotMatch(deployment, /PASSWORD=/);
 });

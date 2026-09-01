@@ -43,6 +43,24 @@ function mediaContentType(relativePath) {
   return "image/jpeg";
 }
 
+function normalizeJaklaenReviewMutation(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("invalid_candidate_review");
+  const action = String(value.action || "").toUpperCase();
+  if (!new Set(["FIELD_EDITED", "APPROVED", "REJECTED", "NEED_MORE_INFO"]).has(action)) throw new Error("invalid_candidate_review_action");
+  const note = typeof value.note === "string" ? value.note.replace(/\s+/g, " ").trim().slice(0, 1000) : "";
+  if (!note && action !== "FIELD_EDITED") throw new Error("candidate_review_note_required");
+  const fields = Array.isArray(value.fields) ? value.fields.slice(0, 40).map((item) => {
+    if (!item || typeof item !== "object" || Array.isArray(item)) throw new Error("invalid_candidate_review_fields");
+    const field = String(item.field || "").trim();
+    if (!/^[a-zA-Z][a-zA-Z0-9_]{0,79}$/.test(field)) throw new Error("invalid_candidate_review_fields");
+    const raw = item.value === null || item.value === undefined || item.value === "" ? "UNKNOWN" : String(item.value).replace(/\s+/g, " ").trim().slice(0, 500);
+    const valueText = raw || "UNKNOWN";
+    return { field, value: valueText };
+  }) : [];
+  if (action === "FIELD_EDITED" && !fields.length) throw new Error("candidate_review_fields_required");
+  return { action, fields, note };
+}
+
 function binary(response, bytes, record, cacheControl) {
   response.writeHead(200, {
     "content-type": mediaContentType(record.relative_path),
@@ -97,7 +115,7 @@ export function createDataService({ pool, apiToken, workerToken, sourcingReposit
         return json(response, 200, { status: result.rows[0]?.ok === 1 ? "ok" : "degraded" });
       }
 
-      if (url.pathname.startsWith("/v1/worker/sourcing")) {
+      if (url.pathname.startsWith("/v1/worker/sourcing") || url.pathname.startsWith("/v1/worker/jaklaen")) {
         if (!workerToken) return json(response, 503, { error: "worker_not_configured" });
         if (!tokenMatches(request, workerToken)) return json(response, 401, { error: "authorization_required" });
         const workerId = normalizeWorkerIdentity(request.headers["x-nk-worker-id"]);
@@ -105,7 +123,7 @@ export function createDataService({ pool, apiToken, workerToken, sourcingReposit
           const command = await sourcing.claimNext(workerId);
           return json(response, 200, { command });
         }
-        if (request.method === "POST" && url.pathname === "/v1/worker/sourcing/candidates") {
+        if (request.method === "POST" && (url.pathname === "/v1/worker/sourcing/candidates" || url.pathname === "/v1/worker/jaklaen/candidates")) {
           const candidate = normalizeCandidateSubmission(await readJson(request));
           const result = await sourcing.ingestCandidate(candidate.commandId, workerId, candidate);
           if (result.status !== "retained") return json(response, 200, { ...result, media: { stored: 0, failed: 0 } });
@@ -114,7 +132,7 @@ export function createDataService({ pool, apiToken, workerToken, sourcingReposit
             const attached = await sourcing.attachCandidateMedia(result.vehicleId, retained.media);
             return json(response, result.idempotent ? 200 : 201, { ...result, media: { stored: attached.stored, failed: retained.failures.length, failures: retained.failures } });
           } catch {
-            return json(response, result.idempotent ? 200 : 201, { ...result, media: { stored: 0, failed: candidate.images.length, failures: [{ code: "media_store_unavailable" }] } });
+            return json(response, result.idempotent ? 200 : 201, { ...result, media: { stored: 0, failed: candidate.images.length + candidate.screenshots.length, failures: [{ code: "media_store_unavailable" }] } });
           }
         }
         const workerMatch = url.pathname.match(/^\/v1\/worker\/sourcing\/commands\/([0-9a-f-]+)\/(heartbeat|complete)$/i);
@@ -213,6 +231,19 @@ export function createDataService({ pool, apiToken, workerToken, sourcingReposit
         }
         if (request.method === "POST" && url.pathname === "/v1/admin/sourcing/commands") {
           return json(response, 202, await sourcing.enqueueCommand(normalizeCommand(await readJson(request)), actor));
+        }
+        return json(response, 404, { error: "not_found" });
+      }
+
+      if (url.pathname.startsWith("/v1/admin/jaklaen/candidates")) {
+        const actor = normalizeActor(request.headers);
+        if (request.method === "GET" && url.pathname === "/v1/admin/jaklaen/candidates") {
+          return json(response, 200, await sourcing.listJaklaenCandidates());
+        }
+        const candidateMatch = url.pathname.match(/^\/v1\/admin\/jaklaen\/candidates\/([^/]+)\/review$/);
+        if (request.method === "POST" && candidateMatch) {
+          const vehicleId = mediaId(candidateMatch[1], 180);
+          return json(response, 200, await sourcing.reviewJaklaenCandidate(vehicleId, normalizeJaklaenReviewMutation(await readJson(request)), actor));
         }
         return json(response, 404, { error: "not_found" });
       }

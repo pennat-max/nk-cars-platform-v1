@@ -307,6 +307,7 @@ Completed source-layer items:
 7. QNAP Owner inventory/media Data API endpoints with customer/internal visibility enforcement
 8. deterministic Hermes/connector worker bridge and review-only candidate ingestion with duplicate and Bangkok-day limit enforcement
 9. internal-only source-image download, bounded raster validation, re-encoding, and QNAP persistence
+10. Preview implementation for Jaklaen Candidate Intake V1: worker alias `/v1/worker/jaklaen/candidates`, screenshot/missing-field validation, Owner-only candidate review API contract, append-only review event schema, and TEST/MOCK Candidate Review preview route at `/buy/owner-preview/jaklaen-candidates`
 
 Next priority:
 1. QNAP infrastructure supplies a stable authenticated HTTPS Data API origin reachable by the approved app runtime without exposing PostgreSQL
@@ -316,6 +317,7 @@ Next priority:
 5. add an authenticated Owner operations queue for availability, actual purchase price, and material cost confirmation
 6. verify QNAP media retention, customer/internal separation, backup, and restore under the infrastructure runbook
 7. provision the private worker credential and authorized Facebook browser profile, then prove one real candidate reaches `NEEDS_REVIEW` without publication or seller messaging
+8. connect Jaklaen to the worker token/API contract and run the required one-real-car proof with real source URL, image evidence, screenshot, Candidate ID, QNAP row, and internal media storage references before any production activation
 
 ## 14. QNAP / Hermes direction
 

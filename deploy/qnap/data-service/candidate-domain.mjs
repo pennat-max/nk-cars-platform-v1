@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 
 const FACEBOOK_HOSTS = new Set(["facebook.com", "fb.com"]);
 const IMAGE_HOSTS = new Set(["fbcdn.net", "fbsbx.com"]);
+const SOURCE_PLATFORMS = new Set(["facebook_marketplace", "facebook_group", "authorized_source"]);
 const TRANSMISSIONS = new Set(["AT", "MT"]);
 const DRIVES = new Set(["2WD", "4WD"]);
 
@@ -49,12 +50,12 @@ function safeHttpsUrl(value, roots, label) {
   return url.toString();
 }
 
-function normalizedImages(value) {
-  if (!Array.isArray(value) || value.length > 30) throw new Error("invalid_candidate_images");
+function normalizedEvidenceUrls(value, label, maxCount = 30) {
+  if (!Array.isArray(value) || value.length > maxCount) throw new Error(`invalid_${label}`);
   const seen = new Set();
   const images = [];
   for (const item of value) {
-    const image = safeHttpsUrl(item, new Set([...FACEBOOK_HOSTS, ...IMAGE_HOSTS]), "candidate_image");
+    const image = safeHttpsUrl(item, new Set([...FACEBOOK_HOSTS, ...IMAGE_HOSTS]), label.slice(0, -1));
     const parsed = new URL(image);
     const identity = `${parsed.hostname.toLowerCase()}${parsed.pathname}`;
     if (seen.has(identity)) continue;
@@ -62,6 +63,29 @@ function normalizedImages(value) {
     images.push(image);
   }
   return images;
+}
+
+function normalizedImages(value) {
+  return normalizedEvidenceUrls(value, "candidate_images", 30);
+}
+
+function normalizedScreenshots(value) {
+  const raw = value === undefined || value === null ? [] : Array.isArray(value) ? value : [value];
+  return normalizedEvidenceUrls(raw, "candidate_screenshots", 10);
+}
+
+function normalizedMissingFields(value) {
+  if (value === undefined || value === null) return [];
+  if (!Array.isArray(value) || value.length > 40) throw new Error("invalid_candidate_missing_fields");
+  const seen = new Set();
+  const fields = [];
+  for (const item of value) {
+    const field = cleanText(item, 80).toUpperCase();
+    if (!field || seen.has(field)) continue;
+    seen.add(field);
+    fields.push(field);
+  }
+  return fields;
 }
 
 function observedAt(value) {
@@ -82,9 +106,10 @@ export function normalizeCandidateSubmission(value) {
   }
   const raw = value.candidate;
   const source = raw.source;
-  if (!source || typeof source !== "object" || Array.isArray(source) || source.platform !== "facebook_marketplace") {
+  if (!source || typeof source !== "object" || Array.isArray(source) || !SOURCE_PLATFORMS.has(source.platform)) {
     throw new Error("invalid_candidate_source");
   }
+  if (raw.candidate_status && raw.candidate_status !== "NEEDS_REVIEW") throw new Error("candidate_auto_publish_forbidden");
   const candidateId = requiredText(raw.candidate_id, "candidate_id", 100);
   if (!/^cand_[a-f0-9]{12,64}$/i.test(candidateId)) throw new Error("invalid_candidate_id");
   const sourceUrl = safeHttpsUrl(source.source_url, FACEBOOK_HOSTS, "candidate_source_url");
@@ -106,8 +131,13 @@ export function normalizeCandidateSubmission(value) {
   const seller = cleanText(source.seller, 500) || "Seller details require review";
   const listingText = cleanText(source.listing_text, 9_000);
   const images = normalizedImages(raw.images || []);
+  const screenshots = normalizedScreenshots(raw.screenshot || raw.screenshots || []);
+  const missingFields = normalizedMissingFields(raw.missing_fields);
+  const confidence = optionalInteger(raw.confidence, 0, 100);
+  const sourcePlatformLabel = source.platform === "facebook_group" ? "Facebook Group" : source.platform === "facebook_marketplace" ? "Facebook Marketplace" : "Authorized Source";
   const normalized = {
     candidateId,
+    candidateStatus: "NEEDS_REVIEW",
     commandId: uuid(value.commandId, "command_id"),
     ruleId: uuid(value.ruleId, "rule_id"),
     vehicleId,
@@ -128,6 +158,9 @@ export function normalizeCandidateSubmission(value) {
     seller,
     listingText,
     images,
+    screenshots,
+    missingFields,
+    confidence,
   };
   normalized.internalRecord = {
     vehicleId,
@@ -152,14 +185,18 @@ export function normalizeCandidateSubmission(value) {
     generalLocation: location.slice(0, 180),
     availability: "Availability Not Yet Confirmed",
     translationState: "Need Review",
-    evidenceLabels: ["Facebook listing title", listingText ? "Facebook listing text" : "Listing text missing", images.length ? `${images.length} source image URLs` : "Source images missing"],
-    sourcePlatform: "Facebook Marketplace",
+    evidenceLabels: [`${sourcePlatformLabel} listing title`, listingText ? `${sourcePlatformLabel} listing text` : "Listing text missing", images.length ? `${images.length} source image URLs` : "Source images missing", screenshots.length ? `${screenshots.length} screenshot URL(s)` : "Screenshot missing"],
+    sourcePlatform: sourcePlatformLabel,
     sourceUrl,
     sellerName: seller,
     sellerPhone: "Not provided",
     exactLocation: location,
-    internalNotes: `Automatically retained for Owner review. No availability claim or seller contact has been made.${listingText ? ` Source text: ${listingText}` : ""}`.slice(0, 10_000),
+    internalNotes: `Jaklaen candidate retained for Owner review with candidate_status=NEEDS_REVIEW. No availability claim, publication, purchase, payment, or seller contact has been made.${missingFields.length ? ` Missing fields: ${missingFields.join(", ")}.` : ""}${listingText ? ` Source text: ${listingText}` : ""}`.slice(0, 10_000),
     originalMediaCount: images.length,
+    screenshotCount: screenshots.length,
+    missingFields,
+    confidence,
+    candidateStatus: "NEEDS_REVIEW",
   };
   return normalized;
 }
