@@ -521,3 +521,19 @@ Decision:
 Boundaries:
 - This approval is for Preview on `codex/app` only.
 - No production deployment, automatic publish, seller contact, negotiation, reservation, purchase, payment, credential storage, CAPTCHA/MFA bypass, or account-risk workaround is authorized.
+
+## 2026-09-01 - Vehicle Sourcing Center plan refined
+
+Status: OWNER APPROVED FOR PLAN / PREVIEW DIRECTION ONLY
+
+Decision:
+- Rename the admin-facing Jaklaen control concept to `Vehicle Sourcing Center`.
+- The center must support three sourcing work types: `SCHEDULED_SEARCH`, `OWNER_SEARCH`, and `CUSTOMER_SEARCH`.
+- All work types must enter a Search Job Queue with request ID, source, criteria, priority, schedule, status, requested quantity, found Candidate count, created time, last run, next run, and safe error/blocker.
+- V1 Customer Search must default to `OWNER_APPROVAL_REQUIRED` before queueing. Owner may later configure immediate queueing, but the safer default protects NK Cars from spam and uncontrolled worker load.
+- The Admin App plan must include Dashboard, New Search, Scheduled Searches, Customer Requests, Search Job Queue, Candidate Review, Pause/Resume/Run Now, Search History, and Audit Log.
+- The full plan, data schema, API contract, permission rules, job lifecycle, and Owner approval gates are recorded in `docs/jaklaen-sourcing-v1.md`.
+
+Boundaries:
+- This is not Production approval.
+- Jaklaen remains prohibited from automatic publish, seller contact, negotiation, reservation, purchase, payment, availability confirmation, credential storage, or Facebook security/rate-limit bypass.

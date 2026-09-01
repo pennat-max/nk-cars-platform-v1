@@ -309,6 +309,7 @@ Completed source-layer items:
 9. internal-only source-image download, bounded raster validation, re-encoding, and QNAP persistence
 10. Preview implementation for Jaklaen Candidate Intake V1: worker alias `/v1/worker/jaklaen/candidates`, screenshot/missing-field validation, Owner-only candidate review API contract, append-only review event schema, and TEST/MOCK Candidate Review preview route at `/buy/owner-preview/jaklaen-candidates`
 11. Preview implementation for app-driven Jaklaen Search Queue V1: the same preview route now includes Search Now, Standing Searches, and Candidate Review sections. The Data API contract adds `GET/POST /v1/admin/jaklaen/search-requests`, `POST /v1/worker/jaklaen/jobs/claim`, and `POST /v1/worker/jaklaen/jobs/:jobId/complete`. `SEARCH_NOW` creates a queued job immediately. `STANDING_SEARCH` stores schedule criteria for a future scheduler to queue jobs only inside active hours. Customer users may only create `SEARCH_NOW` tied to their own Case reference.
+12. Owner-approved planning direction now names the full Admin App surface `Vehicle Sourcing Center`, documented in `docs/jaklaen-sourcing-v1.md`. It expands the simplified preview terms into three work types: `SCHEDULED_SEARCH`, `OWNER_SEARCH`, and `CUSTOMER_SEARCH`. V1 Customer Search defaults to `OWNER_APPROVAL_REQUIRED` before queueing to prevent spam and uncontrolled worker volume.
 
 Next priority:
 1. QNAP infrastructure supplies a stable authenticated HTTPS Data API origin reachable by the approved app runtime without exposing PostgreSQL
