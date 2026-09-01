@@ -69,13 +69,15 @@ export default function JaklaenOwnerSearchPreview() {
   const [decisions, setDecisions] = useState<Record<string, CandidateDecision>>({});
 
   useEffect(() => {
-    if (searchState !== "queued") return;
-    const searchingTimer = window.setTimeout(() => setSearchState("searching"), 700);
-    const resultTimer = window.setTimeout(() => setSearchState("results"), 1800);
-    return () => {
-      window.clearTimeout(searchingTimer);
-      window.clearTimeout(resultTimer);
-    };
+    if (searchState === "queued") {
+      const timer = window.setTimeout(() => setSearchState("searching"), 700);
+      return () => window.clearTimeout(timer);
+    }
+
+    if (searchState === "searching") {
+      const timer = window.setTimeout(() => setSearchState("results"), 1100);
+      return () => window.clearTimeout(timer);
+    }
   }, [searchState]);
 
   function submitSearch(event: FormEvent<HTMLFormElement>) {
@@ -153,6 +155,7 @@ export default function JaklaenOwnerSearchPreview() {
                         <div><dt>พื้นที่</dt><dd>{candidate.location}</dd></div>
                         <div><dt>เวลาที่พบ</dt><dd>{candidate.foundAt}</dd></div>
                       </dl>
+                      <p className={styles.decision}>พบโดยจั๊กแล่น — ยังไม่ตรวจสอบ</p>
                       {decision !== "pending" && <p className={styles.decision}>{decision === "approved" ? "✓ เลือกคันนี้ไว้ตรวจสอบ" : "? ขอข้อมูลเพิ่มแล้ว"}</p>}
                       <div className={styles.cardActions}>
                         <button onClick={() => setDecisions((current) => ({ ...current, [candidate.id]: "approved" }))}><CheckCircle2 size={17} /> สนใจคันนี้</button>
