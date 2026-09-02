@@ -42,3 +42,13 @@
 - Toggle and task form update local React state only
 - Approval action disabled
 - No Worker activation, Tool/Credential change, API integration, migration, real data, external contact, Merge, or Production deploy
+
+## Private Preview deployment attempt
+
+- Owner authorized a Private Preview only; Merge and Production remained prohibited.
+- Used isolated Vercel browser profile `jaklaen-vercel` and isolated CLI configuration; normal Chrome and normal Vercel profiles were not used.
+- Vercel authentication: PASS.
+- Attempted to create dedicated project `nk-cars-ai-office-private-preview` so SSO protection could be enabled before any deployment.
+- Result: BLOCKED by Vercel account/team fair-use restriction: `Your Team exceeded our fair use limits and has been blocked.`
+- No project, deployment, public URL, credential expansion, or Production action was created.
+- Required next action: Owner resolves Vercel fair-use/account access or supplies an authorized unblocked Vercel team/account. Jaklaen must enable SSO protection before deploying.
