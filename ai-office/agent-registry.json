@@ -1,0 +1,16 @@
+{
+  "schema_version": "1.0",
+  "project": "NK Cars Platform V1",
+  "coordinator": "jaklaen-hermes",
+  "owner": "P'Com",
+  "phase": "Phase 1",
+  "default_policy": "least_privilege_no_external_credentials",
+  "agents": [
+    {"id":"nk-product-ai","display_name":"Product AI","profile":"profiles/product-ai.json","status":"disabled_pending_runtime_isolation","credential_access":"none","write_boundary":"requirements_and_task_briefs_only"},
+    {"id":"nk-frontend-ai","display_name":"Frontend AI","profile":"profiles/frontend-ai.json","status":"disabled_pending_runtime_isolation","credential_access":"none","write_boundary":"assigned_task_branch_only_via_coordinator"},
+    {"id":"nk-backend-ai","display_name":"Backend AI","profile":"profiles/backend-ai.json","status":"disabled_pending_runtime_isolation","credential_access":"none_until_owner_approved_test_bootstrap","write_boundary":"assigned_task_branch_only_via_coordinator"},
+    {"id":"nk-qa-ai","display_name":"QA AI","profile":"profiles/qa-ai.json","status":"disabled_pending_runtime_isolation","credential_access":"none","write_boundary":"reports_or_coordinator_assigned_test_branch"},
+    {"id":"nk-security-ai","display_name":"Security AI","profile":"profiles/security-ai.json","status":"disabled_pending_runtime_isolation","credential_access":"redacted_config_only","write_boundary":"security_reports_and_draft_pr_comments_only"}
+  ],
+  "reserved_for_owner": ["merge_main","deploy_production","apply_real_migration","modify_real_data","change_credentials_or_permissions","external_contact","financial_or_binding_action"]
+}

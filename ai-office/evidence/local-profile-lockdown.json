@@ -1,0 +1,14 @@
+{
+  "generated_at": "2026-09-02T11:17:24+07:00",
+  "scope": "local Hermes profiles for NK Cars Phase 1",
+  "profiles": [
+    {"id":"nk-product-ai","gateway":"stopped","enabled_default_toolsets":0,"env_scaffold_exists":true,"env_non_comment_lines":0,"bundled_skill_files":24,"operational_status":"disabled_pending_runtime_isolation"},
+    {"id":"nk-frontend-ai","gateway":"stopped","enabled_default_toolsets":0,"env_scaffold_exists":true,"env_non_comment_lines":0,"bundled_skill_files":24,"operational_status":"disabled_pending_runtime_isolation"},
+    {"id":"nk-backend-ai","gateway":"stopped","enabled_default_toolsets":0,"env_scaffold_exists":true,"env_non_comment_lines":0,"bundled_skill_files":24,"operational_status":"disabled_pending_runtime_isolation"},
+    {"id":"nk-qa-ai","gateway":"stopped","enabled_default_toolsets":0,"env_scaffold_exists":true,"env_non_comment_lines":0,"bundled_skill_files":24,"operational_status":"disabled_pending_runtime_isolation"},
+    {"id":"nk-security-ai","gateway":"stopped","enabled_default_toolsets":0,"env_scaffold_exists":true,"env_non_comment_lines":0,"bundled_skill_files":24,"operational_status":"disabled_pending_runtime_isolation"}
+  ],
+  "enforcement": "All profile CLI toolsets are disabled by default. Only Jaklaen may launch a bounded one-shot with explicit task-scoped toolsets and an isolated workdir/worktree.",
+  "credential_statement": "Each profile has an empty .env scaffold with zero non-comment lines; no credential values were copied. Bundled Hermes reference skill files remain present but have no tool access while default toolsets are disabled.",
+  "limitations": "Tool access can be explicitly granted by the coordinator for a single bounded task; that grant must match the version-controlled role profile and be audited."
+}

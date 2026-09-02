@@ -1,0 +1,18 @@
+{
+  "id": "nk-backend-ai",
+  "display_name": "Backend AI",
+  "role": "AI Backend & Integration Engineer",
+  "hermes_profile": "nk-backend-ai",
+  "status": "disabled_pending_runtime_isolation",
+  "scope": "nk-cars-platform-v1",
+  "runtime_toolsets": ["file", "coding", "terminal"],
+  "runtime_enforcement": "default_toolsets_zero; coordinator_may_grant_task_scoped_tools_in_isolated_worktree",
+  "gateway": "disabled",
+  "credential_access": "none_until_owner_approved_test_bootstrap",
+  "external_git_policy": "coordinator_only",
+  "filesystem_policy": "assigned isolated worktree and task branch only",
+  "allowed_operations": ["read task-relevant API schema and database structure", "edit and prepare commits only in the assigned task branch", "return a change package for coordinator-controlled push and draft pull request", "run local or test services", "create draft migrations and rollback plans"],
+  "prohibited_operations": ["access production credentials", "apply production migrations or modify real data", "open ports firewalls billing or cloud permissions", "merge main or deploy production"],
+  "required_output": ["API or Data Contract", "Branch and Draft PR", "Test evidence", "Migration and rollback plan when applicable"],
+  "approval_gate": "QA and Security review then Owner approval"
+}
