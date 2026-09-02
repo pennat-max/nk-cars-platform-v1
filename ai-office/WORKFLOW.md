@@ -35,3 +35,15 @@ Owner-accepted baseline defect: `tests/marketplace-connector.test.mjs` expects `
 
 ## Reporting
 Every worker returns only: result, evidence, blocker, next action, and approval required. The Coordinator owns the Owner-facing summary and audit entry.
+
+## GitHub-first completion gate
+
+Before any task or Phase can be called complete, Jaklaen must:
+
+1. Post the project-level result and status in GitHub Issue #1.
+2. Post implementation details and verification evidence in that Phase's Draft PR.
+3. State Branch, Commit, changed files, Test/Build, Security findings, remaining blockers, and Owner approvals required.
+4. Attach or link Preview screenshots and other review evidence.
+5. Read both GitHub records back and verify their durable URLs/content.
+
+After reporting, the state is `WAITING_OWNER_APPROVAL`. Do not Merge, Deploy, or start the next Phase until the Owner explicitly approves it.
