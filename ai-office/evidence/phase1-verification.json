@@ -1,0 +1,41 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-09-02T11:17:24+07:00",
+  "attestation_type": "coordinator_recorded_tool_output_non_cryptographic",
+  "branch": "coord/ai-development-team-readiness",
+  "base": {"branch": "codex/app", "commit": "f8a2630"},
+  "source_commits": [
+    "a05656c64055b1537a643bcbb277cb37f2b2d214",
+    "d9b75f659725164b7e485c0ab1b625ed4bf6c479"
+  ],
+  "draft_pr_2": {"branch": "codex/jaklaen-owner-search-preview", "commit": "fc4e52c", "comparison_only": true},
+  "profile_ready_checks": [
+    {"profile":"nk-product-ai","session_id":"20260902_100006_656a0c","result":"READY","toolsets":"safe","operational_status":"disabled_pending_runtime_isolation"},
+    {"profile":"nk-frontend-ai","session_id":"20260902_100059_7d4c95","result":"READY","toolsets":"safe","operational_status":"disabled_pending_runtime_isolation"},
+    {"profile":"nk-backend-ai","session_id":"20260902_100112_695c81","result":"READY","toolsets":"safe","operational_status":"disabled_pending_runtime_isolation"},
+    {"profile":"nk-qa-ai","session_id":"20260902_100128_0fd7cb","result":"READY","toolsets":"safe","operational_status":"disabled_pending_runtime_isolation"},
+    {"profile":"nk-security-ai","session_id":"20260902_100140_938d2a","result":"READY","toolsets":"safe","operational_status":"disabled_pending_runtime_isolation"}
+  ],
+  "commands": [
+    {"command":"node scripts/validate-ai-office.mjs","exit_code":0,"result":"PASS_WITH_LIMITATIONS: 5 profiles, 5 registry agents, 11 audit events, 15 staged blobs scanned from Git index, HEURISTIC_PASS_STAGED_BLOBS, all profiles operationally disabled pending isolation"},
+    {"command":"npx tsc --noEmit","exit_code":0,"result":"PASS"},
+    {"command":"npm run lint","exit_code":0,"result":"PASS: 0 errors, 13 existing no-img-element warnings"},
+    {"command":"npm run build","exit_code":0,"result":"PASS"},
+    {"command":"npm test","exit_code":1,"result":"78/79 PASS; BASELINE_DEFECT_ACCEPTED in tests/marketplace-connector.test.mjs"},
+    {"command":"git diff --cached --check","exit_code":0,"result":"PASS"}
+  ],
+  "baseline_defect": {
+    "status": "BASELINE_DEFECT_ACCEPTED",
+    "test": "tests/marketplace-connector.test.mjs",
+    "expected": "imported",
+    "actual": "partial",
+    "reproduced_on": ["codex/app@f8a2630", "codex/jaklaen-owner-search-preview@fc4e52c"],
+    "owner_instruction": "Do not modify the test to hide the failure; propose a separate root-cause task."
+  },
+  "security": {
+    "scope": "all staged files",
+    "method": "heuristic sensitive filename and credential-pattern scan plus independent read-only review",
+    "result": "PASS_WITH_LIMITATIONS",
+    "limitation": "Hermes toolsets are not a hard read-only filesystem sandbox; profiles remain disabled until coordinator-enforced isolated runtime launch."
+  }
+}

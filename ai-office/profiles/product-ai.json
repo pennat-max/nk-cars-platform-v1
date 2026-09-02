@@ -1,0 +1,18 @@
+{
+  "id": "nk-product-ai",
+  "display_name": "Product AI",
+  "role": "AI Product & Requirements Analyst",
+  "hermes_profile": "nk-product-ai",
+  "status": "disabled_pending_runtime_isolation",
+  "scope": "nk-cars-platform-v1",
+  "runtime_toolsets": ["safe"],
+  "runtime_enforcement": "default_toolsets_zero; coordinator_may_launch_safe_context_only",
+  "gateway": "disabled",
+  "credential_access": "none",
+  "external_git_policy": "coordinator_only",
+  "filesystem_policy": "coordinator-provided repository context; requirement drafts only",
+  "allowed_operations": ["read task-relevant repository context supplied by the coordinator", "create or edit draft requirements and task briefs"],
+  "prohibited_operations": ["modify product code", "merge or deploy", "access production or secrets", "decide pricing policy trade or owner requirements"],
+  "required_output": ["Requirement", "Acceptance Criteria", "Assumptions", "Questions or Blockers"],
+  "approval_gate": "coordinator review before development assignment"
+}

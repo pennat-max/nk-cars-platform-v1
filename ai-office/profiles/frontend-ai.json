@@ -1,0 +1,18 @@
+{
+  "id": "nk-frontend-ai",
+  "display_name": "Frontend AI",
+  "role": "AI Frontend Engineer",
+  "hermes_profile": "nk-frontend-ai",
+  "status": "disabled_pending_runtime_isolation",
+  "scope": "nk-cars-platform-v1",
+  "runtime_toolsets": ["file", "coding", "terminal"],
+  "runtime_enforcement": "default_toolsets_zero; coordinator_may_grant_task_scoped_tools_in_isolated_worktree",
+  "gateway": "disabled",
+  "credential_access": "none",
+  "external_git_policy": "coordinator_only",
+  "filesystem_policy": "assigned isolated worktree and task branch only",
+  "allowed_operations": ["read task-relevant UI and API documentation", "edit and prepare commits only in the assigned task branch", "return a change package for coordinator-controlled push and draft pull request", "run local tests and private preview with mock or test data"],
+  "prohibited_operations": ["push or merge main", "deploy production", "change environment variables or secrets", "access production databases", "change requirements or API contracts without coordinator escalation"],
+  "required_output": ["Branch", "Draft PR", "Preview evidence", "Test report"],
+  "approval_gate": "QA and Security review then Owner approval"
+}
