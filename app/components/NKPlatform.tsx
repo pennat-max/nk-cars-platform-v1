@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { demoLeads, demoRules, demoVehicles, demoWanted } from "../data/demo";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { demoLeads, demoRules, demoWanted } from "../data/demo";
 import { defaultSource, markup, profit, thb } from "../lib/domain";
 import type { Lead, LeadStage, Role, SourcingRule, Vehicle, Wanted } from "../types";
 import VehicleEditor from "./VehicleEditor";
@@ -21,11 +21,13 @@ function StatusBadge({ state }: { state: string }) {
 export default function NKPlatform() {
   const [role, setRole] = useState<Role>("Owner");
   const [view, setView] = useState<View>("home");
-  const [vehicles, setVehicles] = useState<Vehicle[]>(demoVehicles);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [vehiclesLoading, setVehiclesLoading] = useState(true);
+  const [vehiclesError, setVehiclesError] = useState("");
   const [leads, setLeads] = useState<Lead[]>(demoLeads);
   const [wanted, setWanted] = useState<Wanted[]>(demoWanted);
   const [rules, setRules] = useState<SourcingRule[]>(demoRules);
-  const [selectedId, setSelectedId] = useState("v4");
+  const [selectedId, setSelectedId] = useState("");
   const [notice, setNotice] = useState("");
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("All");
@@ -34,6 +36,7 @@ export default function NKPlatform() {
   const [chatInput, setChatInput] = useState("");
   const [chat, setChat] = useState<{ from: "ai" | "user"; text: string }[]>([{ from: "ai", text: "Hello — I’m NK AI. Tell me the model, year, quantity, budget, country and port you need." }]);
   const selected = vehicles.find((vehicle) => vehicle.id === selectedId) || vehicles[0];
+  const persistTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
   useEffect(() => {
     const saved = window.localStorage.getItem("nk-cars-v1-state");
@@ -41,7 +44,6 @@ export default function NKPlatform() {
     try {
       const parsed = JSON.parse(saved);
       queueMicrotask(() => {
-        if (parsed.vehicles) setVehicles(parsed.vehicles);
         if (parsed.leads) setLeads(parsed.leads);
         if (parsed.wanted) setWanted(parsed.wanted);
         if (parsed.rules) setRules(parsed.rules);
@@ -49,10 +51,38 @@ export default function NKPlatform() {
     } catch { /* Keep seeded demo state if device state is invalid. */ }
   }, []);
   useEffect(() => {
-    const persistableVehicles = vehicles.map((vehicle) => ({ ...vehicle, images: undefined }));
-    try { window.localStorage.setItem("nk-cars-v1-state", JSON.stringify({ vehicles: persistableVehicles, leads, wanted, rules })); }
-    catch { /* Large uploaded covers stay in the current session if device storage is full. */ }
-  }, [vehicles, leads, wanted, rules]);
+    try { window.localStorage.setItem("nk-cars-v1-state", JSON.stringify({ leads, wanted, rules })); }
+    catch { /* Device storage full; state stays in the current session. */ }
+  }, [leads, wanted, rules]);
+  useEffect(() => {
+    let active = true;
+    fetch("/api/vehicles", { cache: "no-store" })
+      .then((response) => response.json())
+      .then((payload: { vehicles?: Vehicle[]; error?: string }) => {
+        if (!active) return;
+        if (payload.vehicles) setVehicles(payload.vehicles);
+        else setVehiclesError(payload.error || "โหลดข้อมูลรถจาก Database ไม่สำเร็จ");
+      })
+      .catch(() => { if (active) setVehiclesError("เชื่อมต่อ Database ไม่สำเร็จ"); })
+      .finally(() => { if (active) setVehiclesLoading(false); });
+    return () => { active = false; };
+  }, []);
+
+  async function persistVehicle(vehicle: Vehicle) {
+    clearTimeout(persistTimers.current[vehicle.id]);
+    try {
+      const response = await fetch(`/api/vehicles/${vehicle.id}`, {
+        method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(vehicle),
+      });
+      if (!response.ok) throw new Error("save_failed");
+    } catch {
+      flash("บันทึกไป Database ไม่สำเร็จ กรุณาลองใหม่");
+    }
+  }
+  function schedulePersist(vehicle: Vehicle) {
+    clearTimeout(persistTimers.current[vehicle.id]);
+    persistTimers.current[vehicle.id] = setTimeout(() => { persistVehicle(vehicle); }, 700);
+  }
 
   const published = vehicles.filter((v) => ["Published", "Reserved", "Sold"].includes(v.state));
   const marketVehicles = published.filter((v) => {
@@ -80,23 +110,37 @@ export default function NKPlatform() {
   }
   function approve(id: string) {
     if (role !== "Owner") return flash("Owner approval is required before publishing.");
-    setVehicles((items) => items.map((v) => v.id === id ? { ...v, state: "Published", timeline: [...v.timeline, { id: `${id}-${Date.now()}`, time: "Just now", label: "Owner approved", detail: "Approved and published to Marketplace." }] } : v));
+    const target = vehicles.find((v) => v.id === id);
+    if (!target) return;
+    const updated: Vehicle = { ...target, state: "Published", timeline: [...target.timeline, { id: `${id}-${Date.now()}`, time: "Just now", label: "Owner approved", detail: "Approved and published to Marketplace." }] };
+    setVehicles((items) => items.map((v) => v.id === id ? updated : v));
+    persistVehicle(updated);
     flash("Vehicle approved and published to Marketplace.");
     go("marketplace", id);
   }
   function reject(id: string) {
     if (role !== "Owner") return flash("Only Owner can reject a vehicle.");
-    setVehicles((items) => items.map((v) => v.id === id ? { ...v, state: "Rejected", timeline: [...v.timeline, { id: `${id}-${Date.now()}`, time: "Just now", label: "Owner rejected", detail: "Vehicle removed from the review queue." }] } : v));
+    const target = vehicles.find((v) => v.id === id);
+    if (!target) return;
+    const updated: Vehicle = { ...target, state: "Rejected", timeline: [...target.timeline, { id: `${id}-${Date.now()}`, time: "Just now", label: "Owner rejected", detail: "Vehicle removed from the review queue." }] };
+    setVehicles((items) => items.map((v) => v.id === id ? updated : v));
+    persistVehicle(updated);
     flash("Vehicle rejected.");
     go("review");
   }
   function updateVehicle(field: keyof Vehicle, value: string | number | boolean) {
-    setVehicles((items) => items.map((v) => v.id === selected.id ? { ...v, [field]: value, timeline: [...v.timeline, { id: `${v.id}-${Date.now()}`, time: "Just now", label: "Staff edited", detail: `${String(field)} updated.` }] } : v));
+    if (!selected) return;
+    const target = vehicles.find((v) => v.id === selected.id);
+    if (!target) return;
+    const updated: Vehicle = { ...target, [field]: value, timeline: [...target.timeline, { id: `${target.id}-${Date.now()}`, time: "Just now", label: "Staff edited", detail: `${String(field)} updated.` }] };
+    setVehicles((items) => items.map((v) => v.id === target.id ? updated : v));
+    schedulePersist(updated);
   }
   function saveVehicleDraft(vehicle: Vehicle) {
     setVehicles((items) => items.some((item) => item.id === vehicle.id)
       ? items.map((item) => item.id === vehicle.id ? vehicle : item)
       : [vehicle, ...items]);
+    persistVehicle(vehicle);
     setSelectedId(vehicle.id);
     setEditingId(null);
     flash("Draft saved — vehicle is now in Waiting Review.");
@@ -104,9 +148,12 @@ export default function NKPlatform() {
   }
   function createInquiry() {
     if (!inquiry.name.trim()) return flash("Please enter the customer name.");
+    if (!selected) return;
     const newLead: Lead = { id:`l${Date.now()}`, customer:inquiry.name, country:inquiry.country, port:inquiry.port, vehicleId:selected.id, requirement:inquiry.requirement || `${selected.year} ${selected.brand} ${selected.model}`, stage:"New", lastActivity:"Just now", assigned:"Unassigned", quantity:Number(inquiry.quantity) || 1, budget:inquiry.budget || "Need Review" };
     setLeads((items) => [newLead, ...items]);
-    setVehicles((items) => items.map((v) => v.id === selected.id ? { ...v, timeline: [...v.timeline, { id:`${v.id}-${Date.now()}`,time:"Just now",label:"Customer inquiry",detail:`${inquiry.name} · ${inquiry.country}` }] } : v));
+    const updatedVehicle: Vehicle = { ...selected, timeline: [...selected.timeline, { id:`${selected.id}-${Date.now()}`,time:"Just now",label:"Customer inquiry",detail:`${inquiry.name} · ${inquiry.country}` }] };
+    setVehicles((items) => items.map((v) => v.id === selected.id ? updatedVehicle : v));
+    persistVehicle(updatedVehicle);
     flash("Inquiry created — new Lead is now on Owner Dashboard."); go(role === "Customer" ? "marketplace" : "leads");
   }
   function sendChat() {
@@ -127,25 +174,32 @@ export default function NKPlatform() {
       <div className="top-actions"><Badge tone="purple">DEMO DATA</Badge><select value={role} onChange={(e) => { const next=e.target.value as Role; setRole(next); go(next === "Customer" ? "marketplace" : "home"); }} aria-label="Preview role"><option>Owner</option><option>Internal Staff</option><option>Customer</option></select></div>
     </header>
     {notice && <div className="toast" role="status">{notice}</div>}
+    {vehiclesError && <div className="toast" role="alert">{vehiclesError}</div>}
     <main className="content">
-      {view === "home" && internal && <Dashboard kpis={kpis} vehicles={vehicles} wanted={wanted} go={go} />}
-      {view === "vehicles" && internal && <Vehicles vehicles={vehicles} go={go} setSelectedId={setSelectedId} />}
-      {view === "marketplace" && <Marketplace vehicles={marketVehicles} query={query} setQuery={setQuery} filter={filter} setFilter={setFilter} go={go} />}
-      {view === "review" && internal && <Review vehicles={vehicles} selected={selected} role={role} setSelectedId={setSelectedId} go={go} approve={approve} reject={reject} updateVehicle={updateVehicle} />}
-      {view === "detail" && <Detail vehicle={selected} internal={internal} chat={chat} chatInput={chatInput} setChatInput={setChatInput} sendChat={sendChat} go={go} />}
-      {view === "vehicle360" && internal && <Vehicle360 vehicle={selected} leads={leads} go={go} />}
-      {view === "leads" && internal && <Leads leads={leads} vehicles={vehicles} setLeads={setLeads} />}
-      {view === "wanted" && <WantedPage wanted={wanted} setWanted={setWanted} role={role} flash={flash} />}
-      {view === "rules" && internal && <Rules rules={rules} setRules={setRules} />}
-      {view === "add" && internal && <VehicleEditor key={editingId || "new-vehicle"} initialVehicle={editingId ? vehicles.find((vehicle) => vehicle.id === editingId) : undefined} onSave={saveVehicleDraft} onCancel={() => go(editingId ? "review" : "vehicles", editingId || undefined)} notify={flash} />}
-      {view === "inquiry" && <Inquiry vehicle={selected} inquiry={inquiry} setInquiry={setInquiry} createInquiry={createInquiry} />}
-      {view === "more" && <More internal={internal} go={go} reset={() => { setVehicles(demoVehicles); setLeads(demoLeads); setWanted(demoWanted); setRules(demoRules); flash("DEMO DATA reset complete."); }} />}
+      {vehiclesLoading ? <div className="empty"><b>Loading vehicles…</b><p>Connecting to the NK Cars database.</p></div> : <>
+        {view === "home" && internal && <Dashboard kpis={kpis} vehicles={vehicles} wanted={wanted} go={go} />}
+        {view === "vehicles" && internal && <Vehicles vehicles={vehicles} go={go} setSelectedId={setSelectedId} />}
+        {view === "marketplace" && <Marketplace vehicles={marketVehicles} query={query} setQuery={setQuery} filter={filter} setFilter={setFilter} go={go} />}
+        {view === "review" && internal && (selected ? <Review vehicles={vehicles} selected={selected} role={role} setSelectedId={setSelectedId} go={go} approve={approve} reject={reject} updateVehicle={updateVehicle} /> : <EmptyVehicleState internal={internal} go={go} />)}
+        {view === "detail" && (selected ? <Detail vehicle={selected} internal={internal} chat={chat} chatInput={chatInput} setChatInput={setChatInput} sendChat={sendChat} go={go} /> : <EmptyVehicleState internal={internal} go={go} />)}
+        {view === "vehicle360" && internal && (selected ? <Vehicle360 vehicle={selected} leads={leads} go={go} /> : <EmptyVehicleState internal={internal} go={go} />)}
+        {view === "leads" && internal && <Leads leads={leads} vehicles={vehicles} setLeads={setLeads} />}
+        {view === "wanted" && <WantedPage wanted={wanted} setWanted={setWanted} role={role} flash={flash} />}
+        {view === "rules" && internal && <Rules rules={rules} setRules={setRules} />}
+        {view === "add" && internal && <VehicleEditor key={editingId || "new-vehicle"} initialVehicle={editingId ? vehicles.find((vehicle) => vehicle.id === editingId) : undefined} onSave={saveVehicleDraft} onCancel={() => go(editingId ? "review" : "vehicles", editingId || undefined)} notify={flash} />}
+        {view === "inquiry" && (selected ? <Inquiry vehicle={selected} inquiry={inquiry} setInquiry={setInquiry} createInquiry={createInquiry} /> : <EmptyVehicleState internal={internal} go={go} />)}
+        {view === "more" && <More internal={internal} go={go} reset={() => { setLeads(demoLeads); setWanted(demoWanted); setRules(demoRules); flash("DEMO DATA reset (Leads, Wanted, Rules). Vehicles stay connected to the live database."); }} />}
+      </>}
     </main>
     <nav className="bottom-nav" aria-label="Primary navigation">{nav.map(([label,target]) => <button key={label} className={view === target ? "active" : ""} onClick={() => go(target as View)}><span>{label === "Home" ? "⌂" : label === "Vehicles" ? "▣" : label === "Leads" ? "◎" : label === "Wanted" ? "◇" : label === "Ask NK AI" ? "✦" : "•••"}</span>{label}</button>)}</nav>
   </div>;
 }
 
 function PageHead({ eyebrow, title, action }: { eyebrow:string; title:string; action?:React.ReactNode }) { return <div className="page-head"><div><p className="eyebrow">{eyebrow}</p><h1>{title}</h1></div>{action}</div>; }
+
+function EmptyVehicleState({ internal, go }: { internal: boolean; go: (v: View, id?: string) => void }) {
+  return <div className="empty"><b>No vehicle selected</b><p>{internal ? "Add a vehicle to get started." : "This vehicle is not available right now."}</p>{internal && <button className="button primary" onClick={() => go("add")}>＋ Add vehicle</button>}</div>;
+}
 
 function Dashboard({ kpis, vehicles, wanted, go }: { kpis:(string|number|View)[][]; vehicles:Vehicle[]; wanted:Wanted[]; go:(v:View,id?:string)=>void }) {
   const waiting=vehicles.filter(v=>v.state==="Waiting Review");
