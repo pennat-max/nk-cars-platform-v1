@@ -2,6 +2,10 @@
 
 Private mobile-first prototype and production-rebuild reference for NK Cars' Thailand-to-international used-vehicle sourcing workflow.
 
+New Codex sessions should start here:
+
+- [Start Here for Codex](START_HERE_CODEX.md)
+
 The production handoff is complete and lives in:
 
 - [Codex working agreement](AGENTS.md)
