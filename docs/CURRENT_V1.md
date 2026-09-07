@@ -311,6 +311,7 @@ Completed source-layer items:
 11. Preview implementation for app-driven Jaklaen Search Queue V1: the same preview route now includes Search Now, Standing Searches, and Candidate Review sections. The Data API contract adds `GET/POST /v1/admin/jaklaen/search-requests`, `POST /v1/worker/jaklaen/jobs/claim`, `POST /v1/worker/jaklaen/jobs/:jobId/heartbeat`, and `POST /v1/worker/jaklaen/jobs/:jobId/complete`. `SEARCH_NOW` creates a queued job immediately. `STANDING_SEARCH` stores schedule criteria for a future scheduler to queue jobs only inside active hours. Customer users may only create `SEARCH_NOW` tied to their own Case reference.
 12. Owner-approved planning direction now names the full Admin App surface `Vehicle Sourcing Center`, documented in `docs/jaklaen-sourcing-v1.md`. It expands the simplified preview terms into three work types: `SCHEDULED_SEARCH`, `OWNER_SEARCH`, and `CUSTOMER_SEARCH`. V1 Customer Search defaults to `OWNER_APPROVAL_REQUIRED` before queueing to prevent spam and uncontrolled worker volume.
 13. Jaklaen Health & Readiness Status is now part of the Vehicle Sourcing Center direction and Preview surface. Overall status must remain `BLOCKED` or `OFFLINE` until all core checks pass and a real Toyota Hilux Revo end-to-end proof reaches Candidate Review as `NEEDS_REVIEW` with real Source URL, screenshot, found time, duration, and Candidate ID.
+14. Jaklaen live search Owner Preview handoff now exists at `/buy/owner-preview/jaklaen-search` and is documented in `docs/jaklaen-live-search-preview-handoff.md`. A local Preview proof rendered 3 sanitized Toyota Hilux Revo cards from a real Facebook Marketplace search cache after one successful local run found 20 listings. This remains a Preview-only bridge and does not satisfy the full readiness gate because candidates are not yet persisted into QNAP Candidate Review through the durable Search Job Queue.
 
 Next priority:
 1. QNAP infrastructure supplies a stable authenticated HTTPS Data API origin reachable by the approved app runtime without exposing PostgreSQL
@@ -321,6 +322,7 @@ Next priority:
 6. verify QNAP media retention, customer/internal separation, backup, and restore under the infrastructure runbook
 7. provision the private worker credential and authorized Facebook browser profile, then prove one real candidate reaches `NEEDS_REVIEW` without publication or seller messaging
 8. connect Jaklaen to the worker token/API contract and run the required one-real-car proof with real source URL, image evidence, screenshot, Candidate ID, QNAP row, and internal media storage references before any production activation
+9. replace the temporary `/buy/owner-preview/jaklaen-search` local-cache fallback with the real queue-backed Jaklaen worker flow before using it as an operational feature
 
 ## 14. QNAP / Hermes direction
 

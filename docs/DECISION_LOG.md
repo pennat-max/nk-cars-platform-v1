@@ -568,3 +568,18 @@ Boundaries:
 - No Production deployment is authorized.
 - No automatic publish, seller contact, availability confirmation, negotiation, reservation, purchase, payment, credential storage, CAPTCHA/MFA/checkpoint bypass, or rate-limit/account-risk workaround is authorized.
 - Jaklaen must not be marked `READY` until the real Toyota Hilux Revo end-to-end proof creates a `NEEDS_REVIEW` Candidate with real Source URL, image/screenshot evidence, found time, and Candidate ID.
+
+## 2026-09-02 - Jaklaen live search Owner Preview handoff
+
+Status: PREVIEW IMPLEMENTATION HANDOFF ONLY
+
+Decision:
+- Add a temporary Owner Preview route at `/buy/owner-preview/jaklaen-search` so the Owner can see Toyota Hilux Revo results directly under the search button during Issue #1 coordination.
+- Document the implementation and limitations in `docs/jaklaen-live-search-preview-handoff.md` so another engineer can continue the queue-backed integration.
+- Local testing proved the UI can render 3 sanitized vehicle cards from a real Facebook Marketplace search cache after a local run found 20 Toyota Hilux Revo listings.
+
+Boundaries:
+- This is not Production approval and does not mark Jaklaen `READY`.
+- The Preview cache file, logs, screenshots, browser sessions, cookies, tokens, and raw Facebook output must stay out of GitHub.
+- The temporary cache fallback must be replaced by the durable Search Job Queue and Candidate Intake persistence before operational use.
+- No seller contact, automatic publish, availability confirmation, negotiation, reservation, purchase, payment, credential storage, CAPTCHA/MFA/checkpoint bypass, or rate-limit/account-risk workaround is authorized.
