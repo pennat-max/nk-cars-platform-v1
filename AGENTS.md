@@ -1,65 +1,122 @@
-# NK Cars V1 — Codex Working Agreement
+# NK Cars — Codex Fast/Lean Working Agreement
 
-This repository is the current private prototype and the visual/behavioral reference for the production rebuild.
+Use this file as the default working instruction set for routine development.
 
-Before changing product code, read these files in order:
+## Default context
 
-1. `docs/CODEX_HANDOFF.md`
-2. `docs/AI_MARKETPLACE_IMPORT.md`
-3. `docs/DATA_MODEL.md`
-4. `docs/PRODUCTION_ARCHITECTURE.md`
-5. `docs/ACCEPTANCE_TESTS.md`
-6. `docs/IMPLEMENTATION_PLAN.md`
+For normal tasks, read only:
 
-## Non-negotiable product constraints
+1. `AGENTS.md`
+2. `docs/CURRENT_V1.md`
+3. files directly relevant to the task
 
-- Preserve the current mobile-first UI, information hierarchy, screens, touch targets, labels, navigation, demo behavior, and workflows. Do not redesign unless a technical limitation makes the existing behavior impossible. Record and obtain approval for any unavoidable change.
-- The production path is: Facebook Marketplace URL → fetch reachable listing data and images → analyze all evidence as one AI job → Vehicle Draft → Waiting Review → Owner Approve → Publish.
-- Never fabricate a successful import. If Facebook cannot be reached, preserve the URL and immediately offer multi-photo/screenshot and listing-text fallback.
-- AI must not silently guess, overwrite a user's correction, resolve conflicts without disclosure, confirm unverified availability, invent shipping, invent a price, or grant a discount.
-- New-vehicle intake starts blank. Demo records must never populate or be reused by the create form.
-- Owner approval is required before publication. Staff may create and edit but may not approve, reject, or publish.
-- Public/customer responses must never include source cost, internal margin, source/dealer identity, seller contact information, source URL, full VIN/chassis, or full registration plate.
-- Important state changes and sensitive actions must be authorized on the server, committed transactionally, and written to the activity log. Client-side hidden controls are not authorization.
-- Keep the private preview private until the Owner explicitly approves public publication.
+Do **not** reread the full Master Specification on every task.
 
-## Source-of-truth order
+Read these larger product documents only when the task changes product scope, a requirement is unclear, or `CURRENT_V1.md` explicitly points to them:
 
-When requirements appear to conflict, use this order:
+- `docs/MASTER_SPECIFICATION.md`
+- `docs/PRODUCT_DIRECTION_LIVE_BROKER.md`
+- `docs/PRODUCT_PIVOT_BUYING_BROWSER.md`
 
-1. Explicit new instruction from the Owner.
-2. This working agreement and the handoff documents.
-3. Acceptance tests and state/permission matrices.
-4. Current UI behavior and styling in `app/components`, `app/globals.css`, and `app/data/demo.ts`.
-5. Existing prototype implementation details.
+When requirements conflict, the newest explicit Owner instruction wins. For current customer-facing V1 direction, `PRODUCT_PIVOT_BUYING_BROWSER.md` has priority over older stock-first assumptions.
 
-Preserve observable behavior while replacing prototype-only implementation details such as local storage, a single client-side view switcher, and in-memory rate limiting.
+## Current product direction
 
-## Engineering boundaries
+NK Cars is an **AI Vehicle Buying Browser / Buying Platform for Thailand**, not primarily a permanent stock-catalog website.
 
-- Target standard Next.js App Router with strict TypeScript.
-- Use Server Components for authenticated reads where practical, Server Actions for first-party UI mutations, and Route Handlers for external integrations, AI, webhooks, and public APIs.
-- Put business rules in domain/application services. UI components may invoke rules but must not own the only implementation of them.
-- Use Supabase/PostgreSQL/Auth/Storage for durable data. Scope every business record to an organization even while V1 has one organization.
-- Enable RLS and explicit table privileges on every exposed table. Derive roles from a dedicated organization-membership table or trusted app metadata, never editable user metadata.
-- Keep service-role, OpenAI, Browserless, Meta, WhatsApp, and shipping credentials server-only.
-- Expose public marketplace data through a deliberately restricted DTO/view. Do not query the full internal vehicle row from public pages.
-- Make imports, AI extractions, and external callbacks idempotent and observable. Store prompt/model/version/evidence metadata without logging secrets or sensitive full identifiers.
-- Keep original/private images separate from published/public assets or serve them using signed URLs. Validate MIME type, size, and host allowlists.
+Core customer journey:
 
-## Change discipline
+**Browse or paste vehicle link → Save Vehicle → Vehicle Case → NK AI translation/coordination → Check Availability → Request Inspection → Buy Through NK → downstream purchase/export workflow.**
 
-- Work in small, reviewable milestones following `docs/IMPLEMENTATION_PLAN.md`.
-- Do not delete the current prototype until the parity suite passes against the replacement.
-- Add migrations rather than editing production data manually.
-- Update the handoff docs and acceptance tests when an approved product decision changes behavior.
-- Never commit secrets, tokens, cookies, Browserless profiles, or `.env` files.
+The current implementation must be preserved as rollback/reference while the Buying Browser V1 is rebuilt.
 
-## Required verification before handoff
+## Fast/lean execution mode
 
-- Type checking, linting, unit tests, database/RLS tests, integration tests, and the mobile end-to-end flows in `docs/ACCEPTANCE_TESTS.md` pass.
-- Owner, Staff, Customer, anonymous, cross-organization, and service-role access paths are tested separately.
-- Link import, blocked-import fallback, 30-photo upload, AI conflict handling, manual correction locking, Waiting Review, Owner approval, publish, inquiry creation, and lead visibility are verified end to end.
-- Public responses are checked for internal-data leakage.
-- A migration/rollback note, environment-variable inventory, and deployment runbook are current.
+- Do not ask routine implementation questions when intent is already clear.
+- Make reasonable technical decisions autonomously.
+- Prefer the simplest safe, maintainable implementation.
+- Work in small verifiable milestones.
+- Inspect only relevant files for each milestone.
+- Run targeted tests first; run broader checks when the milestone is stable or the change can affect shared behavior.
+- Do not narrate routine tool calls or repeat documented requirements.
+- Keep progress updates brief: blocker, result, tests, commit SHA, remaining work.
+- Prefer modifying sound existing components over unnecessary rewrites.
+- Update `docs/CURRENT_V1.md` whenever the active milestone, blockers, assumptions, or current architecture materially change.
+- Update `docs/CODEX_PROGRESS.md` only at meaningful milestone boundaries, not after every minor edit.
+- Update `docs/GAP_ANALYSIS.md` only when product/implementation coverage materially changes.
+- After each completed, tested milestone, commit and push stable work to GitHub.
+- Never push obviously broken/untested work merely to show progress.
 
+## Product / UX rules
+
+- Mobile-first, with iPhone as the Owner's primary management device.
+- Customer Browse should use a familiar marketplace-style grid/search/filter pattern while remaining clearly NK-branded.
+- Customer search location defaults to Thailand / NK-configured Thai search areas, not the overseas customer's physical location.
+- Customer account location and destination country are separate from vehicle search location.
+- Support three customer entry paths: Browse Vehicles, Paste Vehicle Link, Ask NK AI to Find One.
+- A saved/selected vehicle becomes a persistent `Vehicle Case`.
+- AI translation and deep vehicle analysis should load progressively; do not block the whole page waiting for AI.
+- Source adapters must remain separate from NK business logic so Facebook, LINE, dealer feeds, websites, auctions, and future sources can be added independently.
+- Never fabricate a successful source import or external integration.
+- Use working fallbacks when a source cannot be accessed.
+
+## Commercial rules
+
+Current intended customer pricing model:
+
+**Actual Vehicle Purchase Price + NK Service Commission + Inspection/Travel + Domestic Transport + Repair/Modification + Export/Shipping + other explicitly agreed costs.**
+
+Current intended NK Service Commission: **10% of actual vehicle purchase price**, configurable before production activation.
+
+Important financial values must be deterministic and sourced from verified records/rate tables, not AI guesses.
+
+## Data / AI rules
+
+- Database records and confirmed documents are the source of truth.
+- AI conversation memory is not authoritative for payment, price, availability, VIN, shipping, approvals, accounting, or fees.
+- AI may extract, translate, summarize, match, rank, and converse.
+- Deterministic systems control financial calculations, permissions, state transitions, approvals, ledgers, and payment confirmation.
+- Unknown or conflicting vehicle facts must remain Unknown / Need Review / Conflict.
+- Human-confirmed data overrides AI prediction.
+- Never silently overwrite a human correction.
+
+## Security / source-session rules
+
+- Never commit secrets, passwords, tokens, cookies, browser profiles, or `.env` files.
+- If a supported source needs authentication, prefer isolated authorized browser sessions; never store plaintext source passwords when avoidable.
+- Customer A's source session/history must never be exposed to Customer B.
+- Never bypass MFA, CAPTCHA, verification, rate limits, or platform security controls.
+- Do not use multiple accounts/profiles to evade platform restrictions.
+
+## Approval boundaries
+
+Codex may autonomously:
+
+- implement/refactor/fix bugs
+- add normal development dependencies
+- create development migrations
+- run tests/builds
+- remove temporary artifacts it created
+- create preview builds
+- commit/push stable milestone work
+
+Owner approval is required before:
+
+- production deployment
+- overwriting/replacing the current public site
+- destructive production database changes
+- deleting important production data
+- activating/purchasing paid services
+- sending real customer/seller messages
+- real deposits, purchases, refunds, transfers, or other financial actions
+- irreversible external actions
+
+Do not ask the Owner to approve the same unchanged decision twice.
+
+## Completion behavior
+
+For each milestone:
+
+**inspect relevant code → implement → targeted tests → broader checks if needed → fix → update CURRENT_V1 → commit/push → concise report.**
+
+Do not stop for non-blocking uncertainty. Make the best reasonable assumption, record it briefly in `docs/CURRENT_V1.md`, and continue.
