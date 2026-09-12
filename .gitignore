@@ -46,3 +46,9 @@ next-env.d.ts
 /.connector-profile/
 /.marketplace-connector-profile/
 /.migration-private/
+
+# local preview/runtime artifacts
+*.out.log
+*.err.log
+nk-*.png
+jaklaen-live-search-result.json

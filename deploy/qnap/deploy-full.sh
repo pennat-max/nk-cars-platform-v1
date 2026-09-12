@@ -46,6 +46,10 @@ fi
   'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" -f /docker-entrypoint-initdb.d/020_sourcing_automation.sql'
 "${docker_bin}" exec tony-nk-cars-postgres sh -c \
   'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" -f /docker-entrypoint-initdb.d/030_candidate_ingestion.sql'
+"${docker_bin}" exec tony-nk-cars-postgres sh -c \
+  'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" -f /docker-entrypoint-initdb.d/040_jaklaen_candidate_review.sql'
+"${docker_bin}" exec tony-nk-cars-postgres sh -c \
+  'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" -f /docker-entrypoint-initdb.d/050_jaklaen_search_queue.sql'
 
 "${docker_bin}" compose -f "${compose_file}" build nk-cars-data nk-cars-app
 "${docker_bin}" compose -f "${compose_file}" up -d

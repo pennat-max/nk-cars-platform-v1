@@ -7,6 +7,7 @@ import sharp from "sharp";
 import { createDataService } from "../deploy/qnap/data-service/server.mjs";
 import { candidateMatchesRule, normalizeCandidateSubmission } from "../deploy/qnap/data-service/candidate-domain.mjs";
 import { QnapMediaStore } from "../deploy/qnap/data-service/media-store.mjs";
+import { deriveJaklaenOverallStatus, normalizeJaklaenJobCompletion, normalizeJaklaenJobHeartbeat, normalizeJaklaenReadinessAction, normalizeJaklaenSearchRequest } from "../deploy/qnap/data-service/jaklaen-search-domain.mjs";
 import {
   normalizeCommand,
   normalizeCompletion,
@@ -64,6 +65,10 @@ const candidatePayload = {
     mileage_km: 65000,
     source_price_thb: 765000,
     images: ["https://scontent.fbcdn.net/revo.jpg"],
+    screenshots: ["https://www.facebook.com/photo.php?fbid=987654321"],
+    confidence: 82,
+    missing_fields: ["grade", "engine"],
+    candidate_status: "NEEDS_REVIEW",
     source: {
       platform: "facebook_marketplace",
       source_url: "https://www.facebook.com/marketplace/item/123456789/",
@@ -99,6 +104,13 @@ async function withService(run) {
     complete: async (id, workerId, completion) => { calls.push({ method: "complete", id, workerId, completion }); return { accepted: true }; },
     ingestCandidate: async (id, workerId, candidate) => { calls.push({ method: "ingestCandidate", id, workerId, candidate }); return { status: "retained", vehicleId: candidate.vehicleId, idempotent: false }; },
     attachCandidateMedia: async (vehicleId, media) => { calls.push({ method: "attachCandidateMedia", vehicleId, media }); return { stored: media.length }; },
+    listJaklaenSearchRequests: async () => ({ observedAt: "2026-09-01T02:00:00.000Z", requests: [], jobs: [] }),
+    createJaklaenSearchRequest: async (request, actor) => { calls.push({ method: "createJaklaenSearchRequest", request, actor }); return { accepted: true, requestId: "srch_test", queuedJobId: request.requestType === "SEARCH_NOW" ? commandId : null, published: false }; },
+    claimNextJaklaenJob: async (workerId) => { calls.push({ method: "claimNextJaklaenJob", workerId }); return { id: commandId, requestId: "srch_test", jobType: "SEARCH_NOW", status: "CLAIMED" }; },
+    heartbeatJaklaenJob: async (jobId, workerId, heartbeat) => { calls.push({ method: "heartbeatJaklaenJob", jobId, workerId, heartbeat }); return { accepted: true, lastHeartbeatAt: "2026-09-01T02:01:00.000Z", published: false }; },
+    completeJaklaenJob: async (jobId, workerId, completion) => { calls.push({ method: "completeJaklaenJob", jobId, workerId, completion }); return { accepted: true, published: false }; },
+    jaklaenReadinessSnapshot: async () => ({ overallStatus: "BLOCKED", currentBlocker: "Real end-to-end Toyota Hilux Revo proof has not passed yet.", checks: [], proof: { requestId: "PENDING_REAL_TEST", candidateId: "PENDING_REAL_TEST", testResult: "NOT_RUN" } }),
+    runJaklaenReadinessAction: async (action, actor) => { calls.push({ method: "runJaklaenReadinessAction", action, actor }); return { accepted: true, action: action.action, published: false, sellerContact: false, readiness: { overallStatus: "BLOCKED" } }; },
   };
   const pool = { query: async () => ({ rows: [{ ok: 1 }] }) };
   const mediaStore = { retainCandidateImages: async () => ({ media: [], failures: [{ index: 1, code: "image_unavailable" }] }) };
@@ -135,11 +147,53 @@ test("candidate ingestion normalizes confidential review data and enforces the a
   assert.equal(candidate.vehicleId, "nk-auto-370aa049ce212e1ce994");
   assert.equal(candidate.internalRecord.visibility, "INTERNAL_ONLY");
   assert.equal(candidate.internalRecord.publicationStatus, "Needs Review");
+  assert.equal(candidate.candidateStatus, "NEEDS_REVIEW");
+  assert.deepEqual(candidate.missingFields, ["GRADE", "ENGINE"]);
+  assert.equal(candidate.screenshots.length, 1);
+  assert.equal(candidate.internalRecord.screenshotCount, 1);
   assert.equal(candidate.internalRecord.sourceUrl, candidatePayload.candidate.source.source_url);
   assert.deepEqual(candidateMatchesRule(candidate, validRule), { matches: true, failures: [] });
   assert.equal(candidateMatchesRule({ ...candidate, location: "Chiang Mai" }, validRule).matches, false);
   assert.equal(candidateMatchesRule({ ...candidate, location: "Phetchaburi, Thailand" }, { ...validRule, locations: ["Phetchaburi"] }).matches, true);
   assert.throws(() => normalizeCandidateSubmission({ ...candidatePayload, candidate: { ...candidatePayload.candidate, source: { ...candidatePayload.candidate.source, source_url: "https://example.com/marketplace/item/1" } } }), /invalid_candidate_source_url/);
+  assert.throws(() => normalizeCandidateSubmission({ ...candidatePayload, candidate: { ...candidatePayload.candidate, candidate_status: "PUBLISHED" } }), /candidate_auto_publish_forbidden/);
+});
+
+test("Jaklaen Search Request domain separates SEARCH_NOW, STANDING_SEARCH, and Customer permissions", () => {
+  const actor = { id: "owner-1", email: "owner@example.com", roles: ["OWNER"] };
+  const payload = {
+    requestType: "SEARCH_NOW",
+    idempotencyKey: "search-now-test-001",
+    priority: "high",
+    customerCaseReference: "CASE-001",
+    criteria: {
+      make: "Toyota",
+      model: "Hilux Revo",
+      grade: "",
+      yearFrom: 2020,
+      yearTo: 2026,
+      transmission: "AT",
+      engineFuel: "",
+      driveType: "4WD",
+      color: "",
+      maxPriceThb: 850000,
+      maxMileageKm: 120000,
+      location: "Bangkok Metro",
+      radiusKm: 120,
+      quantityRequired: 3,
+      sources: ["facebook_marketplace", "facebook_group"],
+    },
+  };
+  const normalized = normalizeJaklaenSearchRequest(payload, actor);
+  assert.equal(normalized.requestType, "SEARCH_NOW");
+  assert.equal(normalized.criteria.grade, "UNKNOWN");
+  assert.equal(normalized.criteria.engineFuel, "PENDING");
+  assert.equal(normalized.requestedBy.role, "OWNER");
+  assert.throws(() => normalizeJaklaenSearchRequest({ ...payload, requestType: "STANDING_SEARCH" }, { id: "customer-1", email: "buyer@example.com", roles: ["CUSTOMER"] }), /customer_standing_search_forbidden/);
+  assert.deepEqual(normalizeJaklaenJobCompletion({ status: "BLOCKED", blockedReason: "CAPTCHA", listingsFound: 0, candidatesReturned: 0, message: "CAPTCHA encountered; stopped." }).blockedReason, "CAPTCHA");
+  assert.equal(normalizeJaklaenReadinessAction({ action: "run_test_search", idempotencyKey: "ready-test-001" }).action, "run_test_search");
+  assert.equal(deriveJaklaenOverallStatus([{ key: "nk_api_connection", label: "NK API Connection", status: "PASS", detail: "ok" }], false), "BLOCKED");
+  assert.equal(deriveJaklaenOverallStatus([{ key: "marketplace_access", label: "Marketplace Access", status: "FAIL", detail: "CAPTCHA" }], false), "BLOCKED");
 });
 
 test("admin sourcing API requires the server token and an independent Owner role", async () => {
@@ -231,6 +285,138 @@ test("worker candidate endpoint retains only a review record and reports partial
   });
 });
 
+test("Jaklaen app queue API creates SEARCH_NOW jobs and lets the worker claim and complete them", async () => {
+  await withService(async ({ baseUrl, calls }) => {
+    const searchRequest = {
+      requestType: "SEARCH_NOW",
+      idempotencyKey: "search-now-test-002",
+      priority: "high",
+      customerCaseReference: "CASE-REVO-002",
+      criteria: {
+        make: "Toyota",
+        model: "Hilux Revo",
+        grade: "UNKNOWN",
+        yearFrom: 2020,
+        yearTo: 2026,
+        transmission: "AT",
+        engineFuel: "Diesel",
+        driveType: "4WD",
+        color: "Any",
+        maxPriceThb: 850000,
+        maxMileageKm: 120000,
+        location: "Bangkok Metro",
+        radiusKm: 120,
+        quantityRequired: 3,
+        sources: ["facebook_marketplace"],
+      },
+    };
+    const created = await fetch(`${baseUrl}/v1/admin/jaklaen/search-requests`, { method: "POST", headers: ownerHeaders(), body: JSON.stringify(searchRequest) });
+    assert.equal(created.status, 201);
+    assert.equal((await created.json()).queuedJobId, commandId);
+    const claimed = await fetch(`${baseUrl}/v1/worker/jaklaen/jobs/claim`, { method: "POST", headers: { authorization: `Bearer ${workerToken}`, "x-nk-worker-id": "jaklaen-hermes" } });
+    assert.equal(claimed.status, 200);
+    assert.equal((await claimed.json()).job.status, "CLAIMED");
+    const heartbeat = await fetch(`${baseUrl}/v1/worker/jaklaen/jobs/${commandId}/heartbeat`, {
+      method: "POST",
+      headers: { authorization: `Bearer ${workerToken}`, "content-type": "application/json", "x-nk-worker-id": "jaklaen-hermes" },
+      body: JSON.stringify({ browserProfileState: "ready", currentStage: "marketplace_search", listingsInspected: 2, candidatesReturned: 0, message: "Searching Toyota Hilux Revo in Bangkok Metro." }),
+    });
+    assert.equal(heartbeat.status, 200);
+    assert.equal((await heartbeat.json()).published, false);
+    const completed = await fetch(`${baseUrl}/v1/worker/jaklaen/jobs/${commandId}/complete`, {
+      method: "POST",
+      headers: { authorization: `Bearer ${workerToken}`, "content-type": "application/json", "x-nk-worker-id": "jaklaen-hermes" },
+      body: JSON.stringify({ status: "COMPLETED", listingsFound: 4, candidatesReturned: 1, message: "One candidate returned for NEEDS_REVIEW." }),
+    });
+    assert.equal(completed.status, 200);
+    assert.equal((await completed.json()).published, false);
+    assert.equal(calls.find((call) => call.method === "createJaklaenSearchRequest").request.requestType, "SEARCH_NOW");
+    assert.equal(calls.find((call) => call.method === "claimNextJaklaenJob").workerId, "jaklaen-hermes");
+    assert.equal(calls.find((call) => call.method === "heartbeatJaklaenJob").heartbeat.currentStage, "marketplace_search");
+    assert.equal(calls.find((call) => call.method === "completeJaklaenJob").completion.candidatesReturned, 1);
+  });
+});
+
+test("Jaklaen job heartbeat normalizes safe runtime state only", () => {
+  assert.deepEqual(normalizeJaklaenJobHeartbeat({
+    browserProfileState: "login_required",
+    currentStage: "facebook_login_check",
+    listingsInspected: 0,
+    candidatesReturned: 0,
+    message: "Login required; worker stopped without bypass attempt.",
+  }), {
+    browserProfileState: "login_required",
+    currentStage: "facebook_login_check",
+    listingsInspected: 0,
+    candidatesReturned: 0,
+    message: "Login required; worker stopped without bypass attempt.",
+  });
+  assert.throws(() => normalizeJaklaenJobHeartbeat({ browserProfileState: "bypass", message: "unsafe" }), /invalid_browser_profile_state/);
+});
+
+test("Jaklaen readiness API stays BLOCKED until real end-to-end proof exists", async () => {
+  await withService(async ({ baseUrl, calls }) => {
+    const snapshot = await fetch(`${baseUrl}/v1/admin/jaklaen/readiness`, { headers: ownerHeaders() });
+    assert.equal(snapshot.status, 200);
+    assert.equal((await snapshot.json()).overallStatus, "BLOCKED");
+    const customer = await fetch(`${baseUrl}/v1/admin/jaklaen/readiness`, { headers: { ...ownerHeaders(), "x-nk-actor-roles": "CUSTOMER" } });
+    assert.equal(customer.status, 403);
+    const action = await fetch(`${baseUrl}/v1/admin/jaklaen/readiness/actions`, {
+      method: "POST",
+      headers: ownerHeaders(),
+      body: JSON.stringify({ action: "run_test_search", idempotencyKey: "ready-test-002", note: "Toyota Hilux Revo readiness proof" }),
+    });
+    assert.equal(action.status, 202);
+    const payload = await action.json();
+    assert.equal(payload.published, false);
+    assert.equal(payload.sellerContact, false);
+    assert.equal(payload.readiness.overallStatus, "BLOCKED");
+    assert.equal(calls.find((call) => call.method === "runJaklaenReadinessAction").action.action, "run_test_search");
+  });
+});
+
+test("Jaklaen worker alias and Owner review endpoint keep candidates internal-only", async () => {
+  await withService(async ({ baseUrl, calls }) => {
+    const received = await fetch(`${baseUrl}/v1/worker/jaklaen/candidates`, {
+      method: "POST",
+      headers: { authorization: `Bearer ${workerToken}`, "content-type": "application/json", "x-nk-worker-id": "jaklaen-hermes" },
+      body: JSON.stringify(candidatePayload),
+    });
+    assert.equal(received.status, 201);
+    assert.equal(calls[0].method, "ingestCandidate");
+    assert.equal(calls[0].workerId, "jaklaen-hermes");
+    assert.equal(calls[0].candidate.internalRecord.candidateStatus, "NEEDS_REVIEW");
+  });
+
+  const calls = [];
+  const repository = {
+    listJaklaenCandidates: async () => ({ observedAt: "2026-09-01T01:00:00.000Z", records: [] }),
+    reviewJaklaenCandidate: async (vehicleId, mutation, actor) => {
+      calls.push({ vehicleId, mutation, actor });
+      return { vehicleId, publicationStatus: "NEEDS_REVIEW", candidateStatus: mutation.action, published: false };
+    },
+  };
+  const pool = { query: async () => ({ rows: [{ ok: 1 }] }) };
+  const server = createDataService({ pool, apiToken, workerToken, sourcingRepository: repository });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const address = server.address();
+  try {
+    const listed = await fetch(`http://127.0.0.1:${address.port}/v1/admin/jaklaen/candidates`, { headers: ownerHeaders() });
+    assert.equal(listed.status, 200);
+    const reviewed = await fetch(`http://127.0.0.1:${address.port}/v1/admin/jaklaen/candidates/nk-auto-test/review`, {
+      method: "POST",
+      headers: ownerHeaders(),
+      body: JSON.stringify({ action: "APPROVED", note: "Owner approved candidate for next internal workflow only." }),
+    });
+    assert.equal(reviewed.status, 200);
+    assert.deepEqual(await reviewed.json(), { vehicleId: "nk-auto-test", publicationStatus: "NEEDS_REVIEW", candidateStatus: "APPROVED", published: false });
+    assert.equal(calls[0].mutation.action, "APPROVED");
+    assert.equal(calls[0].actor.id, "owner-1");
+  } finally {
+    await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+  }
+});
+
 test("QNAP media store re-encodes permitted source images into the internal-only root", async () => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "nk-media-test-"));
   try {
@@ -242,9 +428,10 @@ test("QNAP media store re-encodes permitted source images into the internal-only
     });
     const candidate = normalizeCandidateSubmission(candidatePayload);
     const retained = await store.retainCandidateImages(candidate);
-    assert.equal(retained.media.length, 1);
+    assert.equal(retained.media.length, 2);
     assert.equal(retained.media[0].visibility, "INTERNAL_ONLY");
     assert.match(retained.media[0].relativePath, /^automated\/nk-auto-/);
+    assert.equal(retained.media[1].lifecycleStage, "Evidence");
     assert.equal((await store.read(retained.media[0].relativePath, "INTERNAL_ONLY")).subarray(0, 2).toString("hex"), "ffd8");
   } finally {
     await fs.rm(root, { recursive: true, force: true });
@@ -305,7 +492,14 @@ test("QNAP HTTPS ingress exposes only the bounded Data API allowlist", () => {
   assert.equal(allowedQnapIngressPath("/v1/public/listings"), true);
   assert.equal(allowedQnapIngressPath("/v1/admin/sourcing"), true);
   assert.equal(allowedQnapIngressPath("/v1/admin/sourcing/rules/df73ef9f-b5e0-4f12-91a4-30a2f70c95d8"), true);
+  assert.equal(allowedQnapIngressPath("/v1/admin/jaklaen/candidates"), true);
+  assert.equal(allowedQnapIngressPath("/v1/admin/jaklaen/candidates/nk-auto-test/review"), true);
+  assert.equal(allowedQnapIngressPath("/v1/admin/jaklaen/search-requests"), true);
+  assert.equal(allowedQnapIngressPath("/v1/admin/jaklaen/readiness"), true);
+  assert.equal(allowedQnapIngressPath("/v1/admin/jaklaen/readiness/actions"), true);
   assert.equal(allowedQnapIngressPath("/v1/worker/sourcing/commands/claim"), false);
+  assert.equal(allowedQnapIngressPath("/v1/worker/jaklaen/jobs/claim"), false);
+  assert.equal(allowedQnapIngressPath("/v1/worker/jaklaen/candidates"), false);
   assert.equal(allowedQnapIngressPath("/v1/admin/media/internal-secret"), false);
   assert.equal(allowedQnapIngressPath("/v1/admin/sourcing/../media"), false);
   assert.equal(qnapIngressAuthorized(`Bearer ${apiToken}`, apiToken), true);
@@ -313,9 +507,11 @@ test("QNAP HTTPS ingress exposes only the bounded Data API allowlist", () => {
 });
 
 test("QNAP sourcing schema is append-only and deployment migrates existing volumes", async () => {
-  const [schema, candidateSchema, compose, deployment] = await Promise.all([
+  const [schema, candidateSchema, jaklaenReviewSchema, jaklaenQueueSchema, compose, deployment] = await Promise.all([
     fs.readFile(new URL("../deploy/qnap/postgres/init/020_sourcing_automation.sql", import.meta.url), "utf8"),
     fs.readFile(new URL("../deploy/qnap/postgres/init/030_candidate_ingestion.sql", import.meta.url), "utf8"),
+    fs.readFile(new URL("../deploy/qnap/postgres/init/040_jaklaen_candidate_review.sql", import.meta.url), "utf8"),
+    fs.readFile(new URL("../deploy/qnap/postgres/init/050_jaklaen_search_queue.sql", import.meta.url), "utf8"),
     fs.readFile(new URL("../deploy/qnap/docker-compose.full.yml", import.meta.url), "utf8"),
     fs.readFile(new URL("../deploy/qnap/deploy-full.sh", import.meta.url), "utf8"),
   ]);
@@ -327,12 +523,24 @@ test("QNAP sourcing schema is append-only and deployment migrates existing volum
   assert.match(candidateSchema, /sourcing_candidate_ingestions/);
   assert.match(candidateSchema, /outcome IN \('RETAINED', 'DUPLICATE'\)/);
   assert.match(candidateSchema, /REVOKE DELETE, UPDATE/);
+  assert.match(jaklaenReviewSchema, /jaklaen_candidate_review_events/);
+  assert.match(jaklaenReviewSchema, /REVOKE DELETE, UPDATE/);
+  assert.match(jaklaenQueueSchema, /jaklaen_search_requests/);
+  assert.match(jaklaenQueueSchema, /jaklaen_search_jobs/);
+  assert.match(jaklaenQueueSchema, /jaklaen_search_audit_events/);
+  assert.match(jaklaenQueueSchema, /CUSTOMER/);
+  assert.match(jaklaenQueueSchema, /JOB_HEARTBEAT/);
+  assert.match(jaklaenQueueSchema, /READINESS_ACTION/);
+  assert.match(jaklaenQueueSchema, /ON DELETE RESTRICT/);
+  assert.match(jaklaenQueueSchema, /REVOKE DELETE/);
   assert.match(compose, /NK_HERMES_WORKER_TOKEN:\s+"\$\{NK_HERMES_WORKER_TOKEN:-\}"/);
   assert.match(compose, /internal-only:\/data\/media\/internal-only/);
   assert.match(compose, /customer-visible:\/data\/media\/customer-visible:ro/);
   assert.doesNotMatch(compose, /NK_HERMES_WORKER_TOKEN:\s+[A-Za-z0-9_-]{32}/);
   assert.match(deployment, /020_sourcing_automation\.sql/);
   assert.match(deployment, /030_candidate_ingestion\.sql/);
+  assert.match(deployment, /040_jaklaen_candidate_review\.sql/);
+  assert.match(deployment, /050_jaklaen_search_queue\.sql/);
   assert.match(deployment, /psql -v ON_ERROR_STOP=1/);
   assert.doesNotMatch(deployment, /PASSWORD=/);
 });

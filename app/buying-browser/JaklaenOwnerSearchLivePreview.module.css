@@ -1,0 +1,275 @@
+.shell {
+  min-height: 100vh;
+  background: #f6f8fb;
+  color: #111827;
+  padding: 20px;
+}
+
+.hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  max-width: 980px;
+  margin: 0 auto 16px;
+}
+
+.hero h1,
+.resultsHeader h2 {
+  margin: 0;
+  color: #0f172a;
+  font-size: clamp(28px, 7vw, 44px);
+  line-height: 1.02;
+  letter-spacing: 0;
+}
+
+.summary {
+  margin: 10px 0 0;
+  max-width: 620px;
+  color: #64748b;
+  font-size: 17px;
+  line-height: 1.45;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  color: #047857;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.readyBadge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  gap: 8px;
+  border-radius: 999px;
+  background: #ecfdf5;
+  color: #047857;
+  padding: 0 14px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.searchBox,
+.results {
+  max-width: 980px;
+  margin: 0 auto 16px;
+  border: 1px solid #d9e2ec;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 8px 28px rgb(15 23 42 / 0.06);
+}
+
+.searchBox {
+  padding: 16px;
+}
+
+.searchBox label {
+  display: block;
+  margin-bottom: 8px;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.searchRow {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+}
+
+.searchRow input {
+  min-height: 50px;
+  min-width: 0;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 0 14px;
+  color: #111827;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.searchRow button,
+.sourceLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 50px;
+  gap: 8px;
+  border: 0;
+  border-radius: 10px;
+  background: #0f2a44;
+  color: #ffffff;
+  padding: 0 16px;
+  font-size: 16px;
+  font-weight: 800;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.searchRow button:disabled {
+  background: #94a3b8;
+  cursor: wait;
+}
+
+.statusLine,
+.statusBad {
+  margin: 12px 0 0;
+  color: #047857;
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+.statusBad {
+  color: #b42318;
+}
+
+.results {
+  overflow: hidden;
+}
+
+.resultsHeader {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.resultsHeader h2 {
+  font-size: 28px;
+}
+
+.resultsHeader strong {
+  color: #047857;
+  font-size: 18px;
+  white-space: nowrap;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  padding: 14px;
+}
+
+.card {
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #ffffff;
+}
+
+.imageWrap {
+  position: relative;
+  aspect-ratio: 1 / 0.78;
+  overflow: hidden;
+  background: #e2e8f0;
+}
+
+.imageWrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.imageWrap span {
+  position: absolute;
+  left: 10px;
+  top: 10px;
+  border-radius: 8px;
+  background: #047857;
+  color: #ffffff;
+  padding: 6px 8px;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.noImage {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  color: #64748b;
+  font-weight: 800;
+}
+
+.cardBody {
+  padding: 12px;
+}
+
+.price {
+  display: block;
+  margin-bottom: 6px;
+  color: #0f172a;
+  font-size: 22px;
+  line-height: 1.1;
+}
+
+.card h3 {
+  margin: 0 0 10px;
+  color: #111827;
+  font-size: 18px;
+  line-height: 1.22;
+}
+
+.card dl {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 0;
+}
+
+.card dt {
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.card dd {
+  margin: 2px 0 0;
+  color: #111827;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.foundAt {
+  margin: 12px 0;
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.sourceLink {
+  width: 100%;
+  min-height: 44px;
+  font-size: 14px;
+}
+
+@media (max-width: 760px) {
+  .shell {
+    padding: 14px;
+  }
+
+  .hero {
+    display: block;
+  }
+
+  .readyBadge {
+    margin-top: 12px;
+  }
+
+  .searchRow {
+    grid-template-columns: 1fr;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}

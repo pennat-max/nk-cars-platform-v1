@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import { candidateMatchesRule } from "./candidate-domain.mjs";
+import { deriveJaklaenOverallStatus } from "./jaklaen-search-domain.mjs";
 
 function mapRule(row) {
   return {
@@ -20,6 +21,37 @@ function mapCommand(row) {
     status: row.status.toLowerCase(),
     createdAt: new Date(row.created_at).toISOString(),
     claimedAt: row.claimed_at ? new Date(row.claimed_at).toISOString() : null,
+  };
+}
+
+function mapJaklaenSearchRequest(row) {
+  return {
+    id: row.id,
+    requestType: row.request_type,
+    status: row.status,
+    criteria: row.criteria_json,
+    schedule: row.schedule_json,
+    priority: row.priority,
+    requestedBy: row.requested_by_json,
+    customerCaseReference: row.customer_case_reference,
+    active: row.active,
+    createdAt: new Date(row.created_at).toISOString(),
+    updatedAt: new Date(row.updated_at).toISOString(),
+  };
+}
+
+function mapJaklaenJob(row) {
+  return {
+    id: row.id,
+    requestId: row.request_id,
+    jobType: row.job_type,
+    status: row.status,
+    workerId: row.worker_id,
+    request: row.request_snapshot_json,
+    safeDetail: row.safe_detail_json || {},
+    createdAt: new Date(row.created_at).toISOString(),
+    claimedAt: row.claimed_at ? new Date(row.claimed_at).toISOString() : null,
+    completedAt: row.completed_at ? new Date(row.completed_at).toISOString() : null,
   };
 }
 
@@ -140,6 +172,224 @@ export class PostgresSourcingRepository {
         );
       }
       return this.snapshot(client);
+    });
+  }
+
+  async listJaklaenSearchRequests() {
+    const [requests, jobs] = await Promise.all([
+      this.pool.query(
+        `SELECT id, request_type, status, criteria_json, schedule_json, priority, requested_by_json, customer_case_reference, active, created_at, updated_at
+         FROM jaklaen_search_requests
+         ORDER BY created_at DESC, id
+         LIMIT 100`,
+      ),
+      this.pool.query(
+        `SELECT id, request_id, job_type, status, worker_id, request_snapshot_json, safe_detail_json, created_at, claimed_at, completed_at
+         FROM jaklaen_search_jobs
+         ORDER BY created_at DESC, id
+         LIMIT 100`,
+      ),
+    ]);
+    return {
+      observedAt: this.now().toISOString(),
+      requests: requests.rows.map(mapJaklaenSearchRequest),
+      jobs: jobs.rows.map(mapJaklaenJob),
+    };
+  }
+
+  async jaklaenReadinessSnapshot() {
+    const [runtime, lastJob, lastCandidate] = await Promise.all([
+      this.pool.query("SELECT hermes_state, browser_profile_state, last_heartbeat_at, last_run_at, message FROM sourcing_runtime_state WHERE singleton = true").catch(() => ({ rows: [] })),
+      this.pool.query(
+        `SELECT id, request_id, job_type, status, worker_id, safe_detail_json, created_at, claimed_at, completed_at
+         FROM jaklaen_search_jobs
+         ORDER BY created_at DESC, id
+         LIMIT 1`,
+      ).catch(() => ({ rows: [] })),
+      this.pool.query(
+        `SELECT vehicle_id, internal_record, observed_at
+         FROM inventory_vehicles
+         WHERE publication_status = 'NEEDS_REVIEW'
+           AND source_adapter IN ('facebook_marketplace_worker', 'jaklaen_vehicle_sourcing_agent')
+         ORDER BY observed_at DESC NULLS LAST, vehicle_id
+         LIMIT 1`,
+      ).catch(() => ({ rows: [] })),
+    ]);
+    const state = runtime.rows[0] || {};
+    const job = lastJob.rows[0] || null;
+    const candidate = lastCandidate.rows[0] || null;
+    const profileState = state.browser_profile_state || "not_configured";
+    const hermesState = state.hermes_state || "not_configured";
+    const hasSuccessfulEndToEnd = Boolean(candidate?.internal_record?.sourceUrl && candidate?.internal_record?.screenshotCount > 0 && candidate?.internal_record?.candidateStatus === "NEEDS_REVIEW");
+    const checks = [
+      { key: "hermes_connection", label: "Hermes Connection", status: hermesState === "running" || hermesState === "ready" ? "PASS" : "FAIL", detail: state.message || "No Hermes/Jaklaen runtime state is configured.", observedAt: state.last_heartbeat_at ? new Date(state.last_heartbeat_at).toISOString() : null },
+      { key: "last_heartbeat", label: "Last Heartbeat", status: state.last_heartbeat_at ? "PASS" : "NOT_TESTED", detail: state.last_heartbeat_at ? "Worker heartbeat received." : "No worker heartbeat recorded.", observedAt: state.last_heartbeat_at ? new Date(state.last_heartbeat_at).toISOString() : null },
+      { key: "last_job_received", label: "Last Job Received", status: job ? "PASS" : "NOT_TESTED", detail: job ? `Latest job ${job.status}.` : "No Jaklaen queue job recorded.", observedAt: job?.created_at ? new Date(job.created_at).toISOString() : null },
+      { key: "browser_control", label: "Browser Control", status: profileState === "ready" ? "PASS" : profileState === "login_required" ? "FAIL" : "NOT_TESTED", detail: `Browser profile state: ${profileState}.`, observedAt: state.last_heartbeat_at ? new Date(state.last_heartbeat_at).toISOString() : null },
+      { key: "facebook_login", label: "Facebook Login", status: profileState === "ready" ? "PASS" : profileState === "login_required" ? "FAIL" : "NOT_TESTED", detail: profileState === "ready" ? "Profile reports ready." : "Facebook login has not been verified.", observedAt: state.last_heartbeat_at ? new Date(state.last_heartbeat_at).toISOString() : null },
+      { key: "session_persistence", label: "Session Persistence", status: "NOT_TESTED", detail: "Restart/session persistence proof is required before READY.", observedAt: null },
+      { key: "marketplace_access", label: "Marketplace Access", status: hasSuccessfulEndToEnd ? "PASS" : "NOT_TESTED", detail: "Requires a real Marketplace listing search proof.", observedAt: candidate?.observed_at ? new Date(candidate.observed_at).toISOString() : null },
+      { key: "search_box_access", label: "Search Box Access", status: hasSuccessfulEndToEnd ? "PASS" : "NOT_TESTED", detail: "Requires real Marketplace search-box interaction proof.", observedAt: candidate?.observed_at ? new Date(candidate.observed_at).toISOString() : null },
+      { key: "image_capture", label: "Image Capture", status: candidate?.internal_record?.screenshotCount > 0 ? "PASS" : "NOT_TESTED", detail: candidate ? "Candidate screenshot/image evidence exists internally." : "No real candidate image/screenshot proof.", observedAt: candidate?.observed_at ? new Date(candidate.observed_at).toISOString() : null },
+      { key: "nk_api_connection", label: "NK API Connection", status: "PASS", detail: "Data API responded and readiness snapshot was generated.", observedAt: this.now().toISOString() },
+      { key: "last_successful_search", label: "Last Successful Search", status: hasSuccessfulEndToEnd ? "PASS" : "FAIL", detail: hasSuccessfulEndToEnd ? "Latest NEEDS_REVIEW candidate has source URL and screenshot evidence." : "No successful real E2E candidate proof yet.", observedAt: candidate?.observed_at ? new Date(candidate.observed_at).toISOString() : null },
+    ];
+    return {
+      observedAt: this.now().toISOString(),
+      overallStatus: deriveJaklaenOverallStatus(checks, hasSuccessfulEndToEnd),
+      currentBlocker: hasSuccessfulEndToEnd ? null : "Real end-to-end Toyota Hilux Revo proof has not passed yet.",
+      lastHeartbeat: state.last_heartbeat_at ? new Date(state.last_heartbeat_at).toISOString() : null,
+      lastJobReceived: job?.created_at ? new Date(job.created_at).toISOString() : null,
+      lastSuccessfulSearch: hasSuccessfulEndToEnd && candidate?.observed_at ? new Date(candidate.observed_at).toISOString() : null,
+      checks,
+      proof: {
+        requestId: job?.request_id || "PENDING_REAL_TEST",
+        candidateId: candidate?.internal_record?.candidateId || "PENDING_REAL_TEST",
+        sourceUrl: candidate?.internal_record?.sourceUrl || "PENDING_REAL_SOURCE_URL",
+        screenshot: candidate?.internal_record?.screenshotCount > 0 ? `${candidate.internal_record.screenshotCount} internal screenshot(s)` : "PENDING_REAL_SCREENSHOT",
+        foundAt: candidate?.observed_at ? new Date(candidate.observed_at).toISOString() : "PENDING",
+        durationSeconds: null,
+        testResult: hasSuccessfulEndToEnd ? "PASS" : "NOT_RUN",
+      },
+    };
+  }
+
+  async runJaklaenReadinessAction(action, actor) {
+    const now = this.now();
+    await this.pool.query(
+      `INSERT INTO jaklaen_search_audit_events
+       (id, request_id, job_id, actor_id, actor_email, action, safe_detail_json, created_at)
+       VALUES ($1, NULL, NULL, $2, $3, $4, $5::jsonb, $6)`,
+      [crypto.randomUUID(), actor.id, actor.email, "READINESS_ACTION", JSON.stringify({ action: action.action, note: action.note, published: false, sellerContact: false }), now],
+    ).catch(() => null);
+    return {
+      accepted: true,
+      action: action.action,
+      published: false,
+      sellerContact: false,
+      message: action.action === "run_test_search"
+        ? "Readiness test search command recorded. Jaklaen remains not READY until a real candidate reaches NEEDS_REVIEW with real source URL and screenshot."
+        : "Readiness action recorded.",
+      readiness: await this.jaklaenReadinessSnapshot(),
+    };
+  }
+
+  async createJaklaenSearchRequest(request, actor) {
+    return this.transaction(async (client) => {
+      const duplicate = await client.query("SELECT id FROM jaklaen_search_requests WHERE idempotency_key = $1", [request.idempotencyKey]);
+      if (duplicate.rows[0]) return { accepted: true, idempotent: true, requestId: duplicate.rows[0].id, published: false };
+      const todayCount = await client.query(
+        `SELECT count(*)::int AS count
+         FROM jaklaen_search_requests
+         WHERE requested_by_json->>'id' = $1
+           AND request_type = 'SEARCH_NOW'
+           AND (timezone('Asia/Bangkok', created_at))::date = (timezone('Asia/Bangkok', $2::timestamptz))::date`,
+        [request.requestedBy.id, this.now()],
+      );
+      const dailyLimit = request.requestedBy.role === "CUSTOMER" ? 5 : 50;
+      if ((todayCount.rows[0]?.count || 0) >= dailyLimit) throw new Error("daily_limit_reached");
+      const id = crypto.randomUUID();
+      const now = this.now();
+      const status = request.requestType === "SEARCH_NOW" ? "QUEUED" : "ACTIVE";
+      await client.query(
+        `INSERT INTO jaklaen_search_requests
+         (id, idempotency_key, request_type, status, criteria_json, schedule_json, priority, requested_by_json, customer_case_reference, active, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5::jsonb, $6::jsonb, $7, $8::jsonb, $9, $10, $11, $11)`,
+        [id, request.idempotencyKey, request.requestType, status, JSON.stringify(request.criteria), request.schedule ? JSON.stringify(request.schedule) : null, request.priority, JSON.stringify(request.requestedBy), request.customerCaseReference, request.active, now],
+      );
+      await client.query(
+        `INSERT INTO jaklaen_search_audit_events
+         (id, request_id, job_id, actor_id, actor_email, action, safe_detail_json, created_at)
+         VALUES ($1, $2, NULL, $3, $4, 'SEARCH_REQUEST_CREATED', $5::jsonb, $6)`,
+        [crypto.randomUUID(), id, actor.id, actor.email, JSON.stringify({ requestType: request.requestType, priority: request.priority, requestedByRole: request.requestedBy.role }), now],
+      );
+      if (request.requestType === "SEARCH_NOW") {
+        const jobId = crypto.randomUUID();
+        await client.query(
+          `INSERT INTO jaklaen_search_jobs
+           (id, request_id, job_type, status, request_snapshot_json, safe_detail_json, created_at)
+           VALUES ($1, $2, 'SEARCH_NOW', 'QUEUED', $3::jsonb, $4::jsonb, $5)`,
+          [jobId, id, JSON.stringify(request), JSON.stringify({ source: "app_search_now", publish: false }), now],
+        );
+        await client.query(
+          `INSERT INTO jaklaen_search_audit_events
+           (id, request_id, job_id, actor_id, actor_email, action, safe_detail_json, created_at)
+           VALUES ($1, $2, $3, $4, $5, 'JOB_QUEUED', $6::jsonb, $7)`,
+          [crypto.randomUUID(), id, jobId, actor.id, actor.email, JSON.stringify({ jobType: "SEARCH_NOW" }), now],
+        );
+        return { accepted: true, requestId: id, status, queuedJobId: jobId, published: false };
+      }
+      return { accepted: true, requestId: id, status, queuedJobId: null, published: false };
+    });
+  }
+
+  async claimNextJaklaenJob(workerId) {
+    return this.transaction(async (client) => {
+      const selected = await client.query(
+        `SELECT id, request_id, job_type, status, worker_id, request_snapshot_json, safe_detail_json, created_at, claimed_at, completed_at
+         FROM jaklaen_search_jobs
+         WHERE status = 'QUEUED'
+         ORDER BY CASE WHEN job_type = 'SEARCH_NOW' THEN 0 ELSE 1 END, created_at, id
+         FOR UPDATE SKIP LOCKED
+         LIMIT 1`,
+      );
+      if (!selected.rows[0]) return null;
+      const now = this.now();
+      await client.query("UPDATE jaklaen_search_jobs SET status = 'CLAIMED', worker_id = $2, claimed_at = $3 WHERE id = $1", [selected.rows[0].id, workerId, now]);
+      await client.query(
+        `INSERT INTO jaklaen_search_audit_events
+         (id, request_id, job_id, actor_id, actor_email, action, safe_detail_json, created_at)
+         VALUES ($1, $2, $3, $4, $4, 'JOB_CLAIMED', '{}'::jsonb, $5)`,
+        [crypto.randomUUID(), selected.rows[0].request_id, selected.rows[0].id, workerId, now],
+      );
+      return mapJaklaenJob({ ...selected.rows[0], status: "CLAIMED", worker_id: workerId, claimed_at: now });
+    });
+  }
+
+  async heartbeatJaklaenJob(jobId, workerId, heartbeat) {
+    return this.transaction(async (client) => {
+      const selected = await client.query(
+        "SELECT id, request_id, safe_detail_json FROM jaklaen_search_jobs WHERE id = $1 AND worker_id = $2 AND status = 'CLAIMED' FOR UPDATE",
+        [jobId, workerId],
+      );
+      if (!selected.rows[0]) throw new Error("command_not_found");
+      const now = this.now();
+      const safeDetail = {
+        ...(selected.rows[0].safe_detail_json || {}),
+        lastHeartbeatAt: now.toISOString(),
+        heartbeat,
+      };
+      await client.query("UPDATE jaklaen_search_jobs SET safe_detail_json = $2::jsonb WHERE id = $1", [jobId, JSON.stringify(safeDetail)]);
+      await client.query(
+        "UPDATE sourcing_runtime_state SET hermes_state = 'running', browser_profile_state = $1, last_heartbeat_at = $2, message = $3, updated_at = $2 WHERE singleton = true",
+        [heartbeat.browserProfileState, now, heartbeat.message],
+      );
+      await client.query(
+        `INSERT INTO jaklaen_search_audit_events
+         (id, request_id, job_id, actor_id, actor_email, action, safe_detail_json, created_at)
+         VALUES ($1, $2, $3, $4, $4, 'JOB_HEARTBEAT', $5::jsonb, $6)`,
+        [crypto.randomUUID(), selected.rows[0].request_id, jobId, workerId, JSON.stringify({ currentStage: heartbeat.currentStage, browserProfileState: heartbeat.browserProfileState, listingsInspected: heartbeat.listingsInspected, candidatesReturned: heartbeat.candidatesReturned }), now],
+      );
+      return { accepted: true, lastHeartbeatAt: now.toISOString(), published: false };
+    });
+  }
+
+  async completeJaklaenJob(jobId, workerId, completion) {
+    return this.transaction(async (client) => {
+      const selected = await client.query(
+        "SELECT id, request_id FROM jaklaen_search_jobs WHERE id = $1 AND worker_id = $2 AND status = 'CLAIMED' FOR UPDATE",
+        [jobId, workerId],
+      );
+      if (!selected.rows[0]) throw new Error("command_not_found");
+      const now = this.now();
+      await client.query("UPDATE jaklaen_search_jobs SET status = $2, safe_detail_json = $3::jsonb, completed_at = $4 WHERE id = $1", [jobId, completion.status, JSON.stringify(completion), now]);
+      await client.query(
+        `INSERT INTO jaklaen_search_audit_events
+         (id, request_id, job_id, actor_id, actor_email, action, safe_detail_json, created_at)
+         VALUES ($1, $2, $3, $4, $4, $5, $6::jsonb, $7)`,
+        [crypto.randomUUID(), selected.rows[0].request_id, jobId, workerId, completion.status === "BLOCKED" ? "JOB_BLOCKED" : "JOB_COMPLETED", JSON.stringify(completion), now],
+      );
+      return { accepted: true, published: false };
     });
   }
 
@@ -284,6 +534,104 @@ export class PostgresSourcingRepository {
         );
       }
       return { stored: media.length };
+    });
+  }
+
+  async listJaklaenCandidates() {
+    const [vehicles, vehicleMedia, events] = await Promise.all([
+      this.pool.query(
+        `SELECT vehicle_id, source_reference, publication_status, customer_record, internal_record, source_adapter, observed_at
+         FROM inventory_vehicles
+         WHERE publication_status = 'NEEDS_REVIEW'
+           AND source_adapter IN ('facebook_marketplace_worker', 'jaklaen_vehicle_sourcing_agent')
+         ORDER BY observed_at DESC NULLS LAST, vehicle_id`,
+      ),
+      this.pool.query(
+        `SELECT media_id, vehicle_id, visibility
+         FROM vehicle_media
+         WHERE vehicle_id IS NOT NULL AND visibility = 'INTERNAL_ONLY'
+         ORDER BY imported_at, media_id`,
+      ),
+      this.pool.query(
+        `SELECT vehicle_id, candidate_id, actor_id, actor_email, action, old_value_json, new_value_json, note, created_at
+         FROM jaklaen_candidate_review_events
+         ORDER BY created_at DESC
+         LIMIT 200`,
+      ).catch(() => ({ rows: [] })),
+    ]);
+    const byVehicle = new Map();
+    for (const item of vehicleMedia.rows) {
+      const items = byVehicle.get(item.vehicle_id) || [];
+      items.push({ mediaId: item.media_id, visibility: item.visibility });
+      byVehicle.set(item.vehicle_id, items);
+    }
+    const eventsByVehicle = new Map();
+    for (const item of events.rows) {
+      const items = eventsByVehicle.get(item.vehicle_id) || [];
+      items.push({
+        candidateId: item.candidate_id,
+        actorId: item.actor_id,
+        actorEmail: item.actor_email,
+        action: item.action,
+        oldValue: item.old_value_json,
+        newValue: item.new_value_json,
+        note: item.note,
+        createdAt: new Date(item.created_at).toISOString(),
+      });
+      eventsByVehicle.set(item.vehicle_id, items);
+    }
+    return {
+      observedAt: this.now().toISOString(),
+      records: vehicles.rows.map((row) => ({
+        vehicleId: row.vehicle_id,
+        sourceReference: row.source_reference,
+        publicationStatus: row.publication_status,
+        customerRecord: row.customer_record,
+        internalRecord: row.internal_record,
+        sourceAdapter: row.source_adapter,
+        observedAt: row.observed_at ? new Date(row.observed_at).toISOString() : null,
+        media: byVehicle.get(row.vehicle_id) || [],
+        auditEvents: eventsByVehicle.get(row.vehicle_id) || [],
+      })),
+    };
+  }
+
+  async reviewJaklaenCandidate(vehicleId, mutation, actor) {
+    return this.transaction(async (client) => {
+      const selected = await client.query(
+        `SELECT vehicle_id, internal_record, publication_status
+         FROM inventory_vehicles
+         WHERE vehicle_id = $1 AND publication_status = 'NEEDS_REVIEW'
+         FOR UPDATE`,
+        [vehicleId],
+      );
+      const vehicle = selected.rows[0];
+      if (!vehicle) throw new Error("candidate_not_found");
+      const currentRecord = vehicle.internal_record || {};
+      const oldValue = {
+        candidateStatus: currentRecord.candidateStatus || "NEEDS_REVIEW",
+        fields: mutation.fields ? Object.fromEntries(mutation.fields.map((item) => [item.field, currentRecord[item.field] ?? null])) : {},
+      };
+      const nextRecord = { ...currentRecord };
+      for (const item of mutation.fields || []) nextRecord[item.field] = item.value;
+      nextRecord.candidateStatus = mutation.action === "FIELD_EDITED" ? oldValue.candidateStatus : mutation.action;
+      nextRecord.reviewedAt = this.now().toISOString();
+      nextRecord.reviewedBy = actor.email;
+      nextRecord.reviewNote = mutation.note;
+      const now = this.now();
+      await client.query("UPDATE inventory_vehicles SET internal_record = $2::jsonb, updated_at = $3 WHERE vehicle_id = $1", [vehicleId, JSON.stringify(nextRecord), now]);
+      await client.query(
+        `INSERT INTO jaklaen_candidate_review_events
+         (id, vehicle_id, candidate_id, actor_id, actor_email, action, old_value_json, new_value_json, note, created_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8::jsonb, $9, $10)`,
+        [crypto.randomUUID(), vehicleId, currentRecord.candidateId || currentRecord.sourceReference || vehicleId, actor.id, actor.email, mutation.action, JSON.stringify(oldValue), JSON.stringify({ candidateStatus: nextRecord.candidateStatus, fields: mutation.fields || [] }), mutation.note, now],
+      );
+      return {
+        vehicleId,
+        publicationStatus: "NEEDS_REVIEW",
+        candidateStatus: nextRecord.candidateStatus,
+        published: false,
+      };
     });
   }
 }

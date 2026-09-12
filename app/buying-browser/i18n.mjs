@@ -1,4 +1,4 @@
-export const SUPPORTED_LANGUAGES = Object.freeze(["en", "zh-CN", "th"]);
+export const SUPPORTED_LANGUAGES = Object.freeze(["en", "th"]);
 
 const dictionaries = {
   en: {

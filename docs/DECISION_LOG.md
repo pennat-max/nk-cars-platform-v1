@@ -460,3 +460,126 @@ Decision:
 - Keep daily retained candidates capped at `1` for the pilot and keep all results in `NEEDS_REVIEW`.
 - This widening does not authorize publication, seller messaging, reservation, purchase, payment, CAPTCHA/MFA bypass, or rate-limit evasion.
 - QNAP rule `7412f2fb-fe79-4469-b36b-96d3c55daa3a` was updated from revision 1 to revision 2 after backup `/share/CACHEDEV6_DATA/nk-cars/backups/postgres/nk-cars-before-hermes-rule-update-20260828T102957Z.dump`.
+
+## 2026-08-31 - Customer language and card price presentation
+
+Status: OWNER APPROVED AND IMPLEMENTED
+
+Decision:
+- Customer-facing Buying Browser language selector now offers English and Thai only.
+- Simplified Chinese is removed from the customer UI selector and stored customer UI language normalization falls back to English if an old Chinese value exists.
+- English vehicle cards and detail pages prioritize USD estimate with THB as the secondary approximate source price.
+- Thai vehicle cards and detail pages prioritize THB with USD as the secondary estimate.
+- Customer Browse price filters follow the selected language: English inputs are USD and converted through configured FX; Thai inputs are THB.
+- Short vehicle cards hide unknown compact specs such as unknown drive instead of showing text like `AT - Unknown`.
+
+Boundaries:
+- This changes customer presentation only. It does not change vehicle source records, pricing math, FX configuration, source evidence capture, QNAP/Hermes behavior, seller messaging, payments, or production data.
+- Chinese text can still be preserved/detected as source evidence for audit or translation history, but it is not offered as a customer UI language.
+
+## 2026-08-31 - Compact Browse card details
+
+Status: OWNER APPROVED AND IMPLEMENTED
+
+Decision:
+- Customer Browse cards now show only the photo, NK status badge, Save heart, selected-language primary price, and vehicle year/make/model.
+- Secondary converted price, compact transmission/drive specs, mileage, and location are removed from Browse cards to reduce visual density on mobile.
+- Full vehicle facts remain available on Vehicle Detail and Vehicle Case screens.
+
+Boundaries:
+- This is a customer presentation change only. It does not remove underlying vehicle data, change search/filter logic, pricing math, Vehicle Case snapshots, QNAP/Hermes behavior, seller messaging, payments, or production data.
+
+## 2026-09-01 - Jaklaen Candidate Intake V1 preview approved
+
+Status: OWNER APPROVED FOR PREVIEW IMPLEMENTATION ONLY
+
+Decision:
+- Build Jaklaen Candidate Intake V1 on `codex/app` as a Preview workflow.
+- Jaklaen may submit sourced vehicle candidates into NK Cars through an authenticated worker API.
+- Every new candidate must enter `NEEDS_REVIEW` and must not publish automatically.
+- Candidate payloads must preserve source URL, source platform, listing title, vehicle facts, source price, location, seller reference, description, image URLs, screenshot URLs, collected time, confidence, missing fields, and candidate status.
+- Unknown data must be represented as `UNKNOWN` or `PENDING`; AI/worker output must not guess.
+- Owner review must support field correction, comment/reason, Approve, Reject, and Need More Info.
+- Every review change must be written to append-only audit records.
+- Development may use TEST/MOCK fixtures when clearly labelled, but the final approval proof requires at least one real Toyota Hilux Revo candidate with full evidence.
+
+Boundaries:
+- No production deployment is authorized by this preview approval.
+- No automatic publication, seller contact, payment, purchase, destructive migration, credential storage, or Facebook security bypass is authorized.
+
+## 2026-09-01 - Jaklaen app-driven Search Queue V1 preview approved
+
+Status: OWNER APPROVED FOR PREVIEW IMPLEMENTATION ONLY
+
+Decision:
+- Extend Jaklaen Candidate Intake V1 so Owner, Staff, or eligible Customer users can create `SEARCH_NOW` requests from the app.
+- Extend the same workflow so Owner/Staff can create `STANDING_SEARCH` schedules with frequency, weekdays, active hours, source scope, priority, and vehicle criteria.
+- App-created Search Requests must create or schedule Jaklaen queue jobs. Jaklaen receives jobs through a worker-token endpoint and returns candidates through the existing candidate intake boundary.
+- Customer accounts may create `SEARCH_NOW` only for their own Case reference and may not edit company Standing Searches.
+- Queue, review, and correction activity must be audited. Duplicate detection, rate limits, and candidate `NEEDS_REVIEW` defaults remain mandatory.
+
+Boundaries:
+- This approval is for Preview on `codex/app` only.
+- No production deployment, automatic publish, seller contact, negotiation, reservation, purchase, payment, credential storage, CAPTCHA/MFA bypass, or account-risk workaround is authorized.
+
+## 2026-09-01 - Vehicle Sourcing Center plan refined
+
+Status: OWNER APPROVED FOR PLAN / PREVIEW DIRECTION ONLY
+
+Decision:
+- Rename the admin-facing Jaklaen control concept to `Vehicle Sourcing Center`.
+- The center must support three sourcing work types: `SCHEDULED_SEARCH`, `OWNER_SEARCH`, and `CUSTOMER_SEARCH`.
+- All work types must enter a Search Job Queue with request ID, source, criteria, priority, schedule, status, requested quantity, found Candidate count, created time, last run, next run, and safe error/blocker.
+- V1 Customer Search must default to `OWNER_APPROVAL_REQUIRED` before queueing. Owner may later configure immediate queueing, but the safer default protects NK Cars from spam and uncontrolled worker load.
+- The Admin App plan must include Dashboard, New Search, Scheduled Searches, Customer Requests, Search Job Queue, Candidate Review, Pause/Resume/Run Now, Search History, and Audit Log.
+- The full plan, data schema, API contract, permission rules, job lifecycle, and Owner approval gates are recorded in `docs/jaklaen-sourcing-v1.md`.
+
+Boundaries:
+- This is not Production approval.
+- Jaklaen remains prohibited from automatic publish, seller contact, negotiation, reservation, purchase, payment, availability confirmation, credential storage, or Facebook security/rate-limit bypass.
+
+## 2026-09-01 - Jaklaen Health and Readiness gate
+
+Status: OWNER APPROVED FOR PREVIEW IMPLEMENTATION ONLY
+
+Decision:
+- Add Jaklaen Health & Readiness Status to the NK Cars Admin App / Vehicle Sourcing Center.
+- Readiness must show Hermes connection, heartbeat, job receipt, browser control, Facebook login/session, Marketplace and search-box access, image capture, NK API connection, last successful search, current blocker, and overall status.
+- Overall status values are `READY`, `DEGRADED`, `OFFLINE`, and `BLOCKED`.
+- `READY` requires every core check to pass and a real Toyota Hilux Revo end-to-end test to succeed.
+- The real test must show Request ID, Candidate ID, real Source URL, real screenshot, found time, duration, and test result, with Candidate visible in Review as `NEEDS_REVIEW`.
+- Until the real end-to-end proof exists, Jaklaen must not be shown as READY.
+
+Boundaries:
+- No seller contact, automatic publish, availability confirmation, negotiation, reservation, purchase, payment, credential storage, CAPTCHA/MFA/checkpoint bypass, or rate-limit/account-risk workaround is authorized.
+
+## 2026-09-01 - Jaklaen Search Job Queue Preview connection
+
+Status: OWNER APPROVED FOR PREVIEW IMPLEMENTATION ONLY
+
+Decision:
+- GitHub Issue #1 authorizes connecting NK Cars Web App and the Jaklaen Hermes worker through the shared Search Job Queue on Preview only.
+- The NK API remains the durable mailbox/source of truth: app creates Search Request, API queues Job, Jaklaen claims with worker token, sends heartbeat, submits Candidate evidence, completes or blocks the Job, and Candidate remains `NEEDS_REVIEW`.
+- Worker ID for this connection is `jaklaen-hermes`.
+- `NK_HERMES_WORKER_TOKEN` is a runtime secret only. It must not be committed to GitHub, pasted into chat, or logged.
+- Heartbeat events are recorded as `JOB_HEARTBEAT` audit entries and update the Jaklaen readiness Last Heartbeat.
+
+Boundaries:
+- No Production deployment is authorized.
+- No automatic publish, seller contact, availability confirmation, negotiation, reservation, purchase, payment, credential storage, CAPTCHA/MFA/checkpoint bypass, or rate-limit/account-risk workaround is authorized.
+- Jaklaen must not be marked `READY` until the real Toyota Hilux Revo end-to-end proof creates a `NEEDS_REVIEW` Candidate with real Source URL, image/screenshot evidence, found time, and Candidate ID.
+
+## 2026-09-02 - Jaklaen live search Owner Preview handoff
+
+Status: PREVIEW IMPLEMENTATION HANDOFF ONLY
+
+Decision:
+- Add a temporary Owner Preview route at `/buy/owner-preview/jaklaen-search` so the Owner can see Toyota Hilux Revo results directly under the search button during Issue #1 coordination.
+- Document the implementation and limitations in `docs/jaklaen-live-search-preview-handoff.md` so another engineer can continue the queue-backed integration.
+- Local testing proved the UI can render 3 sanitized vehicle cards from a real Facebook Marketplace search cache after a local run found 20 Toyota Hilux Revo listings.
+
+Boundaries:
+- This is not Production approval and does not mark Jaklaen `READY`.
+- The Preview cache file, logs, screenshots, browser sessions, cookies, tokens, and raw Facebook output must stay out of GitHub.
+- The temporary cache fallback must be replaced by the durable Search Job Queue and Candidate Intake persistence before operational use.
+- No seller contact, automatic publish, availability confirmation, negotiation, reservation, purchase, payment, credential storage, CAPTCHA/MFA/checkpoint bypass, or rate-limit/account-risk workaround is authorized.

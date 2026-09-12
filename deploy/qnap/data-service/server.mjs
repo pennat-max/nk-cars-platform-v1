@@ -3,6 +3,7 @@ import http from "node:http";
 import { pathToFileURL } from "node:url";
 import { createPool } from "./db.mjs";
 import { normalizeCandidateSubmission } from "./candidate-domain.mjs";
+import { normalizeJaklaenJobCompletion, normalizeJaklaenJobHeartbeat, normalizeJaklaenReadinessAction, normalizeJaklaenSearchRequest } from "./jaklaen-search-domain.mjs";
 import { QnapMediaStore } from "./media-store.mjs";
 import {
   normalizeActor,
@@ -41,6 +42,45 @@ function mediaContentType(relativePath) {
   if (/\.png$/i.test(relativePath)) return "image/png";
   if (/\.webp$/i.test(relativePath)) return "image/webp";
   return "image/jpeg";
+}
+
+function normalizeJaklaenReviewMutation(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("invalid_candidate_review");
+  const action = String(value.action || "").toUpperCase();
+  if (!new Set(["FIELD_EDITED", "APPROVED", "REJECTED", "NEED_MORE_INFO"]).has(action)) throw new Error("invalid_candidate_review_action");
+  const note = typeof value.note === "string" ? value.note.replace(/\s+/g, " ").trim().slice(0, 1000) : "";
+  if (!note && action !== "FIELD_EDITED") throw new Error("candidate_review_note_required");
+  const fields = Array.isArray(value.fields) ? value.fields.slice(0, 40).map((item) => {
+    if (!item || typeof item !== "object" || Array.isArray(item)) throw new Error("invalid_candidate_review_fields");
+    const field = String(item.field || "").trim();
+    if (!/^[a-zA-Z][a-zA-Z0-9_]{0,79}$/.test(field)) throw new Error("invalid_candidate_review_fields");
+    const raw = item.value === null || item.value === undefined || item.value === "" ? "UNKNOWN" : String(item.value).replace(/\s+/g, " ").trim().slice(0, 500);
+    const valueText = raw || "UNKNOWN";
+    return { field, value: valueText };
+  }) : [];
+  if (action === "FIELD_EDITED" && !fields.length) throw new Error("candidate_review_fields_required");
+  return { action, fields, note };
+}
+
+function normalizeJaklaenActor(headers) {
+  const clean = (value, label, max) => {
+    const normalized = typeof value === "string" ? value.replace(/\s+/g, " ").trim() : "";
+    if (!normalized || normalized.length > max) throw new Error(`invalid_${label}`);
+    return normalized;
+  };
+  const roles = [...new Set(String(headers["x-nk-actor-roles"] || "").split(",").map((role) => role.trim()).filter(Boolean))].sort();
+  if (!roles.some((role) => ["OWNER", "STAFF", "CUSTOMER"].includes(role))) throw new Error("jaklaen_role_required");
+  return {
+    id: clean(headers["x-nk-actor-id"], "actor_id", 200),
+    email: clean(headers["x-nk-actor-email"], "actor_email", 320),
+    roles,
+  };
+}
+
+function normalizeJaklaenAdminActor(headers) {
+  const actor = normalizeJaklaenActor(headers);
+  if (!actor.roles.some((role) => role === "OWNER" || role === "STAFF")) throw new Error("owner_role_required");
+  return actor;
 }
 
 function binary(response, bytes, record, cacheControl) {
@@ -97,7 +137,7 @@ export function createDataService({ pool, apiToken, workerToken, sourcingReposit
         return json(response, 200, { status: result.rows[0]?.ok === 1 ? "ok" : "degraded" });
       }
 
-      if (url.pathname.startsWith("/v1/worker/sourcing")) {
+      if (url.pathname.startsWith("/v1/worker/sourcing") || url.pathname.startsWith("/v1/worker/jaklaen")) {
         if (!workerToken) return json(response, 503, { error: "worker_not_configured" });
         if (!tokenMatches(request, workerToken)) return json(response, 401, { error: "authorization_required" });
         const workerId = normalizeWorkerIdentity(request.headers["x-nk-worker-id"]);
@@ -105,7 +145,18 @@ export function createDataService({ pool, apiToken, workerToken, sourcingReposit
           const command = await sourcing.claimNext(workerId);
           return json(response, 200, { command });
         }
-        if (request.method === "POST" && url.pathname === "/v1/worker/sourcing/candidates") {
+        if (request.method === "POST" && url.pathname === "/v1/worker/jaklaen/jobs/claim") {
+          const job = await sourcing.claimNextJaklaenJob(workerId);
+          return json(response, 200, { job });
+        }
+        const jaklaenJobMatch = url.pathname.match(/^\/v1\/worker\/jaklaen\/jobs\/([0-9a-f-]+)\/(heartbeat|complete)$/i);
+        if (request.method === "POST" && jaklaenJobMatch?.[2] === "heartbeat") {
+          return json(response, 200, await sourcing.heartbeatJaklaenJob(jaklaenJobMatch[1], workerId, normalizeJaklaenJobHeartbeat(await readJson(request))));
+        }
+        if (request.method === "POST" && jaklaenJobMatch?.[2] === "complete") {
+          return json(response, 200, await sourcing.completeJaklaenJob(jaklaenJobMatch[1], workerId, normalizeJaklaenJobCompletion(await readJson(request))));
+        }
+        if (request.method === "POST" && (url.pathname === "/v1/worker/sourcing/candidates" || url.pathname === "/v1/worker/jaklaen/candidates")) {
           const candidate = normalizeCandidateSubmission(await readJson(request));
           const result = await sourcing.ingestCandidate(candidate.commandId, workerId, candidate);
           if (result.status !== "retained") return json(response, 200, { ...result, media: { stored: 0, failed: 0 } });
@@ -114,7 +165,7 @@ export function createDataService({ pool, apiToken, workerToken, sourcingReposit
             const attached = await sourcing.attachCandidateMedia(result.vehicleId, retained.media);
             return json(response, result.idempotent ? 200 : 201, { ...result, media: { stored: attached.stored, failed: retained.failures.length, failures: retained.failures } });
           } catch {
-            return json(response, result.idempotent ? 200 : 201, { ...result, media: { stored: 0, failed: candidate.images.length, failures: [{ code: "media_store_unavailable" }] } });
+            return json(response, result.idempotent ? 200 : 201, { ...result, media: { stored: 0, failed: candidate.images.length + candidate.screenshots.length, failures: [{ code: "media_store_unavailable" }] } });
           }
         }
         const workerMatch = url.pathname.match(/^\/v1\/worker\/sourcing\/commands\/([0-9a-f-]+)\/(heartbeat|complete)$/i);
@@ -213,6 +264,42 @@ export function createDataService({ pool, apiToken, workerToken, sourcingReposit
         }
         if (request.method === "POST" && url.pathname === "/v1/admin/sourcing/commands") {
           return json(response, 202, await sourcing.enqueueCommand(normalizeCommand(await readJson(request)), actor));
+        }
+        return json(response, 404, { error: "not_found" });
+      }
+
+      if (url.pathname.startsWith("/v1/admin/jaklaen/candidates")) {
+        const actor = normalizeActor(request.headers);
+        if (request.method === "GET" && url.pathname === "/v1/admin/jaklaen/candidates") {
+          return json(response, 200, await sourcing.listJaklaenCandidates());
+        }
+        const candidateMatch = url.pathname.match(/^\/v1\/admin\/jaklaen\/candidates\/([^/]+)\/review$/);
+        if (request.method === "POST" && candidateMatch) {
+          const vehicleId = mediaId(candidateMatch[1], 180);
+          return json(response, 200, await sourcing.reviewJaklaenCandidate(vehicleId, normalizeJaklaenReviewMutation(await readJson(request)), actor));
+        }
+        return json(response, 404, { error: "not_found" });
+      }
+
+      if (url.pathname.startsWith("/v1/admin/jaklaen/search-requests")) {
+        const actor = normalizeJaklaenActor(request.headers);
+        if (request.method === "GET" && url.pathname === "/v1/admin/jaklaen/search-requests") {
+          return json(response, 200, await sourcing.listJaklaenSearchRequests());
+        }
+        if (request.method === "POST" && url.pathname === "/v1/admin/jaklaen/search-requests") {
+          const payload = await readJson(request);
+          return json(response, 201, await sourcing.createJaklaenSearchRequest(normalizeJaklaenSearchRequest(payload, actor), actor));
+        }
+        return json(response, 404, { error: "not_found" });
+      }
+
+      if (url.pathname.startsWith("/v1/admin/jaklaen/readiness")) {
+        const actor = normalizeJaklaenAdminActor(request.headers);
+        if (request.method === "GET" && url.pathname === "/v1/admin/jaklaen/readiness") {
+          return json(response, 200, await sourcing.jaklaenReadinessSnapshot());
+        }
+        if (request.method === "POST" && url.pathname === "/v1/admin/jaklaen/readiness/actions") {
+          return json(response, 202, await sourcing.runJaklaenReadinessAction(normalizeJaklaenReadinessAction(await readJson(request)), actor));
         }
         return json(response, 404, { error: "not_found" });
       }

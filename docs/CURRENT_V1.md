@@ -125,7 +125,7 @@ V1 Browse defaults to **Bangkok Metro** to reduce inspection/travel time and cos
 
 Inspection remains a first-class Vehicle Case workflow but is no longer a separate primary mobile navigation destination. Customers access inspection status and requests from My Cases. Vehicle detail presents Check Availability as the recommended first step, keeps Ask NK AI beside it, and keeps Save as a familiar photo-level heart action.
 
-Owner-approved marketplace UI direction: Browse is mobile-first and uses a two-column vehicle grid on small phones, with larger readable text, image-first vehicle cards, THB price primary, USD estimate secondary, and only key facts on the card. Saved vehicles act as a shortlist where customers can select multiple vehicles and add them to a shipment plan. The customer shipment planner guides 1, 2, or 3 cars per shipment, shows full-shipment and per-car planning estimates, explains that 3 cars share freight plus the THB 25,000 Rushing/loading service, and keeps shipping estimates separate from confirmed totals.
+Owner-approved marketplace UI direction: Browse is mobile-first and uses a two-column vehicle grid on small phones, with larger readable text, image-first vehicle cards, language-aware primary price, and very compact card copy. English cards show only the USD primary estimate; Thai cards show only the THB primary price. Browse cards do not show secondary converted price, compact specs, mileage, or location; those details remain available on Vehicle Detail. Saved vehicles act as a shortlist where customers can select multiple vehicles and add them to a shipment plan. The customer shipment planner guides 1, 2, or 3 cars per shipment, shows full-shipment and per-car planning estimates, explains that 3 cars share freight plus the THB 25,000 Rushing/loading service, and keeps shipping estimates separate from confirmed totals.
 
 Customer location/destination country is separate from Search Location. Do not use the overseas customer's physical location as the Thai Marketplace search area.
 
@@ -180,7 +180,7 @@ Where source login is required:
 ## 8. AI behavior
 
 AI may:
-- translate Thai <-> English / Simplified Chinese
+- translate Thai <-> English
 - extract vehicle specs
 - summarize listing details
 - rank/match vehicles
@@ -241,12 +241,11 @@ Customer shipping plan rule approved on 2026-08-28:
 
 Customer-facing V1 supports:
 - English (default)
-- Simplified Chinese
 - Thai
 
 Use one authoritative structured business record. Language switching must not duplicate or mutate underlying vehicle/pricing data.
 
-Preserve original source text separately from normalized/translated customer text.
+Preserve original source text separately from normalized/translated customer text. Chinese may still be detected as source evidence for audit/history, but it is not offered as a customer UI language.
 
 ## 11. Inspection Network
 
@@ -308,6 +307,11 @@ Completed source-layer items:
 7. QNAP Owner inventory/media Data API endpoints with customer/internal visibility enforcement
 8. deterministic Hermes/connector worker bridge and review-only candidate ingestion with duplicate and Bangkok-day limit enforcement
 9. internal-only source-image download, bounded raster validation, re-encoding, and QNAP persistence
+10. Preview implementation for Jaklaen Candidate Intake V1: worker alias `/v1/worker/jaklaen/candidates`, screenshot/missing-field validation, Owner-only candidate review API contract, append-only review event schema, and TEST/MOCK Candidate Review preview route at `/buy/owner-preview/jaklaen-candidates`
+11. Preview implementation for app-driven Jaklaen Search Queue V1: the same preview route now includes Search Now, Standing Searches, and Candidate Review sections. The Data API contract adds `GET/POST /v1/admin/jaklaen/search-requests`, `POST /v1/worker/jaklaen/jobs/claim`, `POST /v1/worker/jaklaen/jobs/:jobId/heartbeat`, and `POST /v1/worker/jaklaen/jobs/:jobId/complete`. `SEARCH_NOW` creates a queued job immediately. `STANDING_SEARCH` stores schedule criteria for a future scheduler to queue jobs only inside active hours. Customer users may only create `SEARCH_NOW` tied to their own Case reference.
+12. Owner-approved planning direction now names the full Admin App surface `Vehicle Sourcing Center`, documented in `docs/jaklaen-sourcing-v1.md`. It expands the simplified preview terms into three work types: `SCHEDULED_SEARCH`, `OWNER_SEARCH`, and `CUSTOMER_SEARCH`. V1 Customer Search defaults to `OWNER_APPROVAL_REQUIRED` before queueing to prevent spam and uncontrolled worker volume.
+13. Jaklaen Health & Readiness Status is now part of the Vehicle Sourcing Center direction and Preview surface. Overall status must remain `BLOCKED` or `OFFLINE` until all core checks pass and a real Toyota Hilux Revo end-to-end proof reaches Candidate Review as `NEEDS_REVIEW` with real Source URL, screenshot, found time, duration, and Candidate ID.
+14. Jaklaen live search Owner Preview handoff now exists at `/buy/owner-preview/jaklaen-search` and is documented in `docs/jaklaen-live-search-preview-handoff.md`. A local Preview proof rendered 3 sanitized Toyota Hilux Revo cards from a real Facebook Marketplace search cache after one successful local run found 20 listings. This remains a Preview-only bridge and does not satisfy the full readiness gate because candidates are not yet persisted into QNAP Candidate Review through the durable Search Job Queue.
 
 Next priority:
 1. QNAP infrastructure supplies a stable authenticated HTTPS Data API origin reachable by the approved app runtime without exposing PostgreSQL
@@ -317,6 +321,8 @@ Next priority:
 5. add an authenticated Owner operations queue for availability, actual purchase price, and material cost confirmation
 6. verify QNAP media retention, customer/internal separation, backup, and restore under the infrastructure runbook
 7. provision the private worker credential and authorized Facebook browser profile, then prove one real candidate reaches `NEEDS_REVIEW` without publication or seller messaging
+8. connect Jaklaen to the worker token/API contract and run the required one-real-car proof with real source URL, image evidence, screenshot, Candidate ID, QNAP row, and internal media storage references before any production activation
+9. replace the temporary `/buy/owner-preview/jaklaen-search` local-cache fallback with the real queue-backed Jaklaen worker flow before using it as an operational feature
 
 ## 14. QNAP / Hermes direction
 
@@ -327,7 +333,7 @@ Approved application storage direction:
 - Google Sheets + Drive remain only a temporary import/migration source and optional export/reporting surface.
 - Target flow is `Hermes/authorized capture -> QNAP PostgreSQL + QNAP storage -> NK App`.
 - The application now includes an Owner-only mobile sourcing automation menu for rule criteria, year range, Bangkok Metro areas, daily cap, schedule, and Hermes Run Now/Pause/Resume commands.
-- The repository now includes the QNAP PostgreSQL sourcing-rule/audit/command/runtime/candidate schema, authenticated admin endpoints, separate worker-token endpoints, deterministic connector bridge, internal-only media persistence, and a bounded HTTPS ingress allowlist. Candidate ingestion can only create `NEEDS_REVIEW` records. These components remain fail-closed until the tested release is installed on QNAP and production identity/ingress/worker authorization is activated.
+- The repository now includes the QNAP PostgreSQL sourcing-rule/audit/command/runtime/candidate schema, app-driven Jaklaen search-request/job-queue/audit schema, authenticated admin endpoints, separate worker-token endpoints, deterministic connector bridge, internal-only media persistence, and a bounded HTTPS ingress allowlist. Candidate ingestion can only create `NEEDS_REVIEW` records. These components remain fail-closed until the tested release is installed on QNAP and production identity/ingress/worker authorization is activated.
 - QNAP full stack commit `f9793f15189b6eaf356dae03f92ee5dc94478c71` was deployed on 2026-08-27 and the Data API is healthy. A QNAP-only `NK_HERMES_WORKER_TOKEN` is configured and distinct from `NK_INTERNAL_API_TOKEN`.
 - QNAP full stack commit `f31c030f6d7a0946af033f9005412c6671e84238` is now deployed and includes the Owner-approved Phetchaburi pilot sourcing location. The pilot rule exists in QNAP as `7412f2fb-fe79-4469-b36b-96d3c55daa3a`.
 - The installed Hermes container is running, but its current free inference provider has returned rate-limit errors and its browser profile/connector runtime is not connected. The application must continue to report `not_configured` or the real safe error state; it must not claim that automated sourcing ran.
@@ -369,12 +375,12 @@ Do not reread the full Master Spec unless scope is ambiguous or changing.
 The maximum technically achievable Buying Browser V1 application scope is complete on `codex/app`:
 
 - Browse contains 20 Owner-reviewed customer-safe vehicle snapshots, including 16 in the default Bangkok Metro scope.
-- English, Simplified Chinese, and Thai now cover the core customer surfaces: Browse, vehicle detail/gallery, Saved, Vehicle Cases, inspection requests, Messages, Account, Paste/Share fallback, source browser companion, and NK AI search.
+- English and Thai now cover the core customer surfaces: Browse, vehicle detail/gallery, Saved, Vehicle Cases, inspection requests, Messages, Account, Paste/Share fallback, source browser companion, and NK AI search.
 - Language selection changes presentation only. It does not duplicate or mutate vehicle, pricing, quotation, PI, or Case records.
 - Deterministic commercial flow is implemented through 6% Platform & Transaction plus 4% Buying Service, configured pass-through costs, Owner verification, quotation/acceptance, and gated PI preparation.
 - Availability, inspection, messages, and AI actions record honest workflow state without pretending a provider, seller reply, payment, or purchase exists.
 - Customer/internal data boundaries and QNAP/repository fail-safe source adapters remain intact.
-- Mobile verification at 390 x 844 passed for all core routes, all three languages, galleries, images, and horizontal layout.
+- Mobile verification at 390 x 844 passed for all core routes, supported customer languages, galleries, images, and horizontal layout.
 
 Remaining items are activation blockers rather than unfinished application behavior: production identity/workspace persistence, approved legal issuer/payment instructions, authorized seller messaging/reply ingestion, inspection-provider booking, and stable authenticated QNAP Data API/media ingress. These must not be faked or activated without the required Owner/external inputs.
 

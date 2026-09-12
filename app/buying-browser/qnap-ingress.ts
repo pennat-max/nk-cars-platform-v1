@@ -5,12 +5,17 @@ const EXACT_PATHS = new Set([
   "/v1/admin/sourcing",
   "/v1/admin/sourcing/rules",
   "/v1/admin/sourcing/commands",
+  "/v1/admin/jaklaen/candidates",
+  "/v1/admin/jaklaen/search-requests",
+  "/v1/admin/jaklaen/readiness",
+  "/v1/admin/jaklaen/readiness/actions",
 ]);
 
 const RULE_PATH = /^\/v1\/admin\/sourcing\/rules\/[0-9a-f-]{36}$/i;
+const JAKLAEN_REVIEW_PATH = /^\/v1\/admin\/jaklaen\/candidates\/[a-zA-Z0-9_-]+(?::[a-zA-Z0-9_-]+)*\/review$/;
 
 export function allowedQnapIngressPath(pathname: string) {
-  return EXACT_PATHS.has(pathname) || RULE_PATH.test(pathname);
+  return EXACT_PATHS.has(pathname) || RULE_PATH.test(pathname) || JAKLAEN_REVIEW_PATH.test(pathname);
 }
 
 export function qnapIngressAuthorized(authorization: string | null, configuredToken: string) {

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ArrowLeft, Bot, CheckCircle2, ChevronLeft, ChevronRight, ClipboardCheck, Clock3, Gauge, Heart, MapPin, ShieldCheck, ShoppingBag, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useBuyingBrowser } from "../BuyingBrowserProvider";
-import { customerFxDisclosure, formatDateTime, formatMileage, formatThb, formatUsdFromThb } from "../format";
+import { customerFxDisclosure, formatCustomerPrimaryPrice, formatCustomerSecondaryPrice, formatDateTime, formatMileage } from "../format";
 import { useI18n } from "../use-i18n";
 import VehiclePhoto from "../components/VehiclePhoto";
 
@@ -59,7 +59,12 @@ export default function VehicleScreen({ sourceId }: { sourceId?: string }) {
 
   if (!listing) return <section className="bb-empty-state"><h1>{t("vehicleNotFound")}</h1><p>{t("vehicleNotFoundText")}</p><Link className="bb-button primary" href="/buy"><ArrowLeft size={17} />{t("backToBrowse")}</Link></section>;
   const existingCase = findCaseByListing(listing.id);
-  const mobilePriceCaption = language === "zh-CN" ? "车源报价估算。NK 会在报价前核实。" : language === "th" ? "ราคาประเมินจากประกาศต้นทาง NK จะตรวจสอบก่อนออกใบเสนอราคา" : "Estimated from source listing. NK will verify before quote.";
+  const mobilePriceCaption = language === "th" ? "ราคาประเมินจากประกาศต้นทาง NK จะตรวจสอบก่อนออกใบเสนอราคา" : "Estimated from source listing. NK will verify before quote.";
+  const summaryFacts = [
+    { label: t("transmission"), value: listing.transmission },
+    { label: t("drive"), value: listing.drive },
+    { label: "Last checked", value: formatDateTime(listing.observedAt) },
+  ].filter((item) => item.value && item.value !== "Unknown");
 
   function showPhoto(index: number) {
     const nextIndex = Math.min(Math.max(index, 0), listing!.imageUrls.length - 1);
@@ -115,12 +120,10 @@ export default function VehicleScreen({ sourceId }: { sourceId?: string }) {
           <div className="bb-status-row"><span className="bb-status-chip market">{listing.demo ? "Demo" : t("nkSelection")}</span><span className="bb-status-chip pending"><Clock3 size={13} />{availabilityLabel(listing.availability)}</span></div>
           <h1>{listing.title}</h1>
           <p className="bb-grade">{listing.grade} · {listing.color}</p>
-          <strong className="bb-vehicle-price">{formatThb(listing.observedPriceThb)}</strong>
+          <strong className="bb-vehicle-price">{formatCustomerPrimaryPrice(listing.observedPriceThb, language)}</strong>
           <div className="bb-vehicle-key-facts" aria-label="Vehicle key facts">
-            <div><small>USD estimate</small><b>{formatUsdFromThb(listing.observedPriceThb)}</b></div>
-            <div><small>{t("transmission")}</small><b>{listing.transmission}</b></div>
-            <div><small>{t("drive")}</small><b>{listing.drive}</b></div>
-            <div><small>Last checked</small><b>{formatDateTime(listing.observedAt)}</b></div>
+            {formatCustomerSecondaryPrice(listing.observedPriceThb, language) && <div><small>{language === "th" ? "USD estimate" : "Thai price"}</small><b>{formatCustomerSecondaryPrice(listing.observedPriceThb, language)}</b></div>}
+            {summaryFacts.map((item) => <div key={item.label}><small>{item.label}</small><b>{item.value}</b></div>)}
           </div>
           <p className="bb-price-caption"><span className="bb-price-caption-short">{mobilePriceCaption}</span><span className="bb-price-caption-full">{t("observedPriceCaption", { date: formatDateTime(listing.observedAt), fx: customerFxDisclosure() })}</span></p>
           <div className="bb-detail-primary-actions">
