@@ -32,6 +32,20 @@ export function buildFacebookSearchUrl(request) {
   return url.toString();
 }
 
+function inferMarketplaceLocation(...values) {
+  const evidence = values.filter((value) => typeof value === "string").join(" ").toLowerCase();
+  const locations = [
+    ["Bangkok", ["bangkok", "กรุงเทพ"]],
+    ["Nonthaburi", ["nonthaburi", "นนทบุรี"]],
+    ["Pathum Thani", ["pathum thani", "ปทุมธานี"]],
+    ["Samut Prakan", ["samut prakan", "สมุทรปราการ"]],
+    ["Samut Sakhon", ["samut sakhon", "สมุทรสาคร"]],
+    ["Nakhon Pathom", ["nakhon pathom", "นครปฐม"]],
+    ["Phetchaburi", ["phetchaburi", "เพชรบุรี"]],
+  ];
+  return locations.find(([, aliases]) => aliases.some((alias) => evidence.includes(alias)))?.[0] || "";
+}
+
 export class FacebookPlaywrightSourceAdapter extends SourceAdapter {
   constructor({
     profileManager,
@@ -105,7 +119,13 @@ export class FacebookPlaywrightSourceAdapter extends SourceAdapter {
           maxImages: 6,
           profileId,
         });
-        const candidate = normalizeCandidate(listing, {
+        const candidate = normalizeCandidate({
+          ...card,
+          ...listing,
+          title: listing.title || card.title,
+          location: listing.location || card.location || inferMarketplaceLocation(card.title, card.listing_text, listing.title, listing.listing_text),
+          listing_text: listing.listing_text || card.listing_text,
+        }, {
           search_request_id: request.request_id,
           search_run_id: options.runId,
           adapter: this.name,

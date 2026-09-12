@@ -136,6 +136,34 @@ test("tracks authorized browser profile state without exposing session data", as
   assert.equal(manager.getStatus("fb-buyer-01").state, "login_required");
 });
 
+test("reuses an authorized loopback CDP browser without copying or closing its profile", async () => {
+  let connectedTo = "";
+  let closed = false;
+  const page = { close: async () => undefined };
+  const context = {
+    cookies: async () => [{ name: "c_user", value: "not-returned" }, { name: "xs", value: "not-returned" }],
+    newPage: async () => page,
+    close: async () => { closed = true; },
+    setDefaultNavigationTimeout() {},
+    setDefaultTimeout() {},
+  };
+  const manager = new BrowserProfileManager({
+    profiles: [{ id: "fb-buyer-01", directory: os.tmpdir(), cdpEndpoint: "http://127.0.0.1:9223" }],
+    browserType: {
+      connectOverCDP: async (endpoint) => {
+        connectedTo = endpoint;
+        return { contexts: () => [context] };
+      },
+    },
+  });
+
+  assert.equal((await manager.checkSession("fb-buyer-01")).state, "ready");
+  assert.equal(connectedTo, "http://127.0.0.1:9223");
+  await manager.withPage("fb-buyer-01", async () => ({ state: "ok" }));
+  await manager.closeAll();
+  assert.equal(closed, false);
+});
+
 test("protects the local connector and supports search plus legacy listing import", async (t) => {
   const profileManager = {
     listProfiles: () => [{ profile_id: "fb-buyer-01", state: "ready" }],

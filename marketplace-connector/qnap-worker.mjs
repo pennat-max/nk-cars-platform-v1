@@ -156,7 +156,14 @@ export async function runQnapWorkerOnce(config, fetchImpl = fetch) {
           const ingested = await jsonRequest(fetchImpl, `${config.qnapUrl}/v1/worker/sourcing/candidates`, config.qnapToken, {
             method: "POST",
             headers: { "x-nk-worker-id": config.workerId },
-            body: JSON.stringify({ commandId: command.id, ruleId: entry.id, candidate }),
+            body: JSON.stringify({
+              commandId: command.id,
+              ruleId: entry.id,
+              candidate: {
+                ...candidate,
+                confidence: Number.isSafeInteger(candidate.confidence) ? candidate.confidence : null,
+              },
+            }),
           });
           if (ingested.status === "retained") {
             retained += 1;

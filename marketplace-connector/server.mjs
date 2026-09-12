@@ -265,6 +265,7 @@ export function createDefaultRuntime(env = process.env) {
     profiles: profiles.map((profile) => ({
       ...profile,
       channel: config.channel,
+      cdpEndpoint: config.cdpEndpoint,
       headless: config.headless,
       navigationTimeoutMs: config.navigationTimeoutMs,
     })),

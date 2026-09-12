@@ -30,6 +30,7 @@ export class BrowserProfileManager {
         label: typeof profile.label === "string" ? profile.label.trim().slice(0, 100) : id,
         directory: path.resolve(profile.directory),
         channel: profile.channel || "chrome",
+        cdpEndpoint: profile.cdpEndpoint || null,
         headless: profile.headless !== false,
         navigationTimeoutMs: profile.navigationTimeoutMs || 45_000,
         state: PROFILE_STATES.has(profile.initialState) ? profile.initialState : "login_required",
@@ -49,6 +50,7 @@ export class BrowserProfileManager {
       label: typeof profile.label === "string" ? profile.label.trim().slice(0, 100) : id,
       directory: path.resolve(profile.directory),
       channel: profile.channel || "chrome",
+      cdpEndpoint: profile.cdpEndpoint || null,
       headless: profile.headless !== false,
       navigationTimeoutMs: profile.navigationTimeoutMs || 45_000,
       state: PROFILE_STATES.has(profile.initialState) ? profile.initialState : "login_required",
@@ -106,7 +108,7 @@ export class BrowserProfileManager {
     const profile = this.#get(id);
     const context = profile.contextPromise ? await profile.contextPromise.catch(() => null) : null;
     profile.contextPromise = null;
-    if (context) await context.close().catch(() => undefined);
+    if (context && !profile.cdpEndpoint) await context.close().catch(() => undefined);
   }
 
   async closeAll() {
@@ -115,6 +117,12 @@ export class BrowserProfileManager {
 
   async openInteractiveLogin(id) {
     const profile = this.#get(id);
+    if (profile.cdpEndpoint) {
+      const context = await this.#context(profile);
+      const page = await context.newPage();
+      await page.goto("https://www.facebook.com/marketplace/", { waitUntil: "domcontentloaded", timeout: profile.navigationTimeoutMs });
+      return { context, waitForSession: async () => this.checkSession(id) };
+    }
     await this.closeProfile(id);
     await fs.mkdir(profile.directory, { recursive: true });
     const context = await this.browserType.launchPersistentContext(profile.directory, {
@@ -162,6 +170,14 @@ export class BrowserProfileManager {
   async #context(profile) {
     if (!profile.contextPromise) {
       profile.contextPromise = (async () => {
+        if (profile.cdpEndpoint) {
+          const browser = await this.browserType.connectOverCDP(profile.cdpEndpoint);
+          const context = browser.contexts()[0];
+          if (!context) throw new Error("browser_context_missing");
+          context.setDefaultNavigationTimeout(profile.navigationTimeoutMs);
+          context.setDefaultTimeout(15_000);
+          return context;
+        }
         await fs.mkdir(profile.directory, { recursive: true });
         const context = await this.browserType.launchPersistentContext(profile.directory, {
           channel: profile.channel,
