@@ -64,7 +64,12 @@ async function runSearchRunner(input: Record<string, unknown>) {
   return JSON.parse(stdout);
 }
 
-function safeCachedCandidate(candidate: Record<string, any>) {
+type CachedCandidate = Record<string, unknown> & {
+  images?: unknown;
+  source?: Record<string, unknown>;
+};
+
+function safeCachedCandidate(candidate: CachedCandidate) {
   const titleParts = [candidate.year, candidate.brand, candidate.model].filter(Boolean);
   return {
     id: cleanText(candidate.candidate_id, `candidate-${Date.now()}`),

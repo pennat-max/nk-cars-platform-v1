@@ -20,13 +20,18 @@ type Candidate = {
   foundAt: string;
 };
 
+type RawCandidate = Record<string, unknown> & {
+  images?: unknown;
+  source?: Record<string, unknown>;
+};
+
 function cleanText(value: unknown, fallback = "PENDING") {
   if (typeof value !== "string") return fallback;
   const trimmed = value.trim();
   return trimmed || fallback;
 }
 
-function safeCandidate(candidate: Record<string, any>): Candidate {
+function safeCandidate(candidate: RawCandidate): Candidate {
   const titleParts = [candidate.year, candidate.brand, candidate.model].filter(Boolean);
   return {
     id: cleanText(candidate.candidate_id, `candidate-${Date.now()}`),
