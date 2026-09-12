@@ -33,15 +33,16 @@ function cleanText(value: unknown, fallback = "PENDING") {
 
 function safeCandidate(candidate: RawCandidate): Candidate {
   const titleParts = [candidate.year, candidate.brand, candidate.model].filter(Boolean);
+  const year = typeof candidate.year === "number" || typeof candidate.year === "string" ? candidate.year : "UNKNOWN";
   return {
     id: cleanText(candidate.candidate_id, `candidate-${Date.now()}`),
     title: titleParts.length ? titleParts.join(" ") : "Toyota Hilux Revo",
-    year: candidate.year || "UNKNOWN",
+    year,
     transmission: cleanText(candidate.transmission, "UNKNOWN"),
     drive: cleanText(candidate.drive_type, "UNKNOWN"),
     mileageKm: typeof candidate.mileage_km === "number" ? candidate.mileage_km : null,
     priceThb: typeof candidate.source_price_thb === "number" ? candidate.source_price_thb : null,
-    imageUrl: Array.isArray(candidate.images) ? candidate.images.find((image: string) => /^https?:\/\//.test(image)) || null : null,
+    imageUrl: Array.isArray(candidate.images) ? candidate.images.find((image): image is string => typeof image === "string" && /^https?:\/\//.test(image)) || null : null,
     location: cleanText(candidate.source?.location, "PENDING"),
     sourceUrl: cleanText(candidate.source?.source_url, ""),
     foundAt: cleanText(candidate.source?.observed_at, new Date().toISOString()),
