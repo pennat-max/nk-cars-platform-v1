@@ -46,7 +46,7 @@ export default async function LiveCandidatesPage() {
   const host = (await headers()).get("host") || "";
   if (!privateHost(host)) notFound();
   const all = await records();
-  const cars = all.filter((item) => item.publicationStatus === "NEEDS_REVIEW" && item.customerRecord == null).slice(0, 30);
+  const cars = all.filter((item) => item.publicationStatus === "NEEDS_REVIEW" && item.customerRecord == null).slice(0, 10);
   return (
     <main style={{ maxWidth: 1180, margin: "0 auto", padding: "24px 16px 60px", fontFamily: "Arial, sans-serif", color: "#111827" }}>
       <header style={{ marginBottom: 24 }}>
