@@ -57,6 +57,10 @@ const MAX_IMAGES = 30;
 const BROWSERLESS_DEFAULT_ORIGIN = "https://production-sfo.browserless.io";
 const FACEBOOK_MOBILE_USER_AGENT = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/27.0 Mobile/15E148 Safari/604.1 NKCars/1.0";
 
+function runtimeEnv(name: string) {
+  return process.env[name]?.trim();
+}
+
 // Standard Chromium only: no stealth mode, CAPTCHA solving, proxy rotation, or login automation.
 const BROWSERLESS_FUNCTION = String.raw`
 export default async ({ page, context }) => {
@@ -373,7 +377,7 @@ async function limitedJson<T>(response: Response) {
 }
 
 function browserlessOrigin() {
-  const value = process.env.BROWSERLESS_API_URL?.trim() || BROWSERLESS_DEFAULT_ORIGIN;
+  const value = runtimeEnv("BROWSERLESS_API_URL") || BROWSERLESS_DEFAULT_ORIGIN;
   try {
     const url = new URL(value);
     const host = url.hostname.toLowerCase();
@@ -480,15 +484,15 @@ function validConfiguredConnectorUrl(value: string) {
     const loopback = url.hostname === "127.0.0.1" || url.hostname === "localhost" || url.hostname === "[::1]";
     return url.protocol === "http:"
       && loopback
-      && process.env.MARKETPLACE_CONNECTOR_ALLOW_HTTP_LOCALHOST === "true";
+      && runtimeEnv("MARKETPLACE_CONNECTOR_ALLOW_HTTP_LOCALHOST") === "true";
   } catch {
     return false;
   }
 }
 
 function configuredConnector(): { connector: MarketplaceConnector; provider: string } | null {
-  const browserlessToken = process.env.BROWSERLESS_TOKEN?.trim();
-  const browserlessProfile = process.env.BROWSERLESS_PROFILE?.trim();
+  const browserlessToken = runtimeEnv("BROWSERLESS_TOKEN");
+  const browserlessProfile = runtimeEnv("BROWSERLESS_PROFILE");
   const origin = browserlessOrigin();
   if (browserlessToken && browserlessProfile && origin) {
     return {
@@ -497,8 +501,8 @@ function configuredConnector(): { connector: MarketplaceConnector; provider: str
     };
   }
 
-  const endpoint = process.env.MARKETPLACE_CONNECTOR_URL?.trim();
-  const token = process.env.MARKETPLACE_CONNECTOR_TOKEN?.trim();
+  const endpoint = runtimeEnv("MARKETPLACE_CONNECTOR_URL");
+  const token = runtimeEnv("MARKETPLACE_CONNECTOR_TOKEN");
   if (!endpoint || !token) return null;
   if (!validConfiguredConnectorUrl(endpoint)) return null;
   return { connector: new ConfiguredMarketplaceConnector(endpoint, token), provider: "NK Marketplace Connector" };
