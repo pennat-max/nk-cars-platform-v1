@@ -1,6 +1,7 @@
 import { DEFAULT_FILTERS, filterListings } from "../domain.mjs";
 import type { SourceAdapterStatus } from "../types";
 import type { BuyingBrowserSourceAdapter, LinkImportCapability, SourceSearchRequest, SourceSearchResponse } from "./contracts";
+import { autoPublishedCustomerListings } from "./auto-published-customer-data";
 import { capturedCustomerListings } from "./captured-customer-data";
 import { getGoogleStagingSnapshot, getGoogleStagingStatus, googleStagingMigrationBridgeEnabled } from "./google-staging";
 import { getQnapInventorySnapshot, getQnapInventoryStatus, qnapInventoryConfigured } from "./qnap-inventory";
@@ -49,18 +50,18 @@ export class CustomerMarketplaceAdapter implements BuyingBrowserSourceAdapter {
         adapterId: "qnap-postgres",
         mode: "live",
         observedAt: qnapSnapshot.observedAt,
-        results: filterListings(qnapSnapshot.listings, request.filters || DEFAULT_FILTERS).slice(0, Math.max(1, Math.min(request.limit, 50))),
+        results: filterListings(qnapSnapshot.listings, request.filters || DEFAULT_FILTERS).slice(0, Math.max(1, Math.min(request.limit, 100))),
       };
     }
     const snapshot = googleStagingMigrationBridgeEnabled()
       ? await getGoogleStagingSnapshot().catch(() => null)
       : null;
-    const listings = snapshot?.listings || capturedCustomerListings;
+    const listings = snapshot?.listings || [...autoPublishedCustomerListings, ...capturedCustomerListings];
     return {
       adapterId: this.id,
       mode: snapshot ? "live" : "snapshot",
       observedAt: snapshot?.observedAt || observedAt,
-      results: filterListings(listings, request.filters || DEFAULT_FILTERS).slice(0, Math.max(1, Math.min(request.limit, 50))),
+      results: filterListings(listings, request.filters || DEFAULT_FILTERS).slice(0, Math.max(1, Math.min(request.limit, 100))),
     };
   }
 

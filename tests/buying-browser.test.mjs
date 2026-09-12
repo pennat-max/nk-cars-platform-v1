@@ -954,18 +954,18 @@ test("renders additive Buying Browser routes without customer source leakage", a
     if (route === "/buy") {
       assert.match(html, /data-browse-marketplace-v2/i);
       assert.match(html, /data-vehicle-card-v2/i);
-      assert.match(textHtml, /<b>16<\/b> vehicles/i);
+      assert.match(textHtml, /<b>66<\/b> vehicles/i);
       assert.match(html, /NK Selection/i);
       assert.doesNotMatch(html, /zh-CN|简体中文|NK 精选|AT - Unknown/i);
       assert.doesNotMatch(html, /10 selected/i);
-      assert.match(html, /USD 21,686/i);
+      assert.match(html, /USD 13,571/i);
       assert.doesNotMatch(html, /data-real-source-launch/i);
     }
     if (route === "/buy/browse") {
       assert.match(html, /data-browse-marketplace-v2/i);
       assert.match(html, /data-vehicle-card-v2/i);
-      assert.match(html, /2020 Toyota Hilux Revo Rocco 2\.4 AT/i);
-      assert.match(textHtml, /<b>16<\/b> vehicles/i);
+      assert.match(html, /2022 Toyota Hilux Revo/i);
+      assert.match(textHtml, /<b>66<\/b> vehicles/i);
       assert.match(html, /Bangkok Metro/i);
       assert.doesNotMatch(html, /10 selected/i);
       assert.doesNotMatch(html, /Explore customer-safe vehicle results|Demo market results|Primary Buying Browser actions/i);
