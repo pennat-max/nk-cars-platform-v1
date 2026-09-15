@@ -2,6 +2,7 @@ import { DEFAULT_FILTERS, filterListings } from "../domain.mjs";
 import type { SourceAdapterStatus } from "../types";
 import type { BuyingBrowserSourceAdapter, LinkImportCapability, SourceSearchRequest, SourceSearchResponse } from "./contracts";
 import { capturedCustomerListings } from "./captured-customer-data";
+import { recollectedCustomerListings } from "./recollected-customer-data";
 import { getGoogleStagingSnapshot, getGoogleStagingStatus, googleStagingMigrationBridgeEnabled } from "./google-staging";
 import { getQnapInventorySnapshot, getQnapInventoryStatus, qnapInventoryConfigured } from "./qnap-inventory";
 
@@ -57,7 +58,7 @@ export class CustomerMarketplaceAdapter implements BuyingBrowserSourceAdapter {
       : null;
     // Incomplete imports stay out of the customer marketplace until their
     // real source evidence and complete photo gallery have been retained.
-    const listings = snapshot?.listings || capturedCustomerListings;
+    const listings = snapshot?.listings || [...recollectedCustomerListings, ...capturedCustomerListings];
     return {
       adapterId: this.id,
       mode: snapshot ? "live" : "snapshot",
@@ -71,5 +72,5 @@ export class CustomerMarketplaceAdapter implements BuyingBrowserSourceAdapter {
   }
 }
 
-const observedAt = "2026-08-25T15:51:43.342Z";
+const observedAt = "2026-09-15T09:59:15.351Z";
 export const customerMarketplaceAdapter = new CustomerMarketplaceAdapter();

@@ -27,7 +27,7 @@ export default async function BuyingBrowserRoute({ view, sourceId, caseId }: { v
       : { id: "guest-device", displayName: "Guest", email: null, country: "Not set", destinationPort: "Not set", isPreview: true, signInPath, signInProviders };
   const [sourceStatus, result] = await Promise.all([
     customerMarketplaceAdapter.getStatus(),
-    customerMarketplaceAdapter.search({ customerId: customer.id, searchArea: "Thailand", filters: { ...DEFAULT_FILTERS, location: "All Thailand" }, limit: 50 }),
+    customerMarketplaceAdapter.search({ customerId: customer.id, searchArea: "Thailand", filters: { ...DEFAULT_FILTERS, location: "All Thailand" }, limit: 100 }),
   ]);
   return <BuyingBrowserApp view={view} sourceId={sourceId} caseId={caseId} customer={customer} sourceStatus={sourceStatus} listings={result.results} seedCases={signedIn || !demoWorkspaceEnabled ? [] : [createCapturedPocCase(customer.id)]} durableAccount={Boolean(signedIn)} legacyCustomerId={signedIn?.provider !== "qnap" ? customerIdFromEmail(signedIn?.email || null) : undefined} />;
 }
