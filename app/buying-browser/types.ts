@@ -17,6 +17,15 @@ export type SourceTextEvidence = {
   translationLanguage: CustomerLanguage;
 };
 
+export type VehicleSpecEvidence = {
+  field: "year" | "engine" | "transmission" | "drive" | "body" | "mileage" | "color" | "grade";
+  value: string;
+  source: "listing_field" | "listing_title" | "listing_description" | "photo_review" | "unknown";
+  confidence: "high" | "medium" | "low";
+  status: "confirmed" | "inferred" | "unknown" | "conflict";
+  note?: string;
+};
+
 export type TranslationTrace = {
   id: string;
   originalText: string;
@@ -51,6 +60,8 @@ export type CustomerListing = {
   availability: AvailabilityState;
   translationState: TranslationState;
   evidenceLabels: string[];
+  specEvidence?: VehicleSpecEvidence[];
+  imageReview?: { status: "passed" | "needs_review"; checkedImages: number; note: string };
   demo: boolean;
 };
 

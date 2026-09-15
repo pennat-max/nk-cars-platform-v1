@@ -10,6 +10,7 @@ import { nativeCaptureMethod } from "../native-bridge";
 import { formatMileage, formatUsdFromThb } from "../format";
 import { useI18n } from "../use-i18n";
 import { detectSourceLanguage } from "../i18n.mjs";
+import { extractVehicleSpecs, imageEvidenceGate } from "../spec-extractor.mjs";
 import type { CustomerListing, SourceCapture } from "../types";
 
 type ImportPayload = {
@@ -85,6 +86,8 @@ function buildImportedListing(payload: ImportPayload, submittedUrl: string): Cus
   const mileage = numeric(fields.mileage);
   const sourceRef = referenceFromUrl(payload.canonical_url || submittedUrl);
   const confirmedFacts = [fields.engine, fields.transmission, fields.drive, fields.body, mileage ? `${mileage.toLocaleString("en-US")} km` : ""].filter(Boolean);
+  const specEvidence = extractVehicleSpecs({ title: payload.title || title, description: `${payload.description || ""} ${payload.listing_text || ""}`, fields });
+  const imageUrls = payload.images?.filter((image) => /^https:\/\//i.test(image)).slice(0, 30) || [];
   return {
     id: `imported-${sourceRef.toLowerCase()}`,
     adapterId: "facebook-link-import",
@@ -104,10 +107,12 @@ function buildImportedListing(payload: ImportPayload, submittedUrl: string): Cus
     observedPriceThb: numeric(payload.source_price),
     observedAt: new Date().toISOString(),
     generalLocation: broadLocation(payload.location),
-    imageUrls: payload.images?.filter((image) => /^https:\/\//i.test(image)).slice(0, 30) || [],
+    imageUrls,
     availability: "Availability Not Yet Confirmed",
     translationState: titleParts.length >= 3 ? "Normalized" : "Need Review",
     evidenceLabels: [payload.title ? "Accessible listing title" : "Shared source link", payload.description ? "Accessible listing description" : "Details pending", payload.images?.length ? `${payload.images.length} accessible image${payload.images.length === 1 ? "" : "s"}` : "Screenshots requested"],
+    specEvidence,
+    imageReview: imageEvidenceGate({ imageCount: imageUrls.length, checkedImages: 0 }),
     demo: false,
   };
 }

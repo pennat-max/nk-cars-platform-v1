@@ -32,6 +32,7 @@ import { cookieValue, identityGatewayRedirect, identityProviderMode, identitySoc
 import { qnapWorkspaceTestHelpers, readQnapWorkspace, writeQnapWorkspace } from "../app/buying-browser/qnap-workspace.ts";
 import { readQnapSourcingAutomation, saveQnapSourcingRule, sendQnapHermesCommand } from "../app/buying-browser/qnap-sourcing.ts";
 import { defaultSourcingRuleInput, normalizeHermesCommand, normalizeSourcingRuleInput, parseSourcingAutomationSnapshot } from "../app/buying-browser/sourcing-automation.ts";
+import { extractVehicleSpecs, imageEvidenceGate, mergePhotoSpecEvidence } from "../app/buying-browser/spec-extractor.mjs";
 
 const source = {
   id: "listing-1",
@@ -64,6 +65,22 @@ const source = {
   evidenceLabels: ["Listing title"],
   demo: true,
 };
+
+test("vehicle spec extraction preserves unknowns, evidence sources, and image conflicts", () => {
+  const extracted = extractVehicleSpecs({ title: "2022 Toyota Hilux Revo Rocco 2.4 AT", description: "เลขไมล์ 82,450 กม.", fields: { transmission: "AT" } });
+  const byField = Object.fromEntries(extracted.map((item) => [item.field, item]));
+  assert.equal(byField.year.value, "2022");
+  assert.equal(byField.year.source, "listing_title");
+  assert.equal(byField.transmission.status, "confirmed");
+  assert.equal(byField.mileage.value, "82450 km");
+  assert.equal(byField.drive.status, "unknown");
+  const merged = mergePhotoSpecEvidence(extracted, [{ field: "body", value: "Double Cab", confidence: "medium" }, { field: "transmission", value: "MT", confidence: "high" }]);
+  const mergedByField = Object.fromEntries(merged.map((item) => [item.field, item]));
+  assert.equal(mergedByField.body.source, "photo_review");
+  assert.equal(mergedByField.transmission.status, "conflict");
+  assert.equal(imageEvidenceGate({ imageCount: 6, checkedImages: 4 }).status, "passed");
+  assert.equal(imageEvidenceGate({ imageCount: 6, checkedImages: 4, unrelatedCount: 1 }).status, "needs_review");
+});
 
 class MemoryWorkspaceD1 {
   constructor() {

@@ -65,6 +65,13 @@ export default function VehicleScreen({ sourceId }: { sourceId?: string }) {
     { label: t("drive"), value: listing.drive },
     { label: "Last checked", value: formatDateTime(listing.observedAt) },
   ].filter((item) => item.value && item.value !== "Unknown");
+  const specEvidence = listing.specEvidence || [];
+  const specLabels: Record<string, string> = language === "th"
+    ? { year: "ปี", engine: "เครื่องยนต์", transmission: "เกียร์", drive: "ระบบขับเคลื่อน", body: "ตัวถัง", mileage: "เลขไมล์", color: "สี", grade: "รุ่นย่อย" }
+    : { year: "Year", engine: "Engine", transmission: "Transmission", drive: "Drive", body: "Body", mileage: "Mileage", color: "Color", grade: "Grade" };
+  const sourceLabels: Record<string, string> = language === "th"
+    ? { listing_field: "ช่องข้อมูลประกาศ", listing_title: "ชื่อประกาศ", listing_description: "รายละเอียดผู้ขาย", photo_review: "ตรวจจากรูป", unknown: "ยังไม่มีหลักฐาน" }
+    : { listing_field: "Listing field", listing_title: "Listing title", listing_description: "Seller description", photo_review: "Photo review", unknown: "No evidence yet" };
 
   function showPhoto(index: number) {
     const nextIndex = Math.min(Math.max(index, 0), listing!.imageUrls.length - 1);
@@ -152,6 +159,16 @@ export default function VehicleScreen({ sourceId }: { sourceId?: string }) {
         <div className="bb-spec-grid">
           <div><small>{t("year")}</small><b>{listing.year ?? t("needsReview")}</b></div><div><small>{t("engine")}</small><b>{listing.engine || t("needsReview")}</b></div><div><small>{t("transmission")}</small><b>{listing.transmission}</b></div><div><small>{t("drive")}</small><b>{listing.drive}</b></div><div><small>{t("bodyCab")}</small><b>{listing.body}</b></div><div><small>{t("mileage")}</small><b>{formatMileage(listing.mileageKm)}</b></div>
         </div>
+        {specEvidence.length > 0 && <div className="bb-spec-evidence" data-spec-evidence>
+          <div className="bb-spec-evidence-heading"><h3>{language === "th" ? "หลักฐานของสเป็ก" : "Specification evidence"}</h3><p>{language === "th" ? "ระบบไม่ใช้ข้อมูลที่ไม่ทราบเป็นเงื่อนไขว่ารถตรงสเป็ก" : "Unknown values are never counted as confirmed matches."}</p></div>
+          <div className="bb-spec-evidence-list">
+            {specEvidence.map((item) => <div className={`bb-spec-evidence-item ${item.status}`} key={item.field}>
+              <span><small>{specLabels[item.field] || item.field}</small><b>{item.value === "Unknown" ? (language === "th" ? "ยังไม่ทราบ" : "Unknown") : item.value}</b></span>
+              <span><small>{sourceLabels[item.source] || item.source}</small><em>{item.status === "confirmed" ? (language === "th" ? "ยืนยันจากประกาศ" : "Confirmed") : item.status === "inferred" ? (language === "th" ? "ประเมินจากหลักฐาน" : "Evidence-based estimate") : item.status === "conflict" ? (language === "th" ? "ข้อมูลขัดกัน" : "Conflict") : (language === "th" ? "ต้องตรวจเพิ่ม" : "Needs review")}</em></span>
+            </div>)}
+          </div>
+          {listing.imageReview && <p className={`bb-image-review ${listing.imageReview.status}`}><CheckCircle2 size={14} />{language === "th" ? `ตรวจคุณภาพรูปแล้ว ${listing.imageReview.checkedImages} รูป` : `${listing.imageReview.checkedImages} photos quality-checked`}</p>}
+        </div>}
         <div className="bb-vehicle-description"><h3>{t("vehicleOverview")}</h3><p className="bb-normalized-summary">{listingSummary(listing)}</p><small>{t("originalFactsPreserved")}</small></div>
         <div className="bb-evidence-row"><span><CheckCircle2 size={13} />{t("listingFacts")}</span><span><CheckCircle2 size={13} />{listing.translationState === "Normalized" ? t("translatedFromThai") : t("needsReview")}</span><span><CheckCircle2 size={13} />{t("sourcePhotos", { count: listing.imageUrls.length })}</span></div>
       </section>
