@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowUpDown, Bot, Link2, MapPin, RotateCcw, Search, Ship, SlidersHorizontal, X } from "lucide-react";
+import { ArrowRight, ArrowUpDown, Bot, CheckCircle2, ClipboardCheck, Link2, MapPin, RotateCcw, Search, Ship, SlidersHorizontal, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useBuyingBrowser } from "../BuyingBrowserProvider";
 import { DEFAULT_FILTERS, filterListings } from "../domain.mjs";
@@ -62,6 +62,24 @@ export default function BrowseScreen({ savedOnly = false }: { savedOnly?: boolea
 
   return (
     <>
+      {!savedOnly && <section className="bb-find-hero" data-customer-start>
+        <div>
+          <p className="bb-kicker">{language === "th" ? "ให้ NK ช่วยหารถ" : "Find the right vehicle"}</p>
+          <h1>{language === "th" ? "บอกสเป็กและงบที่ต้องการ เราช่วยคัดรถให้" : "Tell us your specifications and budget. NK will shortlist the best matches."}</h1>
+          <p>{language === "th" ? "ระบบจะแยกสิ่งที่ต้องมีและสิ่งที่ยืดหยุ่นได้ พร้อมบอกข้อมูลที่ยังต้องตรวจสอบ" : "See confirmed matches, flexible alternatives, and facts that still need verification."}</p>
+        </div>
+        <div className="bb-find-hero-actions">
+          <Link className="bb-button primary" href="/buy/ask"><Bot size={18} />{language === "th" ? "ให้ NK ช่วยหารถ" : "Help me find a vehicle"}<ArrowRight size={17} /></Link>
+          <a className="bb-button secondary" href="#vehicle-results"><Search size={18} />{language === "th" ? "ดูรถทั้งหมด" : "Browse all vehicles"}</a>
+        </div>
+        <div className="bb-find-steps" aria-label="How buying through NK works">
+          <span><b>1</b><small>{language === "th" ? "บอกสเป็ก" : "Tell us what you need"}</small></span>
+          <span><b>2</b><small>{language === "th" ? "NK คัดและตรวจข้อมูล" : "NK shortlists and checks"}</small></span>
+          <span><b>3</b><small>{language === "th" ? "ตรวจว่ารถยังอยู่" : "Confirm availability"}</small></span>
+          <span><b>4</b><small>{language === "th" ? "ตรวจรถและเสนอราคา" : "Inspect and quote"}</small></span>
+        </div>
+        <p className="bb-find-trust"><CheckCircle2 size={15} />{language === "th" ? "ยังไม่มีการติดต่อผู้ขาย จองรถ หรือชำระเงิน จนกว่าคุณจะขอดำเนินการ" : "No seller contact, reservation, or payment happens until you request the next step."}</p>
+      </section>}
       {savedOnly && <section className="bb-page-heading bb-browse-heading">
         <div><p className="bb-kicker">NK Cars · {t("thailand")}</p><h1>{savedOnly ? t("savedVehicles") : t("browseVehicles")}</h1></div>
         <span className="bb-result-count">{visibleListings.length} {t("results")}</span>
@@ -72,7 +90,7 @@ export default function BrowseScreen({ savedOnly = false }: { savedOnly?: boolea
         <button className="bb-button primary" disabled={!selectedSavedIds.length} onClick={addSelectedToShipment}><Ship size={17} />Add selected to shipment</button>
       </section>}
 
-      <section className={savedOnly ? "bb-marketplace-toolbar saved" : "bb-marketplace-toolbar"} aria-label="Vehicle search and filters" data-browse-marketplace-v2={!savedOnly ? true : undefined}>
+      <section id="vehicle-results" className={savedOnly ? "bb-marketplace-toolbar saved" : "bb-marketplace-toolbar"} aria-label="Vehicle search and filters" data-browse-marketplace-v2={!savedOnly ? true : undefined}>
         {!savedOnly && <h1 className="bb-sr-only">{t("browseVehicles")}</h1>}
         <div className="bb-market-search-row">
           <label className="bb-search-field"><Search size={19} /><input value={filters.query} onChange={(event) => setFilter("query", event.target.value)} placeholder={t("searchVehicles")} aria-label={t("searchVehicles")} />{filters.query && <button onClick={() => setFilter("query", "")} aria-label="Clear search"><X size={17} /></button>}</label>
@@ -93,6 +111,11 @@ export default function BrowseScreen({ savedOnly = false }: { savedOnly?: boolea
       </section>
 
       {visibleListings.length ? <section className="bb-listing-grid" aria-label="Vehicle results">{visibleListings.map((listing) => <ListingCard key={listing.id} listing={listing} selectable={savedOnly} selected={selectedSavedIds.includes(listing.id)} onSelect={toggleSavedSelection} />)}</section> : <section className="bb-empty-state"><Search size={30} /><h2>{savedOnly ? t("noSaved") : t("noMatches")}</h2><button className="bb-button secondary" onClick={() => setFilters({ ...DEFAULT_FILTERS })}><RotateCcw size={17} />{t("resetFilters")}</button></section>}
+
+      {!savedOnly && <section className="bb-buying-trust">
+        <div><ClipboardCheck size={22} /><span><b>{language === "th" ? "ข้อมูลตรงไปตรงมา" : "Honest vehicle facts"}</b><small>{language === "th" ? "ข้อมูลที่ไม่ทราบจะแสดงว่ายังไม่ทราบ ไม่ใช้การคาดเดาแทนข้อเท็จจริง" : "Unknown facts stay unknown instead of being presented as confirmed."}</small></span></div>
+        <div><CheckCircle2 size={22} /><span><b>{language === "th" ? "NK ตรวจสอบก่อนเสนอราคา" : "Verified before quotation"}</b><small>{language === "th" ? "ตรวจสถานะรถ ราคา สภาพ และค่าใช้จ่ายจริงก่อนออกใบเสนอราคา" : "Availability, price, condition, and actual costs are checked before a quote."}</small></span></div>
+      </section>}
 
       {filterOpen && <div className="bb-filter-overlay" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setFilterOpen(false); }}>
         <section className="bb-filter-sheet" role="dialog" aria-modal="true" aria-label="Vehicle filters">

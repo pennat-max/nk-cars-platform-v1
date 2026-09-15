@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Heart } from "lucide-react";
+import { Camera, Heart } from "lucide-react";
 import { useBuyingBrowser } from "../BuyingBrowserProvider";
 import { formatCustomerPrimaryPrice } from "../format";
 import { useI18n } from "../use-i18n";
@@ -22,6 +22,7 @@ export default function ListingCard({
   const { isSaved, toggleSaved } = useBuyingBrowser();
   const { language, t } = useI18n();
   const saved = isSaved(listing.id);
+  const facts = [listing.transmission !== "Unknown" ? listing.transmission : null, listing.drive !== "Unknown" ? listing.drive : null, listing.mileageKm !== null ? `${listing.mileageKm.toLocaleString("en-US")} km` : null].filter(Boolean);
   return (
     <article className="bb-listing-card" data-listing-id={listing.id} data-vehicle-card-v2>
       {selectable && <label className="bb-card-select" aria-label={`Select ${listing.title}`}>
@@ -36,6 +37,8 @@ export default function ListingCard({
       <Link className="bb-listing-copy" href={`/buy/vehicle/${encodeURIComponent(listing.id)}`}>
         <strong>{formatCustomerPrimaryPrice(listing.observedPriceThb, language)}</strong>
         <h2>{listing.year ?? `${t("year")} ${t("pending")}`} {listing.brand} {listing.model}</h2>
+        <div className="bb-card-facts">{facts.map((fact) => <span key={fact}>{fact}</span>)}<span><Camera size={13} />{listing.imageUrls.length} {language === "th" ? "รูป" : "photos"}</span></div>
+        <small className="bb-card-availability">{language === "th" ? "NK จะตรวจว่ารถยังอยู่และยืนยันราคาก่อนเสนอราคา" : "NK checks availability and price before quotation"}</small>
       </Link>
     </article>
   );
