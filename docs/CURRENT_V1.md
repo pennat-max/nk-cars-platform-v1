@@ -48,6 +48,10 @@ The old stock-first implementation remains rollback/reference. Demo cards are no
 
 ## 2. Marketplace ingestion and staging — approved V1 direction
 
+### Owner approval-by-exception update (2026-09-15)
+
+The Owner no longer needs to approve every sourced vehicle individually. A new import may become eligible for automatic Browse publication only when deterministic gates all pass: the source URL/listing ID is retained; duplicate checks pass; the listing and every displayed photo belong to the same vehicle; the accessible source gallery has been captured with more than one genuine photo; no synthetic/duplicated filler image is used; plates are not blurred; required vehicle facts and source price have evidence; customer-visible media contains no seller contact or internal data; and no material conflict or missing required field remains. Any failed or uncertain gate stays `NEEDS_REVIEW` and is the only class requiring human approval. This decision does not authorize seller contact, availability confirmation, negotiation, reservation, purchase, or payment. Existing fail-closed code remains in force until the automatic eligibility gate is implemented and tested.
+
 The intended V1 operational ingestion flow is:
 
 1. Authorized operator/agent/browser workflow finds a candidate listing from Facebook Marketplace or another supported source.

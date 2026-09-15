@@ -507,6 +507,20 @@ Boundaries:
 - No production deployment is authorized by this preview approval.
 - No automatic publication, seller contact, payment, purchase, destructive migration, credential storage, or Facebook security bypass is authorized.
 
+## 2026-09-15 - Vehicle publication approval by exception
+
+Status: OWNER APPROVED; IMPLEMENTATION PENDING VERIFIED GATES
+
+Decision:
+- The Owner does not need to approve every sourced vehicle individually.
+- A vehicle may be automatically eligible for Browse only after deterministic checks prove retained source identity, no duplicate, matching vehicle/media identity, a genuine multi-photo gallery, no plate blur, evidenced required facts and source price, no customer-visible seller/internal data, and no material conflict or missing required field.
+- Any uncertainty or failed check remains `NEEDS_REVIEW`; human approval is required only for those exceptions.
+- The defective `NK-AUTO-20260912` batch must be deleted and recollected from source rather than repaired with synthetic, duplicated, or unverifiable media.
+
+Boundaries:
+- No seller contact, availability confirmation, negotiation, reservation, purchase, payment, credential exposure, CAPTCHA/MFA bypass, or fabricated evidence is authorized.
+- Current fail-closed candidate intake must not auto-publish until these gates have implementation and test coverage.
+
 ## 2026-09-01 - Jaklaen app-driven Search Queue V1 preview approved
 
 Status: OWNER APPROVED FOR PREVIEW IMPLEMENTATION ONLY
