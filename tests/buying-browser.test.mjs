@@ -33,6 +33,7 @@ import { qnapWorkspaceTestHelpers, readQnapWorkspace, writeQnapWorkspace } from 
 import { readQnapSourcingAutomation, saveQnapSourcingRule, sendQnapHermesCommand } from "../app/buying-browser/qnap-sourcing.ts";
 import { defaultSourcingRuleInput, normalizeHermesCommand, normalizeSourcingRuleInput, parseSourcingAutomationSnapshot } from "../app/buying-browser/sourcing-automation.ts";
 import { extractVehicleSpecs, imageEvidenceGate, mergePhotoSpecEvidence } from "../app/buying-browser/spec-extractor.mjs";
+import { parseWantedRequest, rankVehicleMatches } from "../app/buying-browser/vehicle-matcher.mjs";
 
 const source = {
   id: "listing-1",
@@ -80,6 +81,18 @@ test("vehicle spec extraction preserves unknowns, evidence sources, and image co
   assert.equal(mergedByField.transmission.status, "conflict");
   assert.equal(imageEvidenceGate({ imageCount: 6, checkedImages: 4 }).status, "passed");
   assert.equal(imageEvidenceGate({ imageCount: 6, checkedImages: 4, unrelatedCount: 1 }).status, "needs_review");
+});
+
+test("wanted request matching never counts unknown specifications as confirmed", () => {
+  const request = parseWantedRequest("หา Toyota Hilux Revo ปี 2020 ขึ้นไป 4WD AT 4 ประตู งบไม่เกิน 700,000 บาท");
+  assert.equal(request.must.model, "Hilux Revo");
+  assert.equal(request.must.yearFrom, 2020);
+  assert.equal(request.must.priceMaxThb, 700000);
+  const candidate = { ...source, year: 2022, observedPriceThb: 650000, transmission: "AT", drive: "Unknown", body: "Double Cab", specEvidence: [{ field: "drive", value: "Unknown", source: "unknown", confidence: "low", status: "unknown" }] };
+  const [match] = rankVehicleMatches([candidate], request);
+  assert.equal(match.category, "possible");
+  assert.ok(match.unknown >= 1);
+  assert.ok(match.score < 100);
 });
 
 class MemoryWorkspaceD1 {

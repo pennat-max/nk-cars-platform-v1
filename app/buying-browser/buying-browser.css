@@ -347,6 +347,8 @@
 @media(max-width:720px){.bb-spec-evidence{padding:13px}.bb-spec-evidence-list{grid-template-columns:1fr}.bb-spec-evidence-item{padding:9px 10px}}
 
 /* Final Owner-approved responsive overrides. Keep these last. */
+.bb-wanted-request{margin:18px 0;padding:18px;border:1px solid #dfe5e8;border-radius:16px;background:#fff}
+.bb-wanted-criteria{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0}.bb-wanted-criteria span{display:grid;gap:2px;min-width:130px;padding:10px 12px;border-radius:12px;background:#f4f7f5}.bb-wanted-criteria small{color:#617069}.bb-ranked-matches{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:16px;margin-bottom:16px}.bb-ranked-match{padding:12px;border:1px solid #dfe5e8;border-radius:16px;background:#fff}.bb-match-verdict{display:flex;align-items:center;gap:7px;margin-bottom:10px;color:#996400}.bb-ranked-match ul{margin:10px 0 0;padding-left:20px;font-size:13px}.bb-ranked-match li[data-result="match"]{color:#137244}.bb-ranked-match li[data-result="unknown"]{color:#8b6500}.bb-safe-note{font-size:13px;color:#56645d}
 @media(max-width:720px){
   .view-saved .bb-main,.view-shipments .bb-main{padding:12px 14px 88px;background:#fff}
   .view-saved .bb-shortlist-bar{top:58px;margin:0 -14px 10px;padding:10px 14px;border-radius:0;border-left:0;border-right:0}
