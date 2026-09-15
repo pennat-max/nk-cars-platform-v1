@@ -34,6 +34,7 @@ import { readQnapSourcingAutomation, saveQnapSourcingRule, sendQnapHermesCommand
 import { defaultSourcingRuleInput, normalizeHermesCommand, normalizeSourcingRuleInput, parseSourcingAutomationSnapshot } from "../app/buying-browser/sourcing-automation.ts";
 import { extractVehicleSpecs, imageEvidenceGate, mergePhotoSpecEvidence } from "../app/buying-browser/spec-extractor.mjs";
 import { parseWantedRequest, rankVehicleMatches } from "../app/buying-browser/vehicle-matcher.mjs";
+import { customerEligibleListing, mergeCustomerSafeListings } from "../app/buying-browser/source-adapters/customer-listing-gate.mjs";
 
 const source = {
   id: "listing-1",
@@ -93,6 +94,14 @@ test("wanted request matching never counts unknown specifications as confirmed",
   assert.equal(match.category, "possible");
   assert.ok(match.unknown >= 1);
   assert.ok(match.score < 100);
+});
+
+test("defective cover-only batch stays quarantined when live QNAP inventory returns", () => {
+  const defective = { ...source, id: "nk-auto-20260912-01", imageUrls: ["/vehicle-marketplace/auto-published-20260912/car-01.jpg"] };
+  assert.equal(customerEligibleListing(defective), false);
+  const merged = mergeCustomerSafeListings([defective], Array.from({ length: 49 }, (_, index) => ({ ...source, id: `good-${index}` })));
+  assert.equal(merged.some((listing) => listing.id === defective.id), false);
+  assert.equal(merged.length, 49);
 });
 
 class MemoryWorkspaceD1 {

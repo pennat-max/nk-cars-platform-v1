@@ -3,6 +3,7 @@ import type { SourceAdapterStatus } from "../types";
 import type { BuyingBrowserSourceAdapter, LinkImportCapability, SourceSearchRequest, SourceSearchResponse } from "./contracts";
 import { capturedCustomerListings } from "./captured-customer-data";
 import { recollectedCustomerListings } from "./recollected-customer-data";
+import { mergeCustomerSafeListings } from "./customer-listing-gate.mjs";
 import { getGoogleStagingSnapshot, getGoogleStagingStatus, googleStagingMigrationBridgeEnabled } from "./google-staging";
 import { getQnapInventorySnapshot, getQnapInventoryStatus, qnapInventoryConfigured } from "./qnap-inventory";
 
@@ -10,6 +11,7 @@ function isFacebookHost(hostname: string) {
   const host = hostname.toLowerCase().replace(/^www\./, "");
   return host === "facebook.com" || host.endsWith(".facebook.com") || host === "fb.com" || host.endsWith(".fb.com");
 }
+
 
 export class CustomerMarketplaceAdapter implements BuyingBrowserSourceAdapter {
   readonly id = "qnap-postgres";
@@ -46,11 +48,12 @@ export class CustomerMarketplaceAdapter implements BuyingBrowserSourceAdapter {
   async search(request: SourceSearchRequest): Promise<SourceSearchResponse> {
     const qnapSnapshot = await getQnapInventorySnapshot().catch(() => null);
     if (qnapSnapshot) {
+      const customerSafeListings = mergeCustomerSafeListings(qnapSnapshot.listings, recollectedCustomerListings);
       return {
         adapterId: "qnap-postgres",
         mode: "live",
         observedAt: qnapSnapshot.observedAt,
-        results: filterListings(qnapSnapshot.listings, request.filters || DEFAULT_FILTERS).slice(0, Math.max(1, Math.min(request.limit, 100))),
+        results: filterListings(customerSafeListings, request.filters || DEFAULT_FILTERS).slice(0, Math.max(1, Math.min(request.limit, 100))),
       };
     }
     const snapshot = googleStagingMigrationBridgeEnabled()
