@@ -1,7 +1,6 @@
 import { DEFAULT_FILTERS, filterListings } from "../domain.mjs";
 import type { SourceAdapterStatus } from "../types";
 import type { BuyingBrowserSourceAdapter, LinkImportCapability, SourceSearchRequest, SourceSearchResponse } from "./contracts";
-import { autoPublishedCustomerListings } from "./auto-published-customer-data";
 import { capturedCustomerListings } from "./captured-customer-data";
 import { getGoogleStagingSnapshot, getGoogleStagingStatus, googleStagingMigrationBridgeEnabled } from "./google-staging";
 import { getQnapInventorySnapshot, getQnapInventoryStatus, qnapInventoryConfigured } from "./qnap-inventory";
@@ -56,7 +55,9 @@ export class CustomerMarketplaceAdapter implements BuyingBrowserSourceAdapter {
     const snapshot = googleStagingMigrationBridgeEnabled()
       ? await getGoogleStagingSnapshot().catch(() => null)
       : null;
-    const listings = snapshot?.listings || [...autoPublishedCustomerListings, ...capturedCustomerListings];
+    // Incomplete imports stay out of the customer marketplace until their
+    // real source evidence and complete photo gallery have been retained.
+    const listings = snapshot?.listings || capturedCustomerListings;
     return {
       adapterId: this.id,
       mode: snapshot ? "live" : "snapshot",
