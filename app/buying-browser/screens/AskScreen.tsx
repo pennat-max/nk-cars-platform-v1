@@ -14,7 +14,7 @@ type MatchCheck = { label: string; result: "match" | "mismatch" | "unknown" };
 type MatchResult = { listing: CustomerListing; checks: MatchCheck[]; score: number; unknown: number; category: "confirmed" | "possible" | "not_match" };
 
 export default function AskScreen() {
-  const { state, listings, askFindOne, sourceStatus } = useBuyingBrowser();
+  const { state, listings, askFindOne, saveWantedRequest, sourceStatus } = useBuyingBrowser();
   const { language, t } = useI18n();
   const [question, setQuestion] = useState("");
   const [lastSearch, setLastSearch] = useState("");
@@ -35,6 +35,7 @@ export default function AskScreen() {
 
   function queueSearch() {
     if (!request) return;
+    saveWantedRequest(request.originalText, { ...request.must, ...request.flexible });
     askFindOne(`Vehicle search request queued for NK review: ${request.originalText}. No seller contact is authorized.`);
     setSearchQueued(true);
   }
@@ -67,6 +68,11 @@ export default function AskScreen() {
         {matches.length ? <div className="bb-ranked-matches">{matches.slice(0, 5).map((match) => <article key={match.listing.id} className="bb-ranked-match"><div className="bb-match-verdict">{match.category === "confirmed" ? <CheckCircle2 size={18} /> : <TriangleAlert size={18} />}<b>{match.category === "confirmed" ? `Confirmed match ${match.score}%` : `Possible match ${match.score}% · ${match.unknown} unknown`}</b></div><ListingCard listing={match.listing} /><ul>{match.checks.map((check) => <li key={check.label} data-result={check.result}><b>{check.label}:</b> {check.result === "match" ? "Matches" : check.result === "unknown" ? "Unknown — needs verification" : "Does not match"}</li>)}</ul></article>)}</div> : <div className="bb-empty-inline"><p>No current vehicle meets all confirmed required criteria. NK can queue this request for future sourcing without contacting sellers.</p></div>}
         <button className="bb-button primary" type="button" disabled={searchQueued || request.recognized < 2} onClick={queueSearch}>{searchQueued ? "Request recorded" : "Ask NK to keep searching"}</button>
         {searchQueued && <p className="bb-safe-note">Request recorded in your workspace. It does not authorize seller contact, reservation, negotiation, or payment.</p>}
+      </section>}
+
+      {state.wantedRequests?.length > 0 && <section className="bb-wanted-history">
+        <div className="bb-section-heading"><div><p className="bb-kicker">My vehicle searches</p><h2>{state.wantedRequests.length} active request{state.wantedRequests.length === 1 ? "" : "s"}</h2></div></div>
+        {state.wantedRequests.slice(0, 5).map((item) => <article key={item.id}><div><b>{item.originalText}</b><small>Request {item.id.split("-").slice(-1)[0]} · No seller contact authorized</small></div><span>{item.status === "received" ? "Request received" : item.status.replaceAll("_", " ")}</span></article>)}
       </section>}
     </>
   );

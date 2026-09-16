@@ -337,7 +337,7 @@ test("account workspace validation enforces ownership and customer-safe fields",
   const state = { version: 1, savedListingIds: [listing.id], cases: [vehicleCase], importedListings: [listing], sourceCaptures: [], generalMessages: [] };
   const owned = validateAndOwnBuyingBrowserState(state, "account-1");
   assert.equal(owned.cases[0].customerId, customerWorkspaceId("account-1"));
-  assert.deepEqual(workspaceSummary(owned), { savedVehicles: 1, vehicleCases: 1, importedListings: 1, sourceCaptures: 0, messages: 1 });
+  assert.deepEqual(workspaceSummary(owned), { savedVehicles: 1, vehicleCases: 1, importedListings: 1, sourceCaptures: 0, wantedRequests: 0, messages: 1 });
   assert.throws(() => validateAndOwnBuyingBrowserState({ ...state, importedListings: [{ ...listing, sellerPhone: "private" }] }, "account-1"), /internal_field_not_allowed/);
 });
 

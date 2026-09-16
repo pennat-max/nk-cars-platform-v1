@@ -6,7 +6,7 @@ import { normalizeLanguage } from "./i18n.mjs";
 import { loadPricingSettings } from "./pricing-settings";
 import { clearPreviewMedia, hydratePreviewMedia, persistPreviewMedia, stateForLocalStorage } from "./preview-media";
 import { mergeBuyingBrowserStates } from "./workspace-state.mjs";
-import type { BuyingBrowserState, CustomerIdentity, CustomerLanguage, CustomerListing, GeneralMessage, SourceAdapterStatus, SourceCapture, VehicleCase, WorkspaceSyncStatus } from "./types";
+import type { BuyingBrowserState, CustomerIdentity, CustomerLanguage, CustomerListing, GeneralMessage, SourceAdapterStatus, SourceCapture, VehicleCase, WantedRequest, WorkspaceSyncStatus } from "./types";
 
 type BuyingBrowserContextValue = {
   customer: CustomerIdentity;
@@ -30,6 +30,7 @@ type BuyingBrowserContextValue = {
   askCaseQuestion: (caseId: string, question: string) => void;
   addImportedListing: (listing: CustomerListing, sourceCapture?: SourceCapture) => void;
   askFindOne: (question: string) => void;
+  saveWantedRequest: (originalText: string, criteria: Record<string, string | number | null>) => string;
   resetPreview: () => void;
 };
 
@@ -135,6 +136,7 @@ export function BuyingBrowserProvider({
           const parsed: unknown = JSON.parse(raw);
           if (validStoredState(parsed)) nextState = withSeedCases(await hydratePreviewMedia(storageKey, {
             ...parsed,
+            wantedRequests: Array.isArray(parsed.wantedRequests) ? parsed.wantedRequests : [],
             sourceCaptures: Array.isArray(parsed.sourceCaptures) ? parsed.sourceCaptures : [],
             cases: parsed.cases.map((record) => ({
               ...record,
@@ -278,6 +280,14 @@ export function BuyingBrowserProvider({
     setState((current) => ({ ...current, generalMessages: [...current.generalMessages, ...messages] }));
   }
 
+  function saveWantedRequest(originalText: string, criteria: Record<string, string | number | null>) {
+    const now = new Date().toISOString();
+    const id = `wanted-${now}-${Math.random().toString(36).slice(2, 8)}`;
+    const request: WantedRequest = { id, originalText: originalText.trim().slice(0, 1000), criteria, status: "received", sellerContactAuthorized: false, createdAt: now, updatedAt: now };
+    setState((current) => ({ ...current, wantedRequests: [request, ...(current.wantedRequests || [])] }));
+    return id;
+  }
+
   function resetPreview() {
     void clearPreviewMedia(storageKey);
     setState(initialBuyingBrowserState());
@@ -344,6 +354,7 @@ export function BuyingBrowserProvider({
     askCaseQuestion,
     addImportedListing,
     askFindOne,
+    saveWantedRequest,
     resetPreview,
   };
 

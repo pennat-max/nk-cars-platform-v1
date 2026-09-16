@@ -123,6 +123,7 @@ export function validateAndOwnBuyingBrowserState(value, userId) {
   const importedListings = boundedArray(value.importedListings, "imported_listings");
   const sourceCaptures = boundedArray(value.sourceCaptures, "source_captures");
   const generalMessages = boundedArray(value.generalMessages, "general_messages");
+  const wantedRequests = boundedArray(value.wantedRequests || [], "wanted_requests");
   const ownerId = customerWorkspaceId(userId);
 
   for (const listing of importedListings) assertNoForbiddenListingKeys(listing, "imported_listing");
@@ -138,6 +139,7 @@ export function validateAndOwnBuyingBrowserState(value, userId) {
     importedListings,
     sourceCaptures,
     generalMessages,
+    wantedRequests: wantedRequests.map((request) => ({ ...request, sellerContactAuthorized: false })),
   };
   assertBoundedStrings(state);
   const json = JSON.stringify(state);
@@ -178,6 +180,7 @@ export function mergeBuyingBrowserStates(serverState, localState) {
     sourceCaptures: mergeById(serverState.sourceCaptures, localState.sourceCaptures, (_base, incoming) => incoming),
     generalMessages: mergeById(serverState.generalMessages, localState.generalMessages, (_base, incoming) => incoming)
       .sort((a, b) => String(a.createdAt).localeCompare(String(b.createdAt))),
+    wantedRequests: mergeById(serverState.wantedRequests || [], localState.wantedRequests || [], newer),
   };
 }
 
@@ -187,6 +190,7 @@ export function workspaceSummary(state) {
     vehicleCases: state.cases.length,
     importedListings: state.importedListings.length,
     sourceCaptures: state.sourceCaptures.length,
+    wantedRequests: (state.wantedRequests || []).length,
     messages: state.generalMessages.length + state.cases.reduce((total, item) => total + (Array.isArray(item.messages) ? item.messages.length : 0), 0),
   };
 }

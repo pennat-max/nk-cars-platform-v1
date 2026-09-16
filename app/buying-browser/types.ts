@@ -187,6 +187,16 @@ export type GeneralMessage = {
   createdAt: string;
 };
 
+export type WantedRequest = {
+  id: string;
+  originalText: string;
+  criteria: Record<string, string | number | null>;
+  status: "received" | "searching" | "possible_matches" | "verification" | "ready" | "closed";
+  sellerContactAuthorized: false;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type BuyingBrowserState = {
   version: 1;
   savedListingIds: string[];
@@ -194,6 +204,7 @@ export type BuyingBrowserState = {
   importedListings: CustomerListing[];
   sourceCaptures: SourceCapture[];
   generalMessages: GeneralMessage[];
+  wantedRequests: WantedRequest[];
 };
 
 export type BuyingBrowserView =

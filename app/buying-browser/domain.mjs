@@ -356,7 +356,7 @@ export function assessQuotationReadiness(caseRecord) {
 
 /** @returns {import("./types").BuyingBrowserState} */
 export function initialBuyingBrowserState() {
-  return { version: 1, savedListingIds: [], cases: [], importedListings: [], sourceCaptures: [], generalMessages: [{ id: "welcome", sender: "NK AI", text: "Tell me the model, year, transmission, drive, body type, budget, and preferred Thai search area. I will only use available vehicle facts and will mark unknown information clearly.", createdAt: "2026-08-23T09:00:00.000Z" }] };
+  return { version: 1, savedListingIds: [], cases: [], importedListings: [], sourceCaptures: [], wantedRequests: [], generalMessages: [{ id: "welcome", sender: "NK AI", text: "Tell me the model, year, transmission, drive, body type, budget, and preferred Thai search area. I will only use available vehicle facts and will mark unknown information clearly.", createdAt: "2026-08-23T09:00:00.000Z" }] };
 }
 
 function nextCaseId(existingCases, now) {
