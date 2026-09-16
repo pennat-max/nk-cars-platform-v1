@@ -428,7 +428,7 @@ export function createVehicleCase(listing, existingCases, customerId, now = new 
   const platformTransactionRate = Number.isFinite(Number(pricingSettings.platformTransactionRate)) ? Math.max(0, Number(pricingSettings.platformTransactionRate)) : DEFAULT_PLATFORM_TRANSACTION_RATE;
   const buyingServiceRate = Number.isFinite(Number(pricingSettings.buyingServiceRate)) ? Math.max(0, Number(pricingSettings.buyingServiceRate)) : DEFAULT_BUYING_SERVICE_RATE;
   const caseRecord = {
-    id: caseId, customerId, listingId: listing.id, sourceReference: listing.sourceReference, sourceCaptureId, createdAt, updatedAt: createdAt, status: "Saved", availability: "Availability Not Yet Confirmed", vehicle: { ...listing, availability: "Availability Not Yet Confirmed" }, actualVehiclePurchasePriceThb: null, platformTransactionRate, buyingServiceRate, inspectionQuote: quote, domesticTransportThb: null, repairModificationThb: null, exportShippingThb: null, shippingDestinationCountry: null, shippingDestinationPort: null, shippingVehicleQuantity: 1, shippingContainerLoadingFeeThb: null, otherAgreedThb: null, quotationRequest: null, translationHistory: [],
+    id: caseId, customerId, listingId: listing.id, sourceReference: listing.sourceReference, sourceCaptureId, createdAt, updatedAt: createdAt, status: "Saved", availability: "Availability Not Yet Confirmed", vehicle: { ...listing, availability: "Availability Not Yet Confirmed" }, actualVehiclePurchasePriceThb: null, platformTransactionRate, buyingServiceRate, inspectionQuote: quote, domesticTransportThb: null, repairModificationThb: null, exportShippingThb: null, shippingDestinationCountry: null, shippingDestinationPort: null, shippingVehicleQuantity: 1, shippingContainerLoadingFeeThb: null, otherAgreedThb: null, quotationRequest: null, translationHistory: [], sellerRelayRequests: [],
     messages: [{ id: `${caseId}-welcome`, sender: "NK AI", text: `I created ${caseId} for this ${listing.title}. Availability and the current seller price have not been verified yet.`, createdAt, delivery: "Local preview" }],
     timeline: [{ id: `${caseId}-saved`, title: "Vehicle saved", detail: sourceCaptureId ? "External source link captured internally and customer-safe listing data saved as an NK Vehicle Case." : "Customer-safe source result saved as an NK Vehicle Case.", createdAt }],
   };
@@ -517,6 +517,30 @@ export function buildGroundedAssistantReply(caseRecord, question, language = "en
   if (/inspection|inspect|condition/.test(text)) return !caseRecord.inspectionQuote ? "The vehicle location does not match a configured inspection zone yet. NK must confirm the location before quoting; I will not estimate the fee." : `The configured inspection and travel preview is ${formatCustomerUsd(caseRecord.inspectionQuote.totalThb)} for ${caseRecord.inspectionQuote.region}. Current status: ${caseRecord.inspectionQuote.status}.`;
   if (/mileage|engine|transmission|drive|spec|model|year/.test(text)) return `${vehicle.title}: ${vehicle.engine || "engine unknown"}, ${vehicle.transmission}, ${vehicle.drive}, ${vehicle.body}, ${vehicle.mileageKm === null ? "mileage needs review" : `${vehicle.mileageKm.toLocaleString("en-US")} km`}. These are normalized from the available ${vehicle.demo ? "labeled demo evidence" : "captured listing evidence"} and remain subject to verification.`;
   return `${vehicle.summary} Availability, current price, VIN, and condition must be verified before purchase. Ask me about specifications, pricing, availability, or inspection and I will answer only from this case.`;
+}
+
+export function queueSellerRelayQuestion(caseRecord, question, now = new Date(), language = "en") {
+  const createdAt = safeTime(now);
+  const customerText = String(question || "").trim().slice(0, 1000);
+  if (!customerText) return caseRecord;
+  const prohibited = /(?:deposit|pay|payment|transfer|reserve|book|buy now|accept offer|negotiate|มัดจำ|จ่าย|ชำระ|โอน|จอง|ซื้อเลย|ต่อรอง)/i.test(customerText);
+  const asksAvailability = /(?:available|still there|price|mileage|vin|ยังอยู่|ราคา|เลขไมล์|เลขตัวถัง)/i.test(customerText);
+  const preparedSellerText = prohibited ? null : asksAvailability
+    ? "สวัสดีครับ ขอสอบถามว่ารถคันนี้ยังอยู่หรือไม่ครับ กรุณายืนยันราคาปัจจุบัน เลขไมล์ และข้อมูลรถตามประกาศ โดยคำถามนี้ยังไม่ใช่การจองหรือตกลงซื้อครับ"
+    : null;
+  const status = prohibited ? "Blocked" : "Queued for NK Review";
+  const safetyReason = prohibited ? "Questions that negotiate, reserve, purchase, deposit, transfer, or pay require separate Owner approval." : preparedSellerText ? null : "Thai translation requires NK human review before sending.";
+  const relay = { id: `${caseRecord.id}-relay-${createdAt}`, customerText, preparedSellerText, status, safetyReason, sellerReplyOriginal: null, sellerReplyTranslated: null, createdAt, sentAt: null, repliedAt: null };
+  return {
+    ...caseRecord,
+    updatedAt: createdAt,
+    sellerRelayRequests: [...(caseRecord.sellerRelayRequests || []), relay],
+    messages: [...caseRecord.messages,
+      { id: `${relay.id}-customer`, sender: "Customer", text: customerText, createdAt, delivery: "Recorded" },
+      { id: `${relay.id}-system`, sender: "System", text: prohibited ? "This request was blocked because it could authorize a transaction. NK has not contacted the seller." : "Your seller question is queued for NK review. It has not been sent yet. NK will return the verified reply in this Case.", createdAt, delivery: prohibited ? "Recorded" : "Prepared - not sent" },
+    ],
+    timeline: [...caseRecord.timeline, { id: `${relay.id}-timeline`, title: prohibited ? "Seller question blocked" : "Seller question queued", detail: prohibited ? safetyReason : "Waiting for NK review and an authorized send through the protected source session.", createdAt }],
+  };
 }
 
 export function addCaseQuestion(caseRecord, question, now = new Date(), language = "en") {

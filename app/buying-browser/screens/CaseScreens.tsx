@@ -126,9 +126,10 @@ export function ShipmentsScreen() {
 }
 
 export function CaseDetailScreen({ caseId }: { caseId?: string }) {
-  const { hydrated, findCaseById, requestCaseAvailability, requestCaseInspection, askCaseQuestion } = useBuyingBrowser();
+  const { hydrated, findCaseById, requestCaseAvailability, requestCaseInspection, askCaseQuestion, askSellerQuestion } = useBuyingBrowser();
   const vehicleCase = caseId ? findCaseById(caseId) : undefined;
   const [question, setQuestion] = useState("");
+  const [sellerQuestion, setSellerQuestion] = useState("");
   const [imageIndex, setImageIndex] = useState(0);
   const { language, t, availabilityLabel } = useI18n();
   if (!hydrated) return <section className="bb-loading-state"><span /><p>{t("loadingVehicleCase")}</p></section>;
@@ -139,6 +140,13 @@ export function CaseDetailScreen({ caseId }: { caseId?: string }) {
     if (!question.trim()) return;
     askCaseQuestion(vehicleCase!.id, question);
     setQuestion("");
+  }
+
+  function submitSellerQuestion(event: FormEvent) {
+    event.preventDefault();
+    if (!sellerQuestion.trim()) return;
+    askSellerQuestion(vehicleCase!.id, sellerQuestion);
+    setSellerQuestion("");
   }
 
   const quickQuestions = language === "zh-CN"
@@ -176,6 +184,14 @@ export function CaseDetailScreen({ caseId }: { caseId?: string }) {
           <div className="bb-section-heading"><div><p className="bb-kicker">{t("auditHistory")}</p><h2>{t("caseTimeline")}</h2></div></div>
           <ol>{[...vehicleCase.timeline].reverse().map((item) => <li key={item.id}><span><CheckCircle2 size={15} /></span><div><b>{item.title}</b><p>{item.detail}</p><time>{formatDateTime(item.createdAt)}</time></div></li>)}</ol>
         </div>
+      </section>
+
+      <section className="bb-seller-relay" id="seller-relay">
+        <div className="bb-section-heading"><div><p className="bb-kicker">NK SELLER RELAY</p><h2>Ask the seller through NK</h2></div><span className="bb-status-chip requested"><ShieldCheck size={14}/>Controlled relay</span></div>
+        <p>Ask about availability, current price, mileage, documents or vehicle facts. NK reviews and translates the message, sends it through the protected source session, then returns the seller&apos;s translated reply here.</p>
+        <div className="bb-relay-boundary"><LockKeyhole size={16}/><span>This does not authorize negotiation, reservation, purchase, deposit, transfer or payment. Those actions require separate approval.</span></div>
+        {(vehicleCase.sellerRelayRequests || []).length > 0 && <div className="bb-relay-list">{[...(vehicleCase.sellerRelayRequests || [])].reverse().map((relay) => <article key={relay.id}><header><b>{relay.customerText}</b><span>{relay.status}</span></header>{relay.preparedSellerText && <p><small>Prepared Thai message</small>{relay.preparedSellerText}</p>}{relay.safetyReason && <p className="warning">{relay.safetyReason}</p>}{relay.sellerReplyTranslated && <p><small>Seller reply</small>{relay.sellerReplyTranslated}</p>}</article>)}</div>}
+        <form onSubmit={submitSellerQuestion}><textarea value={sellerQuestion} onChange={(event) => setSellerQuestion(event.target.value)} maxLength={1000} placeholder="Example: Is the vehicle still available? Please confirm the current price and mileage." aria-label="Question for seller through NK"/><button className="bb-button primary" type="submit" disabled={!sellerQuestion.trim()}><Send size={17}/>Queue seller question</button></form>
       </section>
 
       <section className="bb-case-chat" id="nk-ai-case-chat">

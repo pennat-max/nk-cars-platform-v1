@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useEffectEvent, useMemo, useRef, useState, type ReactNode } from "react";
-import { addCaseQuestion, applyCustomerShippingSelection, createVehicleCase, initialBuyingBrowserState, requestAvailability, requestInspection, requestQuotation } from "./domain.mjs";
+import { addCaseQuestion, applyCustomerShippingSelection, createVehicleCase, initialBuyingBrowserState, queueSellerRelayQuestion, requestAvailability, requestInspection, requestQuotation } from "./domain.mjs";
 import { normalizeLanguage } from "./i18n.mjs";
 import { loadPricingSettings } from "./pricing-settings";
 import { clearPreviewMedia, hydratePreviewMedia, persistPreviewMedia, stateForLocalStorage } from "./preview-media";
@@ -28,6 +28,7 @@ type BuyingBrowserContextValue = {
   updateCaseShippingPlan: (caseId: string, selection: { destinationCountry: string; vehicleQuantity: number }) => void;
   acceptCaseQuotation: (caseId: string, quotationNumber: string) => Promise<void>;
   askCaseQuestion: (caseId: string, question: string) => void;
+  askSellerQuestion: (caseId: string, question: string) => void;
   addImportedListing: (listing: CustomerListing, sourceCapture?: SourceCapture) => void;
   askFindOne: (question: string) => void;
   saveWantedRequest: (originalText: string, criteria: Record<string, string | number | null>) => string;
@@ -154,6 +155,7 @@ export function BuyingBrowserProvider({
               quotation: record.quotation ?? null,
               proformaInvoice: record.proformaInvoice ?? null,
               translationHistory: Array.isArray(record.translationHistory) ? record.translationHistory : [],
+              sellerRelayRequests: Array.isArray(record.sellerRelayRequests) ? record.sellerRelayRequests : [],
             })),
           }), seedCases);
         }
@@ -264,6 +266,10 @@ export function BuyingBrowserProvider({
     updateCase(caseId, (record) => addCaseQuestion(record, question, new Date(), language));
   }
 
+  function askSellerQuestion(caseId: string, question: string) {
+    updateCase(caseId, (record) => queueSellerRelayQuestion(record, question, new Date(), language));
+  }
+
   function addImportedListing(listing: CustomerListing, sourceCapture?: SourceCapture) {
     void persistPreviewMedia(storageKey, listing.id, listing.imageUrls);
     setState((current) => ({
@@ -370,6 +376,7 @@ export function BuyingBrowserProvider({
     updateCaseShippingPlan,
     acceptCaseQuotation,
     askCaseQuestion,
+    askSellerQuestion,
     addImportedListing,
     askFindOne,
     saveWantedRequest,

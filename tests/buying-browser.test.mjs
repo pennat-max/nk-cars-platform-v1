@@ -17,6 +17,7 @@ import {
   formatCustomerUsd,
   inspectionQuoteForLocation,
   presentCustomerListing,
+  queueSellerRelayQuestion,
   requestAvailability,
   requestInspection,
   requestQuotation,
@@ -926,6 +927,18 @@ test("Vehicle Case deduplicates save and records honest pending workflows", () =
   assert.match(inspection.messages.at(-1).text, /No provider is assigned or booked yet/i);
   const answered = addCaseQuestion(inspection, "Is this available?", "2026-08-23T10:04:00.000Z");
   assert.match(answered.messages.at(-1).text, /not confirmed|requested/i);
+});
+
+test("seller relay queues safe verification questions and blocks transaction authority", () => {
+  const listing = presentCustomerListing(source);
+  const created = createVehicleCase(listing, [], "customer-1", "2026-08-23T10:00:00.000Z").caseRecord;
+  const queued = queueSellerRelayQuestion(created, "Is this vehicle still available and what is the current price?", "2026-08-23T10:05:00.000Z", "en");
+  assert.equal(queued.sellerRelayRequests.at(-1).status, "Queued for NK Review");
+  assert.match(queued.sellerRelayRequests.at(-1).preparedSellerText, /ยังอยู่หรือไม่/);
+  assert.match(queued.messages.at(-1).text, /not been sent yet/i);
+  const blocked = queueSellerRelayQuestion(queued, "Reserve it and pay a deposit", "2026-08-23T10:06:00.000Z", "en");
+  assert.equal(blocked.sellerRelayRequests.at(-1).status, "Blocked");
+  assert.equal(blocked.sellerRelayRequests.at(-1).preparedSellerText, null);
 });
 
 test("unsupported Chinese customer UI language falls back without mutating the original question", () => {

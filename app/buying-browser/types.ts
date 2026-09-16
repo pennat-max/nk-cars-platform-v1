@@ -37,6 +37,19 @@ export type TranslationTrace = {
   createdAt: string;
 };
 
+export type SellerRelayRequest = {
+  id: string;
+  customerText: string;
+  preparedSellerText: string | null;
+  status: "Queued for NK Review" | "Ready to Send" | "Sent" | "Seller Replied" | "Blocked";
+  safetyReason: string | null;
+  sellerReplyOriginal: string | null;
+  sellerReplyTranslated: string | null;
+  createdAt: string;
+  sentAt: string | null;
+  repliedAt: string | null;
+};
+
 export type CustomerListing = {
   id: string;
   adapterId: string;
@@ -159,6 +172,7 @@ export type VehicleCase = {
     requestedAt: string;
   } | null;
   translationHistory: TranslationTrace[];
+  sellerRelayRequests?: SellerRelayRequest[];
   messages: CaseMessage[];
   timeline: CaseTimelineItem[];
 };

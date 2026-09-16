@@ -32,6 +32,16 @@ function mergeHistory(serverItems, incomingItems) {
   return [...merged.values()].sort((a, b) => String(a.createdAt || "").localeCompare(String(b.createdAt || "")));
 }
 
+function serverControlledSellerRelays(incomingItems, currentItems) {
+  const current = new Map((Array.isArray(currentItems) ? currentItems : []).map((item) => [item.id, item]));
+  return (Array.isArray(incomingItems) ? incomingItems : []).map((item) => {
+    const saved = current.get(item.id);
+    if (saved && ["Ready to Send", "Sent", "Seller Replied", "Blocked"].includes(saved.status)) return saved;
+    const blocked = item.status === "Blocked";
+    return { ...item, status: blocked ? "Blocked" : "Queued for NK Review", sellerReplyOriginal: null, sellerReplyTranslated: null, sentAt: null, repliedAt: null };
+  });
+}
+
 function customerControlledCase(caseRecord, currentCase) {
   if (currentCase?.ownerVerification?.status === "Owner Verified") {
     return {
@@ -53,6 +63,7 @@ function customerControlledCase(caseRecord, currentCase) {
       ownerVerification: currentCase.ownerVerification,
       quotation: currentCase.quotation ?? null,
       proformaInvoice: currentCase.proformaInvoice ?? null,
+      sellerRelayRequests: serverControlledSellerRelays(caseRecord.sellerRelayRequests, currentCase.sellerRelayRequests),
       messages: mergeHistory(currentCase.messages, caseRecord.messages),
       timeline: mergeHistory(currentCase.timeline, caseRecord.timeline),
     };
@@ -77,6 +88,7 @@ function customerControlledCase(caseRecord, currentCase) {
     ownerVerification: null,
     quotation: null,
     proformaInvoice: null,
+    sellerRelayRequests: serverControlledSellerRelays(caseRecord.sellerRelayRequests, currentCase?.sellerRelayRequests),
   };
 }
 
