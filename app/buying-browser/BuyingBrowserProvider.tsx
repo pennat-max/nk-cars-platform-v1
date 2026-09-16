@@ -6,7 +6,7 @@ import { normalizeLanguage } from "./i18n.mjs";
 import { loadPricingSettings } from "./pricing-settings";
 import { clearPreviewMedia, hydratePreviewMedia, persistPreviewMedia, stateForLocalStorage } from "./preview-media";
 import { mergeBuyingBrowserStates } from "./workspace-state.mjs";
-import type { BuyingBrowserState, CustomerIdentity, CustomerLanguage, CustomerListing, GeneralMessage, SourceAdapterStatus, SourceCapture, VehicleCase, WantedRequest, WorkspaceSyncStatus } from "./types";
+import type { BuyingBrowserState, ConversionEvent, CustomerIdentity, CustomerLanguage, CustomerListing, GeneralMessage, SourceAdapterStatus, SourceCapture, VehicleCase, WantedRequest, WorkspaceSyncStatus } from "./types";
 
 type BuyingBrowserContextValue = {
   customer: CustomerIdentity;
@@ -35,6 +35,11 @@ type BuyingBrowserContextValue = {
 };
 
 const BuyingBrowserContext = createContext<BuyingBrowserContextValue | null>(null);
+
+function conversionEvent(name: ConversionEvent["name"], subjectId: string): ConversionEvent {
+  const createdAt = new Date().toISOString();
+  return { id: `${name}-${createdAt}-${Math.random().toString(36).slice(2, 8)}`, name, subjectId, createdAt };
+}
 
 function validStoredState(value: unknown): value is BuyingBrowserState {
   if (!value || typeof value !== "object") return false;
@@ -137,6 +142,7 @@ export function BuyingBrowserProvider({
           if (validStoredState(parsed)) nextState = withSeedCases(await hydratePreviewMedia(storageKey, {
             ...parsed,
             wantedRequests: Array.isArray(parsed.wantedRequests) ? parsed.wantedRequests : [],
+            conversionEvents: Array.isArray(parsed.conversionEvents) ? parsed.conversionEvents : [],
             sourceCaptures: Array.isArray(parsed.sourceCaptures) ? parsed.sourceCaptures : [],
             cases: parsed.cases.map((record) => ({
               ...record,
@@ -214,6 +220,9 @@ export function BuyingBrowserProvider({
       savedListingIds: current.savedListingIds.includes(listingId)
         ? current.savedListingIds.filter((id) => id !== listingId)
         : [listingId, ...current.savedListingIds],
+      conversionEvents: current.savedListingIds.includes(listingId)
+        ? current.conversionEvents
+        : [...(current.conversionEvents || []), conversionEvent("vehicle_saved", listingId)].slice(-500),
     }));
   }
 
@@ -228,6 +237,7 @@ export function BuyingBrowserProvider({
       importedListings: listing.demo ? current.importedListings : [listing, ...current.importedListings.filter((item) => item.id !== listing.id)],
       sourceCaptures: sourceCapture ? [sourceCapture, ...current.sourceCaptures.filter((item) => item.id !== sourceCapture.id)] : current.sourceCaptures,
       cases: existing ? current.cases.map((item) => item.id === existing.id ? nextRecord : item) : [nextRecord, ...current.cases],
+      conversionEvents: existing ? current.conversionEvents : [...(current.conversionEvents || []), conversionEvent("vehicle_case_created", nextRecord.id)].slice(-500),
     }));
     return nextRecord.id;
   }
@@ -236,12 +246,18 @@ export function BuyingBrowserProvider({
     setState((current) => ({ ...current, cases: current.cases.map((record) => record.id === caseId ? update(record) : record) }));
   }
 
+  function recordConversion(name: ConversionEvent["name"], subjectId: string) {
+    setState((current) => ({ ...current, conversionEvents: [...(current.conversionEvents || []), conversionEvent(name, subjectId)].slice(-500) }));
+  }
+
   function requestCaseAvailability(caseId: string) {
     updateCase(caseId, (record) => requestAvailability(record, new Date(), language));
+    recordConversion("availability_requested", caseId);
   }
 
   function requestCaseInspection(caseId: string) {
     updateCase(caseId, (record) => requestInspection(record, new Date(), language));
+    recordConversion("inspection_requested", caseId);
   }
 
   function askCaseQuestion(caseId: string, question: string) {
@@ -285,6 +301,7 @@ export function BuyingBrowserProvider({
     const id = `wanted-${now}-${Math.random().toString(36).slice(2, 8)}`;
     const request: WantedRequest = { id, originalText: originalText.trim().slice(0, 1000), criteria, status: "received", sellerContactAuthorized: false, createdAt: now, updatedAt: now };
     setState((current) => ({ ...current, wantedRequests: [request, ...(current.wantedRequests || [])] }));
+    recordConversion("wanted_request_created", id);
     return id;
   }
 
@@ -295,6 +312,7 @@ export function BuyingBrowserProvider({
 
   function requestCaseQuotation(caseId: string) {
     updateCase(caseId, (record) => requestQuotation(record, new Date(), language));
+    recordConversion("quotation_requested", caseId);
   }
 
   function updateCaseShippingPlan(caseId: string, selection: { destinationCountry: string; vehicleQuantity: number }) {

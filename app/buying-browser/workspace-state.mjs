@@ -124,6 +124,7 @@ export function validateAndOwnBuyingBrowserState(value, userId) {
   const sourceCaptures = boundedArray(value.sourceCaptures, "source_captures");
   const generalMessages = boundedArray(value.generalMessages, "general_messages");
   const wantedRequests = boundedArray(value.wantedRequests || [], "wanted_requests");
+  const conversionEvents = boundedArray(value.conversionEvents || [], "conversion_events");
   const ownerId = customerWorkspaceId(userId);
 
   for (const listing of importedListings) assertNoForbiddenListingKeys(listing, "imported_listing");
@@ -140,6 +141,7 @@ export function validateAndOwnBuyingBrowserState(value, userId) {
     sourceCaptures,
     generalMessages,
     wantedRequests: wantedRequests.map((request) => ({ ...request, sellerContactAuthorized: false })),
+    conversionEvents: conversionEvents.slice(-500),
   };
   assertBoundedStrings(state);
   const json = JSON.stringify(state);
@@ -181,6 +183,7 @@ export function mergeBuyingBrowserStates(serverState, localState) {
     generalMessages: mergeById(serverState.generalMessages, localState.generalMessages, (_base, incoming) => incoming)
       .sort((a, b) => String(a.createdAt).localeCompare(String(b.createdAt))),
     wantedRequests: mergeById(serverState.wantedRequests || [], localState.wantedRequests || [], newer),
+    conversionEvents: mergeById(serverState.conversionEvents || [], localState.conversionEvents || [], newer).slice(-500),
   };
 }
 
@@ -191,6 +194,7 @@ export function workspaceSummary(state) {
     importedListings: state.importedListings.length,
     sourceCaptures: state.sourceCaptures.length,
     wantedRequests: (state.wantedRequests || []).length,
+    conversionEvents: (state.conversionEvents || []).length,
     messages: state.generalMessages.length + state.cases.reduce((total, item) => total + (Array.isArray(item.messages) ? item.messages.length : 0), 0),
   };
 }

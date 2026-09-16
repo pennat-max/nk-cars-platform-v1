@@ -197,6 +197,13 @@ export type WantedRequest = {
   updatedAt: string;
 };
 
+export type ConversionEvent = {
+  id: string;
+  name: "vehicle_saved" | "vehicle_case_created" | "availability_requested" | "inspection_requested" | "quotation_requested" | "wanted_request_created";
+  subjectId: string;
+  createdAt: string;
+};
+
 export type BuyingBrowserState = {
   version: 1;
   savedListingIds: string[];
@@ -205,6 +212,7 @@ export type BuyingBrowserState = {
   sourceCaptures: SourceCapture[];
   generalMessages: GeneralMessage[];
   wantedRequests: WantedRequest[];
+  conversionEvents: ConversionEvent[];
 };
 
 export type BuyingBrowserView =

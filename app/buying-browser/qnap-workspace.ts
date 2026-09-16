@@ -84,6 +84,8 @@ function parseOwnerCase(value: unknown): OwnerCaseQueueItem {
     importedListings: [],
     sourceCaptures: [],
     generalMessages: [],
+    wantedRequests: [],
+    conversionEvents: [],
   }, workspaceUserId) as BuyingBrowserState;
   const vehicleCase = state.cases[0];
   if (!vehicleCase) throw new Error("invalid_owner_case");
