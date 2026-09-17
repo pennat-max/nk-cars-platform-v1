@@ -16,7 +16,7 @@ const yearOptions = ["", "2014", "2018", "2019", "2020", "2021", "2022", "2023",
 
 export default function BrowseScreen({ savedOnly = false }: { savedOnly?: boolean }) {
   const { listings, state, sourceStatus, saveAsCase, storefront, fxQuote } = useBuyingBrowser();
-  const { language, t } = useI18n();
+  const { language, t, brandText } = useI18n();
   const [filters, setFilters] = useState<BrowseFilters>({ ...DEFAULT_FILTERS });
   const [filterOpen, setFilterOpen] = useState(false);
   const [selectedSavedIds, setSelectedSavedIds] = useState<string[]>([]);
@@ -29,7 +29,7 @@ export default function BrowseScreen({ savedOnly = false }: { savedOnly?: boolea
   const visibleListings = useMemo(() => filterListings(sourceListings, domainFilters), [domainFilters, sourceListings]);
   const activeFilterCount = [filters.location !== DEFAULT_FILTERS.location, filters.yearFrom, filters.yearTo, filters.priceMin, filters.priceMax, filters.mileageMax, filters.transmission !== "Any", filters.drive !== "Any", filters.body !== "Any"].filter(Boolean).length;
   const capturedCount = listings.filter((item) => !item.demo).length;
-  const sourceLabel = sourceStatus.live ? "Live" : capturedCount ? "NK Selection" : "Demo";
+  const sourceLabel = sourceStatus.live ? "Live" : capturedCount ? (storefront === "xiangshihai" ? "Xiangshihai Selection" : "NK Selection") : "Demo";
 
   function locationLabel(location: string) {
     if (location === "Bangkok Metro") return t("bangkokMetro");
@@ -58,13 +58,13 @@ export default function BrowseScreen({ savedOnly = false }: { savedOnly?: boolea
   const reviewedVehiclesLabel = language === "th" ? `รถที่ตรวจแล้ว ${visibleListings.length} คัน` : `${visibleListings.length} reviewed vehicles`;
   const minimumPriceLabel = language === "th" ? "ราคาต่ำสุด (THB)" : t("minPrice");
   const maximumPriceLabel = language === "th" ? "ราคาสูงสุด (THB)" : t("maxPrice");
-  const priceFxNote = language === "th" ? "กรอกตัวกรองราคาเป็นบาทไทย ส่วนราคา USD เป็นประมาณการตาม FX ที่ตั้งค่าไว้" : customerFxDisclosure();
+  const priceFxNote = language === "th" ? "กรอกตัวกรองราคาเป็นบาทไทย ส่วนราคา USD เป็นประมาณการตาม FX ที่ตั้งค่าไว้" : brandText(customerFxDisclosure());
   const xsText = language === "zh-CN" ? {
-    eyebrow: "泰国优质车源 · 一站式采购服务", title: "像海汽车采购市场", intro: "浏览泰国真实车源，询价、验车、采购与出口由 NK 团队协助完成。", browse: "立即选车", wanted: "告诉我们您的需求", reviewed: "车源信息已审核", proof: "多图 · 来源记录 · 规格证据", categories: ["全部车源", "双排皮卡", "智能驾驶室", "自动挡", "四轮驱动", "AI 帮我找车"], benefits: [["真实来源", "保留原始车源与检查时间"], ["询价议价", `美元报价按 ${fxQuote.customerRate} 泰铢换算`], ["专业验车", "确认后再安排线下检查"], ["出口协助", "核实费用后提供正式报价"]],
+    eyebrow: "泰国优质车源 · 一站式采购服务", title: "像海汽车采购市场", intro: "浏览泰国真实车源，询价、验车、采购与出口由像海团队协助完成。", browse: "立即选车", wanted: "告诉我们您的需求", reviewed: "车源信息已审核", proof: "多图 · 来源记录 · 规格证据", categories: ["全部车源", "双排皮卡", "智能驾驶室", "自动挡", "四轮驱动", "AI 帮我找车"], benefits: [["真实来源", "保留原始车源与检查时间"], ["询价议价", `美元报价按 ${fxQuote.customerRate} 泰铢换算`], ["专业验车", "确认后再安排线下检查"], ["出口协助", "核实费用后提供正式报价"]],
   } : language === "th" ? {
-    eyebrow: "รถคุณภาพจากไทย · บริการจัดซื้อครบวงจร", title: "ตลาดรถ Xiangshihai", intro: "ค้นหารถจริงในประเทศไทย โดยทีม NK ช่วยสอบถาม ตรวจสภาพ จัดซื้อ และส่งออก", browse: "ดูรถเลย", wanted: "บอกเราว่าต้องการรถแบบไหน", reviewed: "รายการที่ตรวจข้อมูลแล้ว", proof: "หลายรูป · มีแหล่งที่มา · มีหลักฐานสเป็ก", categories: ["รถทั้งหมด", "Double Cab", "Smart Cab", "เกียร์อัตโนมัติ", "ขับเคลื่อน 4 ล้อ", "ให้ AI ช่วยหารถ"], benefits: [["แหล่งข้อมูลจริง", "เก็บแหล่งประกาศและเวลาที่ตรวจ"], ["สอบถามและต่อราคา", `แปลงข้อเสนอ USD ที่เรต ${fxQuote.customerRate} บาท`], ["ตรวจรถโดยผู้เชี่ยวชาญ", "นัดตรวจเมื่อได้รับการยืนยัน"], ["ช่วยดำเนินการส่งออก", "เสนอราคาจริงหลังตรวจค่าใช้จ่าย"]],
+    eyebrow: "รถคุณภาพจากไทย · บริการจัดซื้อครบวงจร", title: "ตลาดรถ Xiangshihai", intro: "ค้นหารถจริงในประเทศไทย โดยทีม Xiangshihai ช่วยสอบถาม ตรวจสภาพ จัดซื้อ และส่งออก", browse: "ดูรถเลย", wanted: "บอกเราว่าต้องการรถแบบไหน", reviewed: "รายการที่ตรวจข้อมูลแล้ว", proof: "หลายรูป · มีแหล่งที่มา · มีหลักฐานสเป็ก", categories: ["รถทั้งหมด", "Double Cab", "Smart Cab", "เกียร์อัตโนมัติ", "ขับเคลื่อน 4 ล้อ", "ให้ AI ช่วยหารถ"], benefits: [["แหล่งข้อมูลจริง", "เก็บแหล่งประกาศและเวลาที่ตรวจ"], ["สอบถามและต่อราคา", `แปลงข้อเสนอ USD ที่เรต ${fxQuote.customerRate} บาท`], ["ตรวจรถโดยผู้เชี่ยวชาญ", "นัดตรวจเมื่อได้รับการยืนยัน"], ["ช่วยดำเนินการส่งออก", "เสนอราคาจริงหลังตรวจค่าใช้จ่าย"]],
   } : {
-    eyebrow: "Quality vehicles from Thailand · One-stop sourcing", title: "Xiangshihai Vehicle Marketplace", intro: "Browse real Thai vehicle listings with NK support for enquiries, inspection, purchasing, and export.", browse: "Browse vehicles", wanted: "Tell us what you need", reviewed: "reviewed vehicles", proof: "Multiple photos · Source records · Specification evidence", categories: ["All vehicles", "Double Cab", "Smart Cab", "Automatic", "Four-wheel drive", "AI vehicle search"], benefits: [["Real sources", "Original source and review time retained"], ["Enquire and negotiate", `USD offers convert at THB ${fxQuote.customerRate}`], ["Professional inspection", "Inspection arranged after confirmation"], ["Export assistance", "Formal quote after costs are verified"]],
+    eyebrow: "Quality vehicles from Thailand · One-stop sourcing", title: "Xiangshihai Vehicle Marketplace", intro: "Browse real Thai vehicle listings with Xiangshihai support for enquiries, inspection, purchasing, and export.", browse: "Browse vehicles", wanted: "Tell us what you need", reviewed: "reviewed vehicles", proof: "Multiple photos · Source records · Specification evidence", categories: ["All vehicles", "Double Cab", "Smart Cab", "Automatic", "Four-wheel drive", "AI vehicle search"], benefits: [["Real sources", "Original source and review time retained"], ["Enquire and negotiate", `USD offers convert at THB ${fxQuote.customerRate}`], ["Professional inspection", "Inspection arranged after confirmation"], ["Export assistance", "Formal quote after costs are verified"]],
   };
 
   return (
@@ -93,7 +93,7 @@ export default function BrowseScreen({ savedOnly = false }: { savedOnly?: boolea
         <p className="bb-find-trust"><CheckCircle2 size={15} />{language === "th" ? "ยังไม่มีการติดต่อผู้ขาย จองรถ หรือชำระเงิน จนกว่าคุณจะขอดำเนินการ" : "No seller contact, reservation, or payment happens until you request the next step."}</p>
       </section>}
       {savedOnly && <section className="bb-page-heading bb-browse-heading">
-        <div><p className="bb-kicker">NK Cars · {t("thailand")}</p><h1>{savedOnly ? t("savedVehicles") : t("browseVehicles")}</h1></div>
+        <div><p className="bb-kicker">{storefront === "xiangshihai" ? "Xiangshihai" : "NK Cars"} · {t("thailand")}</p><h1>{savedOnly ? t("savedVehicles") : t("browseVehicles")}</h1></div>
         <span className="bb-result-count">{visibleListings.length} {t("results")}</span>
       </section>}
       {savedOnly && <section className="bb-shortlist-bar" aria-label="Saved vehicle shortlist actions">

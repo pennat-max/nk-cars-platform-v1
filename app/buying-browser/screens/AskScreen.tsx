@@ -15,7 +15,7 @@ type MatchResult = { listing: CustomerListing; checks: MatchCheck[]; score: numb
 
 export default function AskScreen() {
   const { state, listings, askFindOne, saveWantedRequest, sourceStatus } = useBuyingBrowser();
-  const { language, t } = useI18n();
+  const { language, t, brandText } = useI18n();
   const [question, setQuestion] = useState("");
   const [lastSearch, setLastSearch] = useState("");
   const [searchQueued, setSearchQueued] = useState(false);
@@ -36,7 +36,7 @@ export default function AskScreen() {
   function queueSearch() {
     if (!request) return;
     saveWantedRequest(request.originalText, { ...request.must, ...request.flexible });
-    askFindOne(`Vehicle search request queued for NK review: ${request.originalText}. No seller contact is authorized.`);
+    askFindOne(brandText(`Vehicle search request queued for NK review: ${request.originalText}. No seller contact is authorized.`));
     setSearchQueued(true);
   }
 
@@ -51,8 +51,8 @@ export default function AskScreen() {
     <>
       <section className="bb-page-heading"><div><p className="bb-kicker">{t("groundedVehicleSearch")}</p><h1>{t("askNkAi")}</h1></div></section>
       <section className="bb-ai-search-tool">
-        <header><span><Bot size={25} /></span><div><h2>{t("nkAiAssistant")}</h2><p>Describe the vehicle you want. NK separates required criteria from flexible preferences and never treats unknown specifications as matches.</p></div></header>
-        <div className="bb-ai-search-thread">{state.generalMessages.slice(-6).map((message) => <article key={message.id} className={message.sender === "Customer" ? "customer" : "assistant"}><b>{message.sender}</b><p>{message.text}</p><time>{formatDateTime(message.createdAt)}</time></article>)}</div>
+        <header><span><Bot size={25} /></span><div><h2>{t("nkAiAssistant")}</h2><p>{brandText("Describe the vehicle you want. NK separates required criteria from flexible preferences and never treats unknown specifications as matches.")}</p></div></header>
+        <div className="bb-ai-search-thread">{state.generalMessages.slice(-6).map((message) => <article key={message.id} className={message.sender === "Customer" ? "customer" : "assistant"}><b>{brandText(message.sender)}</b><p>{brandText(message.text)}</p><time>{formatDateTime(message.createdAt)}</time></article>)}</div>
         <div className="bb-prompt-chips">{prompts.map((prompt) => <button key={prompt} onClick={() => setQuestion(prompt)}>{prompt}</button>)}</div>
         <form onSubmit={submit}><textarea value={question} onChange={(event) => setQuestion(event.target.value)} placeholder={prompts[0]} aria-label={t("askNkAi")} /><button className="bb-button primary" type="submit"><Send size={18} />{t("askNkAi")}</button></form>
         <p className="bb-ai-boundary"><Info size={14} />{t(sourceStatus.live ? "inventoryGroundingLive" : "inventoryGroundingFallback")}</p>
@@ -60,13 +60,13 @@ export default function AskScreen() {
 
       {request && <section className="bb-wanted-request">
         <div className="bb-section-heading"><div><p className="bb-kicker">Vehicle wanted request</p><h2>Your criteria</h2></div></div>
-        {criteria.length ? <div className="bb-wanted-criteria">{criteria.map(([label, value]) => <span key={String(label)}><small>{label}</small><b>{value}</b></span>)}</div> : <p>NK could not identify enough specific criteria. Add a model, year, transmission, or maximum budget.</p>}
+        {criteria.length ? <div className="bb-wanted-criteria">{criteria.map(([label, value]) => <span key={String(label)}><small>{label}</small><b>{value}</b></span>)}</div> : <p>{brandText("NK could not identify enough specific criteria. Add a model, year, transmission, or maximum budget.")}</p>}
         <p><b>Required:</b> model, year, budget, transmission, drive and body when supplied. <b>Flexible:</b> mileage preference. Missing vehicle facts stay Unknown.</p>
       </section>}
 
       {request && <section className="bb-ai-results"><div className="bb-section-heading"><div><p className="bb-kicker">Evidence-backed matches</p><h2>{matches.length ? `${matches.length} possible matches` : t("noApprovedMatch")}</h2></div><Link href="/buy"><Search size={17} />{t("useFullFilters")}</Link></div>
-        {matches.length ? <div className="bb-ranked-matches">{matches.slice(0, 5).map((match) => <article key={match.listing.id} className="bb-ranked-match"><div className="bb-match-verdict">{match.category === "confirmed" ? <CheckCircle2 size={18} /> : <TriangleAlert size={18} />}<b>{match.category === "confirmed" ? `Confirmed match ${match.score}%` : `Possible match ${match.score}% · ${match.unknown} unknown`}</b></div><ListingCard listing={match.listing} /><ul>{match.checks.map((check) => <li key={check.label} data-result={check.result}><b>{check.label}:</b> {check.result === "match" ? "Matches" : check.result === "unknown" ? "Unknown — needs verification" : "Does not match"}</li>)}</ul></article>)}</div> : <div className="bb-empty-inline"><p>No current vehicle meets all confirmed required criteria. NK can queue this request for future sourcing without contacting sellers.</p></div>}
-        <button className="bb-button primary" type="button" disabled={searchQueued || request.recognized < 2} onClick={queueSearch}>{searchQueued ? "Request recorded" : "Ask NK to keep searching"}</button>
+        {matches.length ? <div className="bb-ranked-matches">{matches.slice(0, 5).map((match) => <article key={match.listing.id} className="bb-ranked-match"><div className="bb-match-verdict">{match.category === "confirmed" ? <CheckCircle2 size={18} /> : <TriangleAlert size={18} />}<b>{match.category === "confirmed" ? `Confirmed match ${match.score}%` : `Possible match ${match.score}% · ${match.unknown} unknown`}</b></div><ListingCard listing={match.listing} /><ul>{match.checks.map((check) => <li key={check.label} data-result={check.result}><b>{check.label}:</b> {check.result === "match" ? "Matches" : check.result === "unknown" ? "Unknown — needs verification" : "Does not match"}</li>)}</ul></article>)}</div> : <div className="bb-empty-inline"><p>{brandText("No current vehicle meets all confirmed required criteria. NK can queue this request for future sourcing without contacting sellers.")}</p></div>}
+        <button className="bb-button primary" type="button" disabled={searchQueued || request.recognized < 2} onClick={queueSearch}>{searchQueued ? "Request recorded" : brandText("Ask NK to keep searching")}</button>
         {searchQueued && <p className="bb-safe-note">Request recorded in your workspace. It does not authorize seller contact, reservation, negotiation, or payment.</p>}
       </section>}
 

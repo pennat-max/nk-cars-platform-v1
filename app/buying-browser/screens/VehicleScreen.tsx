@@ -11,7 +11,7 @@ import VehiclePhoto from "../components/VehiclePhoto";
 
 export default function VehicleScreen({ sourceId }: { sourceId?: string }) {
   const { listings, isSaved, toggleSaved, saveAsCase, findCaseByListing } = useBuyingBrowser();
-  const { language, t, listingSummary, availabilityLabel } = useI18n();
+  const { language, t, listingSummary, availabilityLabel, brandText } = useI18n();
   const listing = listings.find((item) => item.id === sourceId);
   const [imageIndex, setImageIndex] = useState(0);
   const [fullscreenOpen, setFullscreenOpen] = useState(false);
@@ -59,7 +59,7 @@ export default function VehicleScreen({ sourceId }: { sourceId?: string }) {
 
   if (!listing) return <section className="bb-empty-state"><h1>{t("vehicleNotFound")}</h1><p>{t("vehicleNotFoundText")}</p><Link className="bb-button primary" href="/buy"><ArrowLeft size={17} />{t("backToBrowse")}</Link></section>;
   const existingCase = findCaseByListing(listing.id);
-  const mobilePriceCaption = language === "th" ? "ราคาประเมินจากประกาศต้นทาง NK จะตรวจสอบก่อนออกใบเสนอราคา" : "Estimated from source listing. NK will verify before quote.";
+  const mobilePriceCaption = brandText(language === "th" ? "ราคาประเมินจากประกาศต้นทาง NK จะตรวจสอบก่อนออกใบเสนอราคา" : "Estimated from source listing. NK will verify before quote.");
   const summaryFacts = [
     { label: t("transmission"), value: listing.transmission },
     { label: t("drive"), value: listing.drive },
@@ -132,7 +132,7 @@ export default function VehicleScreen({ sourceId }: { sourceId?: string }) {
             {formatCustomerSecondaryPrice(listing.observedPriceThb, language) && <div><small>{language === "th" ? "USD estimate" : "Thai price"}</small><b>{formatCustomerSecondaryPrice(listing.observedPriceThb, language)}</b></div>}
             {summaryFacts.map((item) => <div key={item.label}><small>{item.label}</small><b>{item.value}</b></div>)}
           </div>
-          <p className="bb-price-caption"><span className="bb-price-caption-short">{mobilePriceCaption}</span><span className="bb-price-caption-full">{t("observedPriceCaption", { date: formatDateTime(listing.observedAt), fx: customerFxDisclosure() })}</span></p>
+          <p className="bb-price-caption"><span className="bb-price-caption-short">{mobilePriceCaption}</span><span className="bb-price-caption-full">{t("observedPriceCaption", { date: formatDateTime(listing.observedAt), fx: brandText(customerFxDisclosure()) })}</span></p>
           <div className="bb-detail-primary-actions">
             <button className="primary" onClick={() => openCase("availability")}><Gauge size={19} /><span><b>{t("checkAvailability")}</b><small>{t("recommendedFirstStep")}</small></span></button>
             <button onClick={() => openCase()}><Bot size={19} /><span><b>{t("askNkAi")}</b></span></button>
