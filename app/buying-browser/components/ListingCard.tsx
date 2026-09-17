@@ -53,7 +53,7 @@ export default function ListingCard({
       <Link className="bb-listing-copy" href={`/buy/vehicle/${encodeURIComponent(listing.id)}`}>
         <strong>{formatCustomerPrimaryPrice(listing.observedPriceThb, language, fxQuote.customerRate)}</strong>
         {listing.observedPriceThb !== null && <em className="bb-card-source-price">{formatThb(listing.observedPriceThb)} · {trustText.observed}</em>}
-        <h2>{listing.year ?? `${t("year")} ${t("pending")}`} {listing.brand} {listing.model}</h2>
+        <h2>{listing.title}</h2>
         <div className="bb-card-facts">{facts.map((fact, index) => <span className={index === 0 && verifiedGrade ? "bb-grade-badge" : undefined} key={fact}>{fact}</span>)}<span><Camera size={13} />{listing.imageUrls.length}</span></div>
         <div className="bb-card-trust"><span><CheckCircle2 size={13}/>{trustText.qa}</span><span><Clock3 size={13}/>{trustText.field}</span></div>
       </Link>
