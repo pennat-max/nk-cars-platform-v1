@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useEffectEvent, useMemo, useRef, useState, type ReactNode } from "react";
-import { addCaseQuestion, applyCustomerShippingSelection, createVehicleCase, initialBuyingBrowserState, queueSellerRelayQuestion, requestAvailability, requestInspection, requestQuotation } from "./domain.mjs";
+import { addCaseQuestion, applyCustomerShippingSelection, createCustomerOffer, createVehicleCase, initialBuyingBrowserState, queueSellerRelayQuestion, requestAvailability, requestInspection, requestQuotation } from "./domain.mjs";
 import { normalizeLanguage } from "./i18n.mjs";
 import { loadPricingSettings } from "./pricing-settings";
 import { clearPreviewMedia, hydratePreviewMedia, persistPreviewMedia, stateForLocalStorage } from "./preview-media";
@@ -9,6 +9,8 @@ import { mergeBuyingBrowserStates } from "./workspace-state.mjs";
 import type { BuyingBrowserState, ConversionEvent, CustomerIdentity, CustomerLanguage, CustomerListing, GeneralMessage, SourceAdapterStatus, SourceCapture, VehicleCase, WantedRequest, WorkspaceSyncStatus } from "./types";
 
 type BuyingBrowserContextValue = {
+  storefront: "nk" | "xiangshihai";
+  fxQuote: { marketRate: number; customerRate: number; rateDate: string | null; source: string; fallback: boolean };
   customer: CustomerIdentity;
   sourceStatus: SourceAdapterStatus;
   state: BuyingBrowserState;
@@ -29,6 +31,7 @@ type BuyingBrowserContextValue = {
   acceptCaseQuotation: (caseId: string, quotationNumber: string) => Promise<void>;
   askCaseQuestion: (caseId: string, question: string) => void;
   askSellerQuestion: (caseId: string, question: string) => void;
+  submitCustomerOffer: (caseId: string, offerUsd: number) => void;
   addImportedListing: (listing: CustomerListing, sourceCapture?: SourceCapture) => void;
   askFindOne: (question: string) => void;
   saveWantedRequest: (originalText: string, criteria: Record<string, string | number | null>) => string;
@@ -60,6 +63,7 @@ function withSeedCases(current: BuyingBrowserState, seedCases: VehicleCase[]) {
 }
 
 export function BuyingBrowserProvider({
+  storefront = "nk",
   customer,
   sourceStatus,
   initialListings,
@@ -68,6 +72,7 @@ export function BuyingBrowserProvider({
   legacyCustomerId,
   children,
 }: {
+  storefront?: "nk" | "xiangshihai";
   customer: CustomerIdentity;
   sourceStatus: SourceAdapterStatus;
   initialListings: CustomerListing[];
@@ -78,7 +83,8 @@ export function BuyingBrowserProvider({
 }) {
   const [state, setState] = useState<BuyingBrowserState>(() => withSeedCases(initialBuyingBrowserState(), seedCases));
   const [hydrated, setHydrated] = useState(false);
-  const [language, setLanguageState] = useState<CustomerLanguage>("en");
+  const [language, setLanguageState] = useState<CustomerLanguage>(storefront === "xiangshihai" ? "zh-CN" : "en");
+  const [fxQuote, setFxQuote] = useState({ marketRate: 34, customerRate: 35, rateDate: null as string | null, source: "NK fallback rate", fallback: true });
   const [workspaceSync, setWorkspaceSync] = useState<WorkspaceSyncStatus>({
     mode: durableAccount ? "syncing" : "local",
     message: durableAccount ? "Connecting secure account workspace" : "Stored on this device only",
@@ -136,7 +142,8 @@ export function BuyingBrowserProvider({
     async function hydrate() {
       let nextState: BuyingBrowserState | null = null;
       try {
-        setLanguageState(normalizeLanguage(window.localStorage.getItem(languageStorageKey)) as CustomerLanguage);
+        const storedLanguage = window.localStorage.getItem(languageStorageKey);
+        setLanguageState(storedLanguage ? normalizeLanguage(storedLanguage) as CustomerLanguage : storefront === "xiangshihai" ? "zh-CN" : "en");
         const raw = window.localStorage.getItem(storageKey) || (legacyStorageKey ? window.localStorage.getItem(legacyStorageKey) : null);
         if (raw) {
           const parsed: unknown = JSON.parse(raw);
@@ -156,6 +163,7 @@ export function BuyingBrowserProvider({
               proformaInvoice: record.proformaInvoice ?? null,
               translationHistory: Array.isArray(record.translationHistory) ? record.translationHistory : [],
               sellerRelayRequests: Array.isArray(record.sellerRelayRequests) ? record.sellerRelayRequests : [],
+              customerOfferRequests: Array.isArray(record.customerOfferRequests) ? record.customerOfferRequests : [],
             })),
           }), seedCases);
         }
@@ -188,6 +196,12 @@ export function BuyingBrowserProvider({
   useEffect(() => {
     document.documentElement.lang = language;
   }, [language]);
+
+  useEffect(() => {
+    fetch("/api/fx/usd-thb", { cache: "no-store" }).then((response) => response.json()).then((quote) => {
+      if (Number.isFinite(Number(quote.marketRate)) && Number.isFinite(Number(quote.customerRate))) setFxQuote({ marketRate: Number(quote.marketRate), customerRate: Number(quote.customerRate), rateDate: quote.rateDate || null, source: String(quote.source || "FX source"), fallback: Boolean(quote.fallback) });
+    }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -268,6 +282,10 @@ export function BuyingBrowserProvider({
 
   function askSellerQuestion(caseId: string, question: string) {
     updateCase(caseId, (record) => queueSellerRelayQuestion(record, question, new Date(), language));
+  }
+
+  function submitCustomerOffer(caseId: string, offerUsd: number) {
+    updateCase(caseId, (record) => createCustomerOffer(record, offerUsd, fxQuote, new Date()));
   }
 
   function addImportedListing(listing: CustomerListing, sourceCapture?: SourceCapture) {
@@ -357,6 +375,8 @@ export function BuyingBrowserProvider({
   }
 
   const value: BuyingBrowserContextValue = {
+    storefront,
+    fxQuote,
     customer,
     sourceStatus,
     state,
@@ -377,6 +397,7 @@ export function BuyingBrowserProvider({
     acceptCaseQuotation,
     askCaseQuestion,
     askSellerQuestion,
+    submitCustomerOffer,
     addImportedListing,
     askFindOne,
     saveWantedRequest,

@@ -50,6 +50,19 @@ export type SellerRelayRequest = {
   repliedAt: string | null;
 };
 
+export type CustomerOfferRequest = {
+  id: string;
+  offerUsd: number;
+  offerThb: number;
+  marketRateThbPerUsd: number;
+  customerRateThbPerUsd: number;
+  fxRule: "ceil(marketRate)+1";
+  fxSource: string;
+  fxRateDate: string | null;
+  status: "Awaiting NK Review" | "Approved to Ask Seller" | "Sent to Seller" | "Seller Responded" | "Declined";
+  createdAt: string;
+};
+
 export type CustomerListing = {
   id: string;
   adapterId: string;
@@ -173,6 +186,7 @@ export type VehicleCase = {
   } | null;
   translationHistory: TranslationTrace[];
   sellerRelayRequests?: SellerRelayRequest[];
+  customerOfferRequests?: CustomerOfferRequest[];
   messages: CaseMessage[];
   timeline: CaseTimelineItem[];
 };

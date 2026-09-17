@@ -13,6 +13,7 @@ import ProformaInvoiceScreen from "./screens/ProformaInvoiceScreen";
 import type { BuyingBrowserView, CustomerIdentity, CustomerListing, SourceAdapterStatus, VehicleCase } from "./types";
 
 export default function BuyingBrowserApp({
+  storefront,
   view,
   sourceId,
   caseId,
@@ -23,6 +24,7 @@ export default function BuyingBrowserApp({
   durableAccount = false,
   legacyCustomerId,
 }: {
+  storefront: "nk" | "xiangshihai";
   view: BuyingBrowserView;
   sourceId?: string;
   caseId?: string;
@@ -34,7 +36,7 @@ export default function BuyingBrowserApp({
   legacyCustomerId?: string;
 }) {
   return (
-    <BuyingBrowserProvider customer={customer} sourceStatus={sourceStatus} initialListings={listings} seedCases={seedCases} durableAccount={durableAccount} legacyCustomerId={legacyCustomerId}>
+    <BuyingBrowserProvider storefront={storefront} customer={customer} sourceStatus={sourceStatus} initialListings={listings} seedCases={seedCases} durableAccount={durableAccount} legacyCustomerId={legacyCustomerId}>
       <BuyingBrowserShell view={view}>
         {view === "source" && <SourceLaunchScreen />}
         {view === "web-browser" && <WebBrowserScreen />}

@@ -19,7 +19,7 @@ export default function ListingCard({
   selected?: boolean;
   onSelect?: (listingId: string) => void;
 }) {
-  const { isSaved, toggleSaved } = useBuyingBrowser();
+  const { isSaved, toggleSaved, fxQuote } = useBuyingBrowser();
   const { language, t } = useI18n();
   const saved = isSaved(listing.id);
   const facts = [listing.transmission !== "Unknown" ? listing.transmission : null, listing.drive !== "Unknown" ? listing.drive : null, listing.mileageKm !== null ? `${listing.mileageKm.toLocaleString("en-US")} km` : null].filter(Boolean);
@@ -35,7 +35,7 @@ export default function ListingCard({
       </Link>
       <button className={saved ? "bb-save-icon saved" : "bb-save-icon"} onClick={() => toggleSaved(listing.id)} aria-label={saved ? t("removeSaved", { vehicle: listing.title }) : `${t("saveVehicle")}: ${listing.title}`} title={saved ? t("removeSavedVehicle") : t("saveVehicle")}><Heart size={19} fill={saved ? "currentColor" : "none"} /></button>
       <Link className="bb-listing-copy" href={`/buy/vehicle/${encodeURIComponent(listing.id)}`}>
-        <strong>{formatCustomerPrimaryPrice(listing.observedPriceThb, language)}</strong>
+        <strong>{formatCustomerPrimaryPrice(listing.observedPriceThb, language, fxQuote.customerRate)}</strong>
         <h2>{listing.year ?? `${t("year")} ${t("pending")}`} {listing.brand} {listing.model}</h2>
         <div className="bb-card-facts">{facts.map((fact) => <span key={fact}>{fact}</span>)}<span><Camera size={13} />{listing.imageUrls.length} {language === "th" ? "รูป" : "photos"}</span></div>
         <small className="bb-card-availability">{language === "th" ? "NK จะตรวจว่ารถยังอยู่และยืนยันราคาก่อนเสนอราคา" : "NK checks availability and price before quotation"}</small>

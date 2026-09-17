@@ -15,7 +15,7 @@ const locations = [...metroLocations, "Nearby Provinces", "All Thailand", "Chon 
 const yearOptions = ["", "2014", "2018", "2019", "2020", "2021", "2022", "2023", "2024", "2025"];
 
 export default function BrowseScreen({ savedOnly = false }: { savedOnly?: boolean }) {
-  const { listings, state, sourceStatus, saveAsCase } = useBuyingBrowser();
+  const { listings, state, sourceStatus, saveAsCase, storefront, fxQuote } = useBuyingBrowser();
   const { language, t } = useI18n();
   const [filters, setFilters] = useState<BrowseFilters>({ ...DEFAULT_FILTERS });
   const [filterOpen, setFilterOpen] = useState(false);
@@ -61,8 +61,13 @@ export default function BrowseScreen({ savedOnly = false }: { savedOnly?: boolea
   const priceFxNote = language === "th" ? "กรอกตัวกรองราคาเป็นบาทไทย ส่วนราคา USD เป็นประมาณการตาม FX ที่ตั้งค่าไว้" : customerFxDisclosure();
 
   return (
-    <>
-      {!savedOnly && <section className="bb-find-hero" data-customer-start>
+    <div className={storefront === "xiangshihai" ? "xs-storefront" : undefined}>
+      {!savedOnly && storefront === "xiangshihai" && <>
+        <section className="xs-top-banner"><div><span>泰国优质车源 · 一站式采购服务</span><h1>像海汽车采购市场</h1><p>浏览泰国真实车源，询价、验车、采购与出口由 NK 团队协助完成。</p><div><a href="#vehicle-results">立即选车 <ArrowRight size={17}/></a><Link href="/buy/ask">告诉我们您的需求</Link></div></div><aside><b>{visibleListings.length}</b><span>已审核车源</span><small>多图 · 来源记录 · 规格证据</small></aside></section>
+        <nav className="xs-categories" aria-label="热门分类"><button onClick={() => setFilter("body", "Any")}>全部车源</button><button onClick={() => setFilter("body", "Double Cab")}>双排皮卡</button><button onClick={() => setFilter("body", "Smart Cab")}>智能驾驶室</button><button onClick={() => setFilter("transmission", "AT")}>自动挡</button><button onClick={() => setFilter("drive", "4WD")}>四轮驱动</button><Link href="/buy/ask">AI 帮我找车</Link></nav>
+        <section className="xs-benefits"><div><b>真实来源</b><span>保留原始车源与检查时间</span></div><div><b>询价议价</b><span>美元报价按 {fxQuote.customerRate} 泰铢换算</span></div><div><b>专业验车</b><span>确认后再安排线下检查</span></div><div><b>出口协助</b><span>核实费用后提供正式报价</span></div></section>
+      </>}
+      {!savedOnly && storefront !== "xiangshihai" && <section className="bb-find-hero" data-customer-start>
         <div>
           <p className="bb-kicker">{language === "th" ? "ให้ NK ช่วยหารถ" : "Find the right vehicle"}</p>
           <h1>{language === "th" ? "บอกสเป็กและงบที่ต้องการ เราช่วยคัดรถให้" : "Tell us your specifications and budget. NK will shortlist the best matches."}</h1>
@@ -132,6 +137,6 @@ export default function BrowseScreen({ savedOnly = false }: { savedOnly?: boolea
           <footer><button className="bb-button secondary" onClick={() => setFilters({ ...DEFAULT_FILTERS })}><RotateCcw size={17} />{t("resetFilters")}</button><button className="bb-button primary" onClick={() => setFilterOpen(false)}>{t("showVehicles", { count: visibleListings.length })}</button></footer>
         </section>
       </div>}
-    </>
+    </div>
   );
 }

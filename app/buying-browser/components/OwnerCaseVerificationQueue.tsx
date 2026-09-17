@@ -200,6 +200,10 @@ export default function OwnerCaseVerificationQueue({ initialCases }: { initialCa
               <label className="wide"><span>Verification evidence / reason</span><textarea rows={3} maxLength={1000} value={form.evidenceNote} onChange={(event) => setForm((current) => ({ ...current, evidenceNote: event.target.value }))} placeholder="Example: Seller confirmed availability and current price by phone at 14:30; shipping remains pending." /></label>
             </div>
             <section className="bb-owner-relay-queue">
+              <h4>Customer offer queue</h4>
+              {(selected.vehicleCase.customerOfferRequests || []).length ? [...(selected.vehicleCase.customerOfferRequests || [])].reverse().map((offer) => <article key={offer.id}><header><b>USD {offer.offerUsd.toLocaleString("en-US")} → THB {offer.offerThb.toLocaleString("en-US")}</b><span>{offer.status}</span></header><p>FX {offer.customerRateThbPerUsd} THB/USD · market {offer.marketRateThbPerUsd} · {offer.fxSource}</p></article>) : <p>No customer offer waiting for this Case.</p>}
+            </section>
+            <section className="bb-owner-relay-queue">
               <h4>Seller relay queue</h4>
               {(selected.vehicleCase.sellerRelayRequests || []).length ? [...(selected.vehicleCase.sellerRelayRequests || [])].reverse().map((relay) => <article key={relay.id}><header><b>{relay.customerText}</b><span>{relay.status}</span></header>{relay.preparedSellerText && <p>{relay.preparedSellerText}</p>}{relay.safetyReason && <small>{relay.safetyReason}</small>}</article>) : <p>No seller questions queued for this Case.</p>}
             </section>

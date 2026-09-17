@@ -5,6 +5,7 @@ import { customerMarketplaceAdapter } from "./source-adapters/customer-marketpla
 import { createCapturedPocCase } from "./source-adapters/sheet-poc-data";
 import type { BuyingBrowserView, CustomerIdentity } from "./types";
 import { customerWorkspaceId } from "./workspace-state.mjs";
+import { headers } from "next/headers";
 
 function customerIdFromEmail(email: string | null) {
   if (!email) return "preview-james-mwangi";
@@ -16,6 +17,8 @@ function customerIdFromAccountId(accountId: string) {
 }
 
 export default async function BuyingBrowserRoute({ view, sourceId, caseId }: { view: BuyingBrowserView; sourceId?: string; caseId?: string }) {
+  const host = (await headers()).get("host")?.split(":")[0].toLowerCase() || "";
+  const storefront = host === "xiangshihai.com" || host === "www.xiangshihai.com" ? "xiangshihai" : "nk";
   const signedIn = await getChatGPTUser();
   const demoWorkspaceEnabled = process.env.NK_ENABLE_DEMO_WORKSPACE !== "false";
   const signInPath = identitySignInPath("/buy/account");
@@ -29,5 +32,5 @@ export default async function BuyingBrowserRoute({ view, sourceId, caseId }: { v
     customerMarketplaceAdapter.getStatus(),
     customerMarketplaceAdapter.search({ customerId: customer.id, searchArea: "Thailand", filters: { ...DEFAULT_FILTERS, location: "All Thailand" }, limit: 100 }),
   ]);
-  return <BuyingBrowserApp view={view} sourceId={sourceId} caseId={caseId} customer={customer} sourceStatus={sourceStatus} listings={result.results} seedCases={signedIn || !demoWorkspaceEnabled ? [] : [createCapturedPocCase(customer.id)]} durableAccount={Boolean(signedIn)} legacyCustomerId={signedIn?.provider !== "qnap" ? customerIdFromEmail(signedIn?.email || null) : undefined} />;
+  return <BuyingBrowserApp storefront={storefront} view={view} sourceId={sourceId} caseId={caseId} customer={customer} sourceStatus={sourceStatus} listings={result.results} seedCases={signedIn || !demoWorkspaceEnabled ? [] : [createCapturedPocCase(customer.id)]} durableAccount={Boolean(signedIn)} legacyCustomerId={signedIn?.provider !== "qnap" ? customerIdFromEmail(signedIn?.email || null) : undefined} />;
 }

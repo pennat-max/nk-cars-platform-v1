@@ -42,6 +42,14 @@ function serverControlledSellerRelays(incomingItems, currentItems) {
   });
 }
 
+function serverControlledOffers(incomingItems, currentItems) {
+  const current = new Map((Array.isArray(currentItems) ? currentItems : []).map((item) => [item.id, item]));
+  return (Array.isArray(incomingItems) ? incomingItems : []).map((item) => {
+    const saved = current.get(item.id);
+    return saved && saved.status !== "Awaiting NK Review" ? saved : { ...item, status: "Awaiting NK Review" };
+  });
+}
+
 function customerControlledCase(caseRecord, currentCase) {
   if (currentCase?.ownerVerification?.status === "Owner Verified") {
     return {
@@ -64,6 +72,7 @@ function customerControlledCase(caseRecord, currentCase) {
       quotation: currentCase.quotation ?? null,
       proformaInvoice: currentCase.proformaInvoice ?? null,
       sellerRelayRequests: serverControlledSellerRelays(caseRecord.sellerRelayRequests, currentCase.sellerRelayRequests),
+      customerOfferRequests: serverControlledOffers(caseRecord.customerOfferRequests, currentCase.customerOfferRequests),
       messages: mergeHistory(currentCase.messages, caseRecord.messages),
       timeline: mergeHistory(currentCase.timeline, caseRecord.timeline),
     };
@@ -89,6 +98,7 @@ function customerControlledCase(caseRecord, currentCase) {
     quotation: null,
     proformaInvoice: null,
     sellerRelayRequests: serverControlledSellerRelays(caseRecord.sellerRelayRequests, currentCase?.sellerRelayRequests),
+    customerOfferRequests: serverControlledOffers(caseRecord.customerOfferRequests, currentCase?.customerOfferRequests),
   };
 }
 

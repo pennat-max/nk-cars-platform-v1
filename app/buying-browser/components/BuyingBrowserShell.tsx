@@ -24,22 +24,22 @@ function activeKey(view: BuyingBrowserView) {
 }
 
 export default function BuyingBrowserShell({ view, children }: { view: BuyingBrowserView; children: React.ReactNode }) {
-  const { customer, state } = useBuyingBrowser();
+  const { customer, state, storefront } = useBuyingBrowser();
   const { language, setLanguage, t } = useI18n();
   const selected = activeKey(view);
   return (
-    <div className={`buying-browser view-${view}`} data-buying-browser-v1>
+    <div className={`buying-browser view-${view} storefront-${storefront}`} data-buying-browser-v1>
       <header className="bb-header">
         <div className="bb-header-inner">
           <Link className="bb-brand" href="/buy" aria-label={t("homeLabel")}>
-            <span>NK</span>
-            <div><b>Cars</b><small>{t("buyingBrowser")}</small></div>
+            <span>{storefront === "xiangshihai" ? "像海" : "NK"}</span>
+            <div><b>{storefront === "xiangshihai" ? "汽车市场" : "Cars"}</b><small>{storefront === "xiangshihai" ? "Thailand Vehicle Marketplace" : t("buyingBrowser")}</small></div>
           </Link>
           <div className="bb-market-location" aria-label="Vehicle search location"><MapPin size={16} /><span><small>{t("searchArea")}</small><b>{t("bangkokMetro")}</b></span></div>
           <nav className="bb-desktop-nav" aria-label={t("navLabel")}>
             {primaryNavItems.map((item) => { const Icon = item.icon; return <Link key={item.key} className={selected === item.key ? "active" : ""} href={item.href}><Icon size={17} />{t(item.labelKey)}</Link>; })}
           </nav>
-          <label className="bb-language-selector" title={t("language")}><Globe2 size={16} /><span className="bb-sr-only">{t("language")}</span><select value={language} onChange={(event) => setLanguage(event.target.value as CustomerLanguage)} aria-label={t("language")}><option value="en">EN</option><option value="th">ไทย</option></select></label>
+          <label className="bb-language-selector" title={t("language")}><Globe2 size={16} /><span className="bb-sr-only">{t("language")}</span><select value={language} onChange={(event) => setLanguage(event.target.value as CustomerLanguage)} aria-label={t("language")}><option value="zh-CN">中文</option><option value="en">EN</option><option value="th">ไทย</option></select></label>
           <Link className="bb-account-button" href="/buy/account" aria-label={t("openAccount")}><span>{customerInitials(customer.displayName)}</span><div><b>{customer.displayName}</b><small>{t(customer.isPreview ? "deviceAccount" : "nkAccount")}</small></div><UserRound size={17} /></Link>
         </div>
       </header>

@@ -126,10 +126,11 @@ export function ShipmentsScreen() {
 }
 
 export function CaseDetailScreen({ caseId }: { caseId?: string }) {
-  const { hydrated, findCaseById, requestCaseAvailability, requestCaseInspection, askCaseQuestion, askSellerQuestion } = useBuyingBrowser();
+  const { hydrated, findCaseById, requestCaseAvailability, requestCaseInspection, askCaseQuestion, askSellerQuestion, submitCustomerOffer, fxQuote } = useBuyingBrowser();
   const vehicleCase = caseId ? findCaseById(caseId) : undefined;
   const [question, setQuestion] = useState("");
   const [sellerQuestion, setSellerQuestion] = useState("");
+  const [offerUsd, setOfferUsd] = useState("");
   const [imageIndex, setImageIndex] = useState(0);
   const { language, t, availabilityLabel } = useI18n();
   if (!hydrated) return <section className="bb-loading-state"><span /><p>{t("loadingVehicleCase")}</p></section>;
@@ -147,6 +148,14 @@ export function CaseDetailScreen({ caseId }: { caseId?: string }) {
     if (!sellerQuestion.trim()) return;
     askSellerQuestion(vehicleCase!.id, sellerQuestion);
     setSellerQuestion("");
+  }
+
+  function submitOffer(event: FormEvent) {
+    event.preventDefault();
+    const amount = Number(offerUsd);
+    if (!Number.isFinite(amount) || amount <= 0) return;
+    submitCustomerOffer(vehicleCase!.id, amount);
+    setOfferUsd("");
   }
 
   const quickQuestions = language === "zh-CN"
@@ -184,6 +193,15 @@ export function CaseDetailScreen({ caseId }: { caseId?: string }) {
           <div className="bb-section-heading"><div><p className="bb-kicker">{t("auditHistory")}</p><h2>{t("caseTimeline")}</h2></div></div>
           <ol>{[...vehicleCase.timeline].reverse().map((item) => <li key={item.id}><span><CheckCircle2 size={15} /></span><div><b>{item.title}</b><p>{item.detail}</p><time>{formatDateTime(item.createdAt)}</time></div></li>)}</ol>
         </div>
+      </section>
+
+      <section className="bb-customer-offer" id="customer-offer">
+        <div className="bb-section-heading"><div><p className="bb-kicker">CUSTOMER OFFER</p><h2>Make an offer in USD</h2></div><span className="bb-status-chip requested">NK review required</span></div>
+        <p>Enter the amount you want NK to ask the seller about. We convert it back to Thai baht using today&apos;s NK customer rate before seller contact.</p>
+        <div className="bb-offer-rate"><span>Market reference</span><b>THB {fxQuote.marketRate.toFixed(3)} / USD</b><span>NK customer rate</span><b>THB {fxQuote.customerRate} / USD</b><small>Rule: market rate rounded up + THB 1 · {fxQuote.source} · {fxQuote.rateDate || "latest available"}</small></div>
+        <form onSubmit={submitOffer}><label><span>Your offer</span><div><b>USD</b><input type="number" min="1" step="1" value={offerUsd} onChange={(event) => setOfferUsd(event.target.value)} placeholder={vehicleCase.vehicle.observedPriceThb === null ? "Enter USD offer" : String(Math.round(vehicleCase.vehicle.observedPriceThb / fxQuote.customerRate))}/></div></label><p>= THB {offerUsd && Number(offerUsd) > 0 ? Math.round(Number(offerUsd) * fxQuote.customerRate).toLocaleString("en-US") : "—"}</p><button className="bb-button primary" type="submit" disabled={!offerUsd || Number(offerUsd) <= 0}>Ask NK to review offer</button></form>
+        <small>This records a negotiation request only. It is not sent automatically and does not reserve or purchase the vehicle.</small>
+        {(vehicleCase.customerOfferRequests || []).length > 0 && <div className="bb-offer-history">{[...(vehicleCase.customerOfferRequests || [])].reverse().map((offer) => <article key={offer.id}><b>USD {offer.offerUsd.toLocaleString("en-US")}</b><span>THB {offer.offerThb.toLocaleString("en-US")}</span><em>{offer.status}</em></article>)}</div>}
       </section>
 
       <section className="bb-seller-relay" id="seller-relay">

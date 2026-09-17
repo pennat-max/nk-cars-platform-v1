@@ -12,6 +12,7 @@ import {
   calculatePricing,
   customerUsdToThb,
   createExternalSourceCapture,
+  createCustomerOffer,
   createVehicleCase,
   filterListings,
   formatCustomerUsd,
@@ -929,6 +930,16 @@ test("Vehicle Case deduplicates save and records honest pending workflows", () =
   assert.match(answered.messages.at(-1).text, /not confirmed|requested/i);
 });
 
+test("customer USD offer locks the live FX rule and converts back to THB", () => {
+  const listing = presentCustomerListing(source);
+  const created = createVehicleCase(listing, [], "customer-1", "2026-08-23T10:00:00.000Z").caseRecord;
+  const offered = createCustomerOffer(created, 12000, { marketRate: 33.225, customerRate: 35, source: "Frankfurter / ECB reference data", rateDate: "2026-09-02" }, "2026-08-23T10:07:00.000Z");
+  assert.equal(offered.customerOfferRequests.at(-1).offerThb, 420000);
+  assert.equal(offered.customerOfferRequests.at(-1).customerRateThbPerUsd, 35);
+  assert.equal(offered.customerOfferRequests.at(-1).status, "Awaiting NK Review");
+  assert.match(offered.messages.at(-1).text, /has not sent it to the seller yet/i);
+});
+
 test("seller relay queues safe verification questions and blocks transaction authority", () => {
   const listing = presentCustomerListing(source);
   const created = createVehicleCase(listing, [], "customer-1", "2026-08-23T10:00:00.000Z").caseRecord;
@@ -1008,7 +1019,7 @@ test("renders additive Buying Browser routes without customer source leakage", a
       assert.match(html, /data-vehicle-card-v2/i);
       assert.match(textHtml, /<b>66<\/b> vehicles/i);
       assert.match(html, /NK Selection/i);
-      assert.doesNotMatch(html, /zh-CN|简体中文|NK 精选|AT - Unknown/i);
+      assert.doesNotMatch(html, /简体中文|NK 精选|AT - Unknown/i);
       assert.doesNotMatch(html, /10 selected/i);
       assert.match(html, /USD 21,686/i);
       assert.doesNotMatch(html, /data-real-source-launch/i);
