@@ -53,9 +53,9 @@ export default function BrowseScreen({ savedOnly = false }: { savedOnly?: boolea
     window.setTimeout(() => window.location.assign("/buy/shipments"), 80);
   }
 
-  const marketplaceHeading = language === "th" ? "รถที่เหมาะกับคุณ" : "Today's picks";
-  const priceStatus = language === "th" ? "ราคายังไม่ยืนยัน" : "Price not verified";
-  const reviewedVehiclesLabel = language === "th" ? `รถที่ตรวจแล้ว ${visibleListings.length} คัน` : `${visibleListings.length} reviewed vehicles`;
+  const marketplaceHeading = language === "zh-CN" ? "推荐车源" : language === "th" ? "รถแนะนำ" : "Top picks";
+  const priceStatus = language === "zh-CN" ? "车源价" : language === "th" ? "ราคาประกาศ" : "Source price";
+  const reviewedVehiclesLabel = language === "zh-CN" ? `${visibleListings.length} 辆` : language === "th" ? `${visibleListings.length} คัน` : `${visibleListings.length} vehicles`;
   const minimumPriceLabel = language === "th" ? "ราคาต่ำสุด (THB)" : t("minPrice");
   const maximumPriceLabel = language === "th" ? "ราคาสูงสุด (THB)" : t("maxPrice");
   const priceFxNote = language === "th" ? "กรอกตัวกรองราคาเป็นบาทไทย ส่วนราคา USD เป็นประมาณการตาม FX ที่ตั้งค่าไว้" : brandText(customerFxDisclosure());
@@ -116,7 +116,7 @@ export default function BrowseScreen({ savedOnly = false }: { savedOnly?: boolea
 
         {!savedOnly && <div className="bb-marketplace-title-row"><div><h2>{marketplaceHeading}</h2><p>{reviewedVehiclesLabel}</p></div><span>{priceStatus}</span></div>}
 
-        {!savedOnly && <div className="bb-marketplace-meta">
+        {!savedOnly && storefront !== "xiangshihai" && <div className="bb-marketplace-meta">
           <div><b>{visibleListings.length}</b> {t("vehicles")} <span className={sourceStatus.live || capturedCount ? "live" : "demo"} role="status">{sourceLabel}</span></div>
           <nav aria-label="More vehicle search tools"><Link href="/buy/paste" title={t("pasteLink")}><Link2 size={14} />{t("pasteLink")}</Link><Link href="/buy/ask" title={t("askNkAi")}><Bot size={14} />{t("askNkAi")}</Link></nav>
         </div>}

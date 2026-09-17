@@ -366,6 +366,28 @@
 .storefront-xiangshihai .xs-top-banner{grid-template-columns:minmax(0,1fr) 180px;gap:18px;margin:12px 0 8px;padding:22px 26px;background:linear-gradient(120deg,#172838 0%,#213c50 66%,#f36a21 66%,#ff8b43 100%);box-shadow:0 8px 20px #1728381c}.storefront-xiangshihai .xs-top-banner h1{font-size:clamp(27px,4vw,42px)}.storefront-xiangshihai .xs-top-banner p{margin-bottom:15px;font-size:14px}.storefront-xiangshihai .xs-top-banner aside{padding:14px}.storefront-xiangshihai .xs-top-banner aside b{font-size:38px}.storefront-xiangshihai .xs-categories{margin-top:8px;margin-bottom:8px;padding:8px}.storefront-xiangshihai .xs-benefits{margin:8px 0 13px}.storefront-xiangshihai .xs-benefits div{padding:11px 13px}.storefront-xiangshihai .bb-marketplace-toolbar{position:sticky;top:72px;z-index:15;padding:10px;background:#f5f5f5;border:1px solid #e7e7e7}.storefront-xiangshihai .bb-card-source-price{display:block;margin:3px 0 0;color:#69747b;font-size:9px;font-style:normal;font-weight:650;line-height:1.35}.bb-card-trust{display:grid;gap:4px;margin-top:8px;padding-top:8px;border-top:1px solid #edf0f1}.bb-card-trust span{display:flex;align-items:center;gap:5px;color:#24704b;font-size:10px;font-weight:750}.bb-card-trust span+span{color:#8b661d}.storefront-xiangshihai .bb-demo-flag.captured{background:#1f7150}.storefront-xiangshihai .bb-listing-image{aspect-ratio:16/11}
 @media(max-width:760px){.storefront-xiangshihai .xs-top-banner{padding:18px 16px;background:linear-gradient(135deg,#172838,#24435a)}.storefront-xiangshihai .xs-benefits{display:flex;overflow-x:auto}.storefront-xiangshihai .xs-benefits div{min-width:180px}.storefront-xiangshihai .bb-marketplace-toolbar{top:59px}.storefront-xiangshihai .bb-card-source-price{font-size:8px}.bb-card-trust span{align-items:flex-start;font-size:9px}}
 
+/* Compact Xiangshihai mobile browse: show vehicles sooner and keep card facts factual. */
+.bb-grade-badge{background:#fff0e7!important;color:#c6480b!important;border:1px solid #ffd0b8}
+@media(max-width:720px){
+  .storefront-xiangshihai .xs-top-banner,.storefront-xiangshihai .xs-categories,.storefront-xiangshihai .xs-benefits{display:none}
+  .storefront-xiangshihai .bb-main{padding-top:6px}
+  .storefront-xiangshihai .bb-marketplace-toolbar{padding:7px 8px 5px;margin-bottom:6px}
+  .storefront-xiangshihai .bb-quick-filters{padding:7px 0 4px}
+  .storefront-xiangshihai .bb-marketplace-title-row{align-items:center;margin:5px 0 3px}
+  .storefront-xiangshihai .bb-marketplace-title-row h2{font-size:20px}
+  .storefront-xiangshihai .bb-marketplace-title-row p{font-size:11px}
+  .storefront-xiangshihai .bb-marketplace-title-row>span{padding:4px 7px;font-size:9px}
+  .storefront-xiangshihai .bb-listing-grid{gap:14px 4px}
+  .storefront-xiangshihai .bb-listing-copy{padding:7px 7px 0!important}
+  .storefront-xiangshihai .bb-listing-copy>strong{font-size:18px!important}
+  .storefront-xiangshihai .bb-listing-copy h2{font-size:14px!important;margin:4px 0!important}
+  .storefront-xiangshihai .bb-card-source-price{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:9px!important}
+  .storefront-xiangshihai .bb-card-facts{gap:3px;margin-top:4px}
+  .storefront-xiangshihai .bb-card-facts span{padding:2px 4px;font-size:8px}
+  .storefront-xiangshihai .bb-card-trust{display:flex;flex-wrap:wrap;gap:3px 7px;margin-top:5px;padding-top:5px}
+  .storefront-xiangshihai .bb-card-trust span{font-size:8px;white-space:nowrap}
+}
+
 /* Final Owner-approved responsive overrides. Keep these last. */
 .bb-wanted-request{margin:18px 0;padding:18px;border:1px solid #dfe5e8;border-radius:16px;background:#fff}
 .bb-wanted-criteria{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0}.bb-wanted-criteria span{display:grid;gap:2px;min-width:130px;padding:10px 12px;border-radius:12px;background:#f4f7f5}.bb-wanted-criteria small{color:#617069}.bb-ranked-matches{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:16px;margin-bottom:16px}.bb-ranked-match{padding:12px;border:1px solid #dfe5e8;border-radius:16px;background:#fff}.bb-match-verdict{display:flex;align-items:center;gap:7px;margin-bottom:10px;color:#996400}.bb-ranked-match ul{margin:10px 0 0;padding-left:20px;font-size:13px}.bb-ranked-match li[data-result="match"]{color:#137244}.bb-ranked-match li[data-result="unknown"]{color:#8b6500}.bb-safe-note{font-size:13px;color:#56645d}
