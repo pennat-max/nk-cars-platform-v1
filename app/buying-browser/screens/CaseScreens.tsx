@@ -163,6 +163,9 @@ export function CaseDetailScreen({ caseId }: { caseId?: string }) {
     : language === "th"
       ? ["รถคันนี้ยังอยู่ไหม ราคาต่ำสุดเท่าไร?", "อธิบายโครงสร้างราคาและค่าใช้จ่ายที่รอยืนยัน", "สเป็กและเลขไมล์ที่ทราบมีอะไรบ้าง?"]
       : ["Is this vehicle still available?", "Show the current price structure and pending costs.", "What are the known specifications and mileage?"];
+  const offerText = language === "zh-CN" ? { kicker: "客户报价", title: "以美元提交意向价格", review: "需要 NK 审核", intro: "输入您希望 NK 向卖家询问的金额。联系卖家前，系统会按当前 NK 客户汇率换算成泰铢。", market: "市场参考汇率", customer: "NK 客户汇率", rule: "规则：市场汇率向上取整后加 1 泰铢", your: "您的报价", placeholder: "输入美元报价", converted: "将向卖家询问的泰铢金额", button: "提交给 NK 审核", boundary: "这只是议价申请，不会自动发送给卖家，也不构成订车、购买或付款授权。" }
+    : language === "th" ? { kicker: "ข้อเสนอจากลูกค้า", title: "เสนอราคาเป็นดอลลาร์สหรัฐ", review: "ต้องผ่านการตรวจสอบของ NK", intro: "กรอกจำนวนที่ต้องการให้ NK นำไปสอบถามผู้ขาย ระบบจะแปลงกลับเป็นเงินบาทด้วยเรตลูกค้าปัจจุบันก่อนติดต่อผู้ขาย", market: "เรตตลาดอ้างอิง", customer: "เรตลูกค้า NK", rule: "กฎ: ปัดเรตตลาดขึ้น แล้วบวก 1 บาท", your: "ข้อเสนอของคุณ", placeholder: "กรอกข้อเสนอ USD", converted: "จำนวนเงินบาทที่จะใช้สอบถามผู้ขาย", button: "ส่งให้ NK ตรวจสอบ", boundary: "นี่เป็นเพียงคำขอต่อรอง ระบบจะไม่ส่งให้ผู้ขายอัตโนมัติ และไม่ถือเป็นการจอง ซื้อ หรืออนุญาตให้ชำระเงิน" }
+    : { kicker: "CUSTOMER OFFER", title: "Make an offer in USD", review: "NK review required", intro: "Enter the amount you want NK to ask the seller about. We convert it to Thai baht using the current NK customer rate before seller contact.", market: "Market reference", customer: "NK customer rate", rule: "Rule: market rate rounded up + THB 1", your: "Your offer", placeholder: "Enter USD offer", converted: "THB amount NK will ask the seller about", button: "Ask NK to review offer", boundary: "This is a negotiation request only. It is not sent automatically and does not reserve, purchase, or authorize payment for the vehicle." };
 
   return (
     <>
@@ -196,11 +199,11 @@ export function CaseDetailScreen({ caseId }: { caseId?: string }) {
       </section>
 
       <section className="bb-customer-offer" id="customer-offer">
-        <div className="bb-section-heading"><div><p className="bb-kicker">CUSTOMER OFFER</p><h2>Make an offer in USD</h2></div><span className="bb-status-chip requested">NK review required</span></div>
-        <p>Enter the amount you want NK to ask the seller about. We convert it back to Thai baht using today&apos;s NK customer rate before seller contact.</p>
-        <div className="bb-offer-rate"><span>Market reference</span><b>THB {fxQuote.marketRate.toFixed(3)} / USD</b><span>NK customer rate</span><b>THB {fxQuote.customerRate} / USD</b><small>Rule: market rate rounded up + THB 1 · {fxQuote.source} · {fxQuote.rateDate || "latest available"}</small></div>
-        <form onSubmit={submitOffer}><label><span>Your offer</span><div><b>USD</b><input type="number" min="1" step="1" value={offerUsd} onChange={(event) => setOfferUsd(event.target.value)} placeholder={vehicleCase.vehicle.observedPriceThb === null ? "Enter USD offer" : String(Math.round(vehicleCase.vehicle.observedPriceThb / fxQuote.customerRate))}/></div></label><p>= THB {offerUsd && Number(offerUsd) > 0 ? Math.round(Number(offerUsd) * fxQuote.customerRate).toLocaleString("en-US") : "—"}</p><button className="bb-button primary" type="submit" disabled={!offerUsd || Number(offerUsd) <= 0}>Ask NK to review offer</button></form>
-        <small>This records a negotiation request only. It is not sent automatically and does not reserve or purchase the vehicle.</small>
+        <div className="bb-section-heading"><div><p className="bb-kicker">{offerText.kicker}</p><h2>{offerText.title}</h2></div><span className="bb-status-chip requested">{offerText.review}</span></div>
+        <p>{offerText.intro}</p>
+        <div className="bb-offer-rate"><span>{offerText.market}</span><b>THB {fxQuote.marketRate.toFixed(3)} / USD</b><span>{offerText.customer}</span><b>THB {fxQuote.customerRate} / USD</b><small>{offerText.rule} · {fxQuote.source} · {fxQuote.rateDate || "latest"}</small></div>
+        <form onSubmit={submitOffer}><label><span>{offerText.your}</span><div><b>USD</b><input type="number" min="1" step="1" value={offerUsd} onChange={(event) => setOfferUsd(event.target.value)} placeholder={vehicleCase.vehicle.observedPriceThb === null ? offerText.placeholder : String(Math.round(vehicleCase.vehicle.observedPriceThb / fxQuote.customerRate))}/></div></label><p><small>{offerText.converted}</small><b>THB {offerUsd && Number(offerUsd) > 0 ? Math.round(Number(offerUsd) * fxQuote.customerRate).toLocaleString("en-US") : "—"}</b></p><button className="bb-button primary" type="submit" disabled={!offerUsd || Number(offerUsd) <= 0}>{offerText.button}</button></form>
+        <small>{offerText.boundary}</small>
         {(vehicleCase.customerOfferRequests || []).length > 0 && <div className="bb-offer-history">{[...(vehicleCase.customerOfferRequests || [])].reverse().map((offer) => <article key={offer.id}><b>USD {offer.offerUsd.toLocaleString("en-US")}</b><span>THB {offer.offerThb.toLocaleString("en-US")}</span><em>{offer.status}</em></article>)}</div>}
       </section>
 

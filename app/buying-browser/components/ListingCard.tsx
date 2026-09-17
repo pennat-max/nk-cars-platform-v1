@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { Camera, Heart } from "lucide-react";
+import { Camera, CheckCircle2, Clock3, Heart } from "lucide-react";
 import { useBuyingBrowser } from "../BuyingBrowserProvider";
-import { formatCustomerPrimaryPrice } from "../format";
+import { formatCustomerPrimaryPrice, formatDateTime, formatThb } from "../format";
 import { useI18n } from "../use-i18n";
 import type { CustomerListing } from "../types";
 import VehiclePhoto from "./VehiclePhoto";
@@ -23,6 +23,11 @@ export default function ListingCard({
   const { language, t } = useI18n();
   const saved = isSaved(listing.id);
   const facts = [listing.transmission !== "Unknown" ? listing.transmission : null, listing.drive !== "Unknown" ? listing.drive : null, listing.mileageKm !== null ? `${listing.mileageKm.toLocaleString("en-US")} km` : null].filter(Boolean);
+  const trustText = language === "zh-CN"
+    ? { qa: "图片与车源信息已审核", field: "尚未现场验车", observed: "车源价格记录" }
+    : language === "th"
+      ? { qa: "ตรวจข้อมูลและรูปแล้ว", field: "ยังไม่ได้ตรวจสภาพหน้างาน", observed: "พบราคาในประกาศ" }
+      : { qa: "Listing and photos reviewed", field: "Not yet physically inspected", observed: "Source price observed" };
   return (
     <article className="bb-listing-card" data-listing-id={listing.id} data-vehicle-card-v2>
       {selectable && <label className="bb-card-select" aria-label={`Select ${listing.title}`}>
@@ -36,9 +41,10 @@ export default function ListingCard({
       <button className={saved ? "bb-save-icon saved" : "bb-save-icon"} onClick={() => toggleSaved(listing.id)} aria-label={saved ? t("removeSaved", { vehicle: listing.title }) : `${t("saveVehicle")}: ${listing.title}`} title={saved ? t("removeSavedVehicle") : t("saveVehicle")}><Heart size={19} fill={saved ? "currentColor" : "none"} /></button>
       <Link className="bb-listing-copy" href={`/buy/vehicle/${encodeURIComponent(listing.id)}`}>
         <strong>{formatCustomerPrimaryPrice(listing.observedPriceThb, language, fxQuote.customerRate)}</strong>
+        {listing.observedPriceThb !== null && <em className="bb-card-source-price">{formatThb(listing.observedPriceThb)} · {trustText.observed} {formatDateTime(listing.observedAt)}</em>}
         <h2>{listing.year ?? `${t("year")} ${t("pending")}`} {listing.brand} {listing.model}</h2>
         <div className="bb-card-facts">{facts.map((fact) => <span key={fact}>{fact}</span>)}<span><Camera size={13} />{listing.imageUrls.length} {language === "zh-CN" ? "张照片" : language === "th" ? "รูป" : "photos"}</span></div>
-        <small className="bb-card-availability">{language === "zh-CN" ? "NK 会在报价前确认可售状态和价格" : language === "th" ? "NK จะตรวจว่ารถยังอยู่และยืนยันราคาก่อนเสนอราคา" : "NK checks availability and price before quotation"}</small>
+        <div className="bb-card-trust"><span><CheckCircle2 size={13}/>{trustText.qa}</span><span><Clock3 size={13}/>{trustText.field}</span></div>
       </Link>
     </article>
   );
