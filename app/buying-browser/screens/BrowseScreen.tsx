@@ -114,7 +114,7 @@ export default function BrowseScreen({ savedOnly = false }: { savedOnly?: boolea
           {metroLocations.filter((location) => location !== "Pathum Thani" && location !== "Nakhon Pathom").map((location, index) => <button key={location} className={filters.location === location ? "active" : ""} onClick={() => setFilter("location", location)}>{index === 0 && <MapPin size={14} />}{locationLabel(location)}</button>)}
         </div>
 
-        {!savedOnly && <div className="bb-marketplace-title-row"><div><h2>{marketplaceHeading}</h2><p>{reviewedVehiclesLabel}</p></div><span>{priceStatus}</span></div>}
+        {!savedOnly && storefront !== "xiangshihai" && <div className="bb-marketplace-title-row"><div><h2>{marketplaceHeading}</h2><p>{reviewedVehiclesLabel}</p></div><span>{priceStatus}</span></div>}
 
         {!savedOnly && storefront !== "xiangshihai" && <div className="bb-marketplace-meta">
           <div><b>{visibleListings.length}</b> {t("vehicles")} <span className={sourceStatus.live || capturedCount ? "live" : "demo"} role="status">{sourceLabel}</span></div>

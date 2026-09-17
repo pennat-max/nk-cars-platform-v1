@@ -24,7 +24,16 @@ export default function ListingCard({
   const saved = isSaved(listing.id);
   const gradeEvidence = listing.specEvidence?.find((item) => item.field === "grade" && item.status === "confirmed" && item.value !== "Unknown");
   const verifiedGrade = gradeEvidence?.value || ((listing.grade && !["Unknown", "Source listing", "Need Review"].includes(listing.grade)) ? listing.grade : null);
-  const facts = [listing.transmission !== "Unknown" ? listing.transmission : null, listing.drive !== "Unknown" ? listing.drive : null, listing.mileageKm !== null ? `${listing.mileageKm.toLocaleString("en-US")} km` : null].filter(Boolean);
+  const usable = (value: string) => value && !["Unknown", "Need Review", "Source listing", "Pending"].includes(value);
+  const facts = [
+    verifiedGrade ? `${language === "zh-CN" ? "版本" : language === "th" ? "เกรด" : "Grade"} ${verifiedGrade}` : null,
+    usable(listing.engine) ? listing.engine : null,
+    listing.transmission !== "Unknown" ? listing.transmission : null,
+    listing.drive !== "Unknown" ? listing.drive : null,
+    usable(listing.body) ? listing.body : null,
+    listing.mileageKm !== null ? `${listing.mileageKm.toLocaleString("en-US")} km` : null,
+    usable(listing.color) ? listing.color : null,
+  ].filter((fact): fact is string => Boolean(fact));
   const trustText = language === "zh-CN"
     ? { qa: "资料已审核", field: "未现场验车", observed: "车源价", grade: "版本" }
     : language === "th"
@@ -45,7 +54,7 @@ export default function ListingCard({
         <strong>{formatCustomerPrimaryPrice(listing.observedPriceThb, language, fxQuote.customerRate)}</strong>
         {listing.observedPriceThb !== null && <em className="bb-card-source-price">{formatThb(listing.observedPriceThb)} · {trustText.observed}</em>}
         <h2>{listing.year ?? `${t("year")} ${t("pending")}`} {listing.brand} {listing.model}</h2>
-        <div className="bb-card-facts">{verifiedGrade && <span className="bb-grade-badge">{trustText.grade} {verifiedGrade}</span>}{facts.map((fact) => <span key={fact}>{fact}</span>)}<span><Camera size={13} />{listing.imageUrls.length}</span></div>
+        <div className="bb-card-facts">{facts.map((fact, index) => <span className={index === 0 && verifiedGrade ? "bb-grade-badge" : undefined} key={fact}>{fact}</span>)}<span><Camera size={13} />{listing.imageUrls.length}</span></div>
         <div className="bb-card-trust"><span><CheckCircle2 size={13}/>{trustText.qa}</span><span><Clock3 size={13}/>{trustText.field}</span></div>
       </Link>
     </article>
