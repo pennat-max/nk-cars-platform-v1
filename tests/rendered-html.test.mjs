@@ -4,14 +4,14 @@ import test from "node:test";
 const platformTitle = /<title>NK Cars Platform V1<\/title>/i;
 const shellMarkup = /class="app-shell"/i;
 
-test("redirects the public root to Buying Browser", async () => {
+test("renders Buying Browser directly at the public root", async () => {
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
   workerUrl.searchParams.set("test", `${process.pid}-${Date.now()}`);
   const { default: worker } = await import(workerUrl.href);
 
   const response = await worker.fetch(
-    new Request("http://localhost/", {
-      headers: { accept: "text/html" },
+    new Request("http://xiangshihai.com/", {
+      headers: { accept: "text/html", host: "xiangshihai.com" },
     }),
     {
       ASSETS: {
@@ -24,8 +24,10 @@ test("redirects the public root to Buying Browser", async () => {
     },
   );
 
-  assert.ok([307, 308].includes(response.status), `unexpected redirect status ${response.status}`);
-  assert.equal(new URL(response.headers.get("location"), "http://localhost").pathname, "/buy");
+  assert.equal(response.status, 200);
+  const html = await response.text();
+  assert.match(html, /Xiangshihai Vehicle Marketplace/i);
+  assert.match(html, /data-browse-marketplace-v2/i);
 });
 
 test("renders production rebuild route shell entry points", async () => {
