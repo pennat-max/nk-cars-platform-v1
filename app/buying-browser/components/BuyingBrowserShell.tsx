@@ -27,13 +27,15 @@ export default function BuyingBrowserShell({ view, children }: { view: BuyingBro
   const { customer, state, storefront } = useBuyingBrowser();
   const { language, setLanguage, t } = useI18n();
   const selected = activeKey(view);
+  const storefrontName = storefront === "xiangshihai" ? (language === "zh-CN" ? "汽车市场" : language === "th" ? "ตลาดรถ" : "Vehicle Market") : "Cars";
+  const storefrontSubtitle = storefront === "xiangshihai" ? (language === "zh-CN" ? "泰国车辆采购平台" : language === "th" ? "แพลตฟอร์มจัดซื้อรถจากไทย" : "Thailand Vehicle Marketplace") : t("buyingBrowser");
   return (
     <div className={`buying-browser view-${view} storefront-${storefront}`} data-buying-browser-v1>
       <header className="bb-header">
         <div className="bb-header-inner">
           <Link className="bb-brand" href="/buy" aria-label={t("homeLabel")}>
             <span>{storefront === "xiangshihai" ? "像海" : "NK"}</span>
-            <div><b>{storefront === "xiangshihai" ? "汽车市场" : "Cars"}</b><small>{storefront === "xiangshihai" ? "Thailand Vehicle Marketplace" : t("buyingBrowser")}</small></div>
+            <div><b>{storefrontName}</b><small>{storefrontSubtitle}</small></div>
           </Link>
           <div className="bb-market-location" aria-label="Vehicle search location"><MapPin size={16} /><span><small>{t("searchArea")}</small><b>{t("bangkokMetro")}</b></span></div>
           <nav className="bb-desktop-nav" aria-label={t("navLabel")}>

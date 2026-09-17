@@ -59,13 +59,20 @@ export default function BrowseScreen({ savedOnly = false }: { savedOnly?: boolea
   const minimumPriceLabel = language === "th" ? "ราคาต่ำสุด (THB)" : t("minPrice");
   const maximumPriceLabel = language === "th" ? "ราคาสูงสุด (THB)" : t("maxPrice");
   const priceFxNote = language === "th" ? "กรอกตัวกรองราคาเป็นบาทไทย ส่วนราคา USD เป็นประมาณการตาม FX ที่ตั้งค่าไว้" : customerFxDisclosure();
+  const xsText = language === "zh-CN" ? {
+    eyebrow: "泰国优质车源 · 一站式采购服务", title: "像海汽车采购市场", intro: "浏览泰国真实车源，询价、验车、采购与出口由 NK 团队协助完成。", browse: "立即选车", wanted: "告诉我们您的需求", reviewed: "已审核车源", proof: "多图 · 来源记录 · 规格证据", categories: ["全部车源", "双排皮卡", "智能驾驶室", "自动挡", "四轮驱动", "AI 帮我找车"], benefits: [["真实来源", "保留原始车源与检查时间"], ["询价议价", `美元报价按 ${fxQuote.customerRate} 泰铢换算`], ["专业验车", "确认后再安排线下检查"], ["出口协助", "核实费用后提供正式报价"]],
+  } : language === "th" ? {
+    eyebrow: "รถคุณภาพจากไทย · บริการจัดซื้อครบวงจร", title: "ตลาดรถ Xiangshihai", intro: "ค้นหารถจริงในประเทศไทย โดยทีม NK ช่วยสอบถาม ตรวจสภาพ จัดซื้อ และส่งออก", browse: "ดูรถเลย", wanted: "บอกเราว่าต้องการรถแบบไหน", reviewed: "รถที่ตรวจแล้ว", proof: "หลายรูป · มีแหล่งที่มา · มีหลักฐานสเป็ก", categories: ["รถทั้งหมด", "Double Cab", "Smart Cab", "เกียร์อัตโนมัติ", "ขับเคลื่อน 4 ล้อ", "ให้ AI ช่วยหารถ"], benefits: [["แหล่งข้อมูลจริง", "เก็บแหล่งประกาศและเวลาที่ตรวจ"], ["สอบถามและต่อราคา", `แปลงข้อเสนอ USD ที่เรต ${fxQuote.customerRate} บาท`], ["ตรวจรถโดยผู้เชี่ยวชาญ", "นัดตรวจเมื่อได้รับการยืนยัน"], ["ช่วยดำเนินการส่งออก", "เสนอราคาจริงหลังตรวจค่าใช้จ่าย"]],
+  } : {
+    eyebrow: "Quality vehicles from Thailand · One-stop sourcing", title: "Xiangshihai Vehicle Marketplace", intro: "Browse real Thai vehicle listings with NK support for enquiries, inspection, purchasing, and export.", browse: "Browse vehicles", wanted: "Tell us what you need", reviewed: "reviewed vehicles", proof: "Multiple photos · Source records · Specification evidence", categories: ["All vehicles", "Double Cab", "Smart Cab", "Automatic", "Four-wheel drive", "AI vehicle search"], benefits: [["Real sources", "Original source and review time retained"], ["Enquire and negotiate", `USD offers convert at THB ${fxQuote.customerRate}`], ["Professional inspection", "Inspection arranged after confirmation"], ["Export assistance", "Formal quote after costs are verified"]],
+  };
 
   return (
     <div className={storefront === "xiangshihai" ? "xs-storefront" : undefined}>
       {!savedOnly && storefront === "xiangshihai" && <>
-        <section className="xs-top-banner"><div><span>泰国优质车源 · 一站式采购服务</span><h1>像海汽车采购市场</h1><p>浏览泰国真实车源，询价、验车、采购与出口由 NK 团队协助完成。</p><div><a href="#vehicle-results">立即选车 <ArrowRight size={17}/></a><Link href="/buy/ask">告诉我们您的需求</Link></div></div><aside><b>{visibleListings.length}</b><span>已审核车源</span><small>多图 · 来源记录 · 规格证据</small></aside></section>
-        <nav className="xs-categories" aria-label="热门分类"><button onClick={() => setFilter("body", "Any")}>全部车源</button><button onClick={() => setFilter("body", "Double Cab")}>双排皮卡</button><button onClick={() => setFilter("body", "Smart Cab")}>智能驾驶室</button><button onClick={() => setFilter("transmission", "AT")}>自动挡</button><button onClick={() => setFilter("drive", "4WD")}>四轮驱动</button><Link href="/buy/ask">AI 帮我找车</Link></nav>
-        <section className="xs-benefits"><div><b>真实来源</b><span>保留原始车源与检查时间</span></div><div><b>询价议价</b><span>美元报价按 {fxQuote.customerRate} 泰铢换算</span></div><div><b>专业验车</b><span>确认后再安排线下检查</span></div><div><b>出口协助</b><span>核实费用后提供正式报价</span></div></section>
+        <section className="xs-top-banner"><div><span>{xsText.eyebrow}</span><h1>{xsText.title}</h1><p>{xsText.intro}</p><div><a href="#vehicle-results">{xsText.browse} <ArrowRight size={17}/></a><Link href="/buy/ask">{xsText.wanted}</Link></div></div><aside><b>{visibleListings.length}</b><span>{xsText.reviewed}</span><small>{xsText.proof}</small></aside></section>
+        <nav className="xs-categories" aria-label={t("vehicleCriteria")}><button onClick={() => setFilter("body", "Any")}>{xsText.categories[0]}</button><button onClick={() => setFilter("body", "Double Cab")}>{xsText.categories[1]}</button><button onClick={() => setFilter("body", "Smart Cab")}>{xsText.categories[2]}</button><button onClick={() => setFilter("transmission", "AT")}>{xsText.categories[3]}</button><button onClick={() => setFilter("drive", "4WD")}>{xsText.categories[4]}</button><Link href="/buy/ask">{xsText.categories[5]}</Link></nav>
+        <section className="xs-benefits">{xsText.benefits.map(([title, detail]) => <div key={title}><b>{title}</b><span>{detail}</span></div>)}</section>
       </>}
       {!savedOnly && storefront !== "xiangshihai" && <section className="bb-find-hero" data-customer-start>
         <div>

@@ -37,8 +37,8 @@ export default function ListingCard({
       <Link className="bb-listing-copy" href={`/buy/vehicle/${encodeURIComponent(listing.id)}`}>
         <strong>{formatCustomerPrimaryPrice(listing.observedPriceThb, language, fxQuote.customerRate)}</strong>
         <h2>{listing.year ?? `${t("year")} ${t("pending")}`} {listing.brand} {listing.model}</h2>
-        <div className="bb-card-facts">{facts.map((fact) => <span key={fact}>{fact}</span>)}<span><Camera size={13} />{listing.imageUrls.length} {language === "th" ? "รูป" : "photos"}</span></div>
-        <small className="bb-card-availability">{language === "th" ? "NK จะตรวจว่ารถยังอยู่และยืนยันราคาก่อนเสนอราคา" : "NK checks availability and price before quotation"}</small>
+        <div className="bb-card-facts">{facts.map((fact) => <span key={fact}>{fact}</span>)}<span><Camera size={13} />{listing.imageUrls.length} {language === "zh-CN" ? "张照片" : language === "th" ? "รูป" : "photos"}</span></div>
+        <small className="bb-card-availability">{language === "zh-CN" ? "NK 会在报价前确认可售状态和价格" : language === "th" ? "NK จะตรวจว่ารถยังอยู่และยืนยันราคาก่อนเสนอราคา" : "NK checks availability and price before quotation"}</small>
       </Link>
     </article>
   );

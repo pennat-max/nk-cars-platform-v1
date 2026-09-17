@@ -805,7 +805,7 @@ test("localization changes presentation without mutating authoritative listing d
   const listing = presentCustomerListing(source);
   const before = structuredClone(listing);
   assert.equal(normalizeLanguage("unsupported"), "en");
-  assert.equal(normalizeLanguage("zh-CN"), "en");
+  assert.equal(normalizeLanguage("zh-CN"), "zh-CN");
   assert.equal(translate("en", "vehiclePrice"), "Vehicle Price");
   assert.equal(translate("th", "vehiclePrice"), "ราคารถ");
   assert.match(translate("en", "inventoryGroundingLive"), /QNAP storage/);
@@ -813,10 +813,10 @@ test("localization changes presentation without mutating authoritative listing d
   for (const key of ["customerWorkspace", "currentFacts", "travelZone", "noConversations", "accountIntro", "vehicleNotFound", "observedPriceCaption", "groundedVehicleSearch", "browseRealMarketplace"]) {
     assert.notEqual(translate("th", key), key);
   }
-  assert.equal(localizeAvailability("Availability Not Yet Confirmed", "zh-CN"), "Availability Not Yet Confirmed");
+  assert.equal(localizeAvailability("Availability Not Yet Confirmed", "zh-CN"), "可售状态尚未确认");
   assert.equal(detectSourceLanguage("รถสวย ไมล์น้อย"), "th");
   assert.equal(detectSourceLanguage("车辆状态很好"), "zh-CN");
-  assert.equal(localizeListingSummary(listing, "zh-CN"), listing.summary);
+  assert.match(localizeListingSummary(listing, "zh-CN"), /Toyota Hilux Revo/);
   assert.match(localizeListingSummary(listing, "th"), /Toyota Hilux Revo/);
   assert.deepEqual(listing, before);
 });
@@ -952,15 +952,15 @@ test("seller relay queues safe verification questions and blocks transaction aut
   assert.equal(blocked.sellerRelayRequests.at(-1).preparedSellerText, null);
 });
 
-test("unsupported Chinese customer UI language falls back without mutating the original question", () => {
+test("Chinese customer UI responds in Chinese without mutating the original question", () => {
   const listing = presentCustomerListing(source);
   const created = createVehicleCase(listing, [], "customer-1", "2026-08-23T10:00:00.000Z").caseRecord;
   const question = "这辆车还在吗？最低价格是多少？";
   const answered = addCaseQuestion(created, question, "2026-08-23T10:04:00.000Z", "zh-CN");
   assert.equal(answered.messages.at(-2).text, question);
-  assert.match(answered.messages.at(-1).text, /verified before purchase|Availability is not confirmed/i);
+  assert.match(answered.messages.at(-1).text, /可售状态尚未确认/);
   assert.equal(answered.translationHistory.at(-1).originalText, question);
-  assert.equal(answered.translationHistory.at(-1).sourceLanguage, "en");
+  assert.equal(answered.translationHistory.at(-1).sourceLanguage, "zh-CN");
   assert.equal(answered.translationHistory.at(-1).translationLanguage, "th");
   assert.equal(answered.translationHistory.at(-1).status, "Prepared - not sent");
 });
